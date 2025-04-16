@@ -1,0 +1,948 @@
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_vector_icons/flutter_vector_icons.dart';
+
+const String API_BASE_URL = 'https://api.worldtriplink.com/api';
+
+class PaymentScreen extends StatefulWidget {
+  final Map<String, dynamic> bookingData;
+
+  const PaymentScreen({super.key, required this.bookingData});
+
+  @override
+  State<PaymentScreen> createState() => _PaymentScreenState();
+}
+
+class _PaymentScreenState extends State<PaymentScreen> {
+  bool _isLoading = false;
+  String _selectedPaymentMethod = 'upi';
+  String? _storedUserId;
+  
+  // Enhanced color scheme for professional design
+  final Color primaryColor = const Color(0xFF2E3192);
+  final Color accentColor = const Color(0xFFFFCC00);
+  final Color lightAccentColor = const Color(0xFFFFF9E0);
+  final Color textColor = const Color(0xFF333333);
+  final Color lightTextColor = const Color(0xFF666666);
+  final Color backgroundColor = const Color(0xFFF5F7FA);
+  final Color cardColor = Colors.white;
+  final Color successColor = const Color(0xFF4CAF50);
+  final Color errorColor = const Color(0xFFE53935);
+
+  @override
+  void initState() {
+    super.initState();
+    _getUserData();
+  }
+
+  Future<void> _getUserData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userData = prefs.getString('userData');
+      
+      if (userData != null) {
+        final parsedData = json.decode(userData);
+        setState(() {
+          if (parsedData['id'] != null) {
+            _storedUserId = parsedData['id'].toString();
+          }
+        });
+      }
+    } catch (e) {
+      debugPrint('Error retrieving user data: $e');
+    }
+  }
+
+  Future<void> _handlePayment() async {
+    setState(() => _isLoading = true);
+    
+    try {
+      // Use userId from SharedPreferences if available, otherwise fall back to route params
+      final effectiveUserId = _storedUserId ?? widget.bookingData['userId']?.toString() ?? '0';
+      
+      // Prepare request body
+      final Map<String, String> requestBody = {
+        'cabId': '123', // Default value
+        'modelName': widget.bookingData['vehicleType'] ?? '',
+        'modelType': widget.bookingData['modelType'] ?? 'hatchback',
+        'seats': widget.bookingData['seats'] ?? '4',
+        'fuelType': 'Petrol', // Default value
+        'availability': 'Available',
+        'price': widget.bookingData['baseFare']?.toString() ?? '0',
+        'pickupLocation': widget.bookingData['pickup'] ?? '',
+        'dropLocation': widget.bookingData['destination'] ?? '',
+        'date': widget.bookingData['date'] ?? '',
+        'time': widget.bookingData['time'] ?? '',
+        'tripType': widget.bookingData['bookingType'] ?? 'oneWay',
+        'distance': widget.bookingData['distance']?.toString() ?? '0',
+        'name': widget.bookingData['passengerName'] ?? '',
+        'email': widget.bookingData['passengerEmail'] ?? '',
+        'service': widget.bookingData['platformFee']?.toString() ?? '0',
+        'gst': widget.bookingData['gst']?.toString() ?? '0',
+        'total': widget.bookingData['totalFare']?.toString() ?? '0',
+        'phone': widget.bookingData['passengerPhone'] ?? '',
+        'userId': effectiveUserId,
+        'driverrate': '3000', // Default value
+        'paymentMethod': _selectedPaymentMethod,
+      };
+      
+      // Add return date for round trips
+      if (widget.bookingData['bookingType'] == 'roundTrip' && 
+          widget.bookingData['returnDate'] != null) {
+        requestBody['returndate'] = widget.bookingData['returnDate'];
+        
+        // Calculate days between dates
+        try {
+          final startDate = DateTime.parse(widget.bookingData['date']);
+          final endDate = DateTime.parse(widget.bookingData['returnDate']);
+          final diffDays = endDate.difference(startDate).inDays;
+          requestBody['days'] = (diffDays > 0 ? diffDays : 1).toString();
+        } catch (e) {
+          requestBody['days'] = '1';
+        }
+      } else {
+        requestBody['days'] = '1';
+      }
+      
+      // Make API call
+      final response = await http.post(
+        Uri.parse('$API_BASE_URL/bookingConfirm'),
+        body: requestBody,
+      );
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        
+        if (data['status'] == 'success') {
+          _showBookingConfirmation(data['bookingId'] ?? 'Unknown');
+        } else {
+          _showErrorDialog(data['message'] ?? 'Failed to create booking. Please try again.');
+        }
+      } else {
+        throw Exception('Failed to process payment');
+      }
+    } catch (e) {
+      _showErrorDialog('Failed to process payment. Please try again.');
+      debugPrint('Payment error: $e');
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  void _showBookingConfirmation(String bookingId) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Row(
+          children: [
+            Icon(Icons.check_circle, color: successColor, size: 28),
+            const SizedBox(width: 12),
+            const Text('Booking Confirmed'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Your booking has been confirmed!',
+              style: TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: lightAccentColor,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: accentColor.withOpacity(0.3), width: 1),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: accentColor.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.confirmation_number, color: primaryColor, size: 24),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Booking ID',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: lightTextColor,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          bookingId,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: textColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'A confirmation has been sent to your email.',
+              style: TextStyle(
+                fontSize: 14,
+                color: lightTextColor,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              // Navigate to home screen
+              Navigator.of(context).popUntil((route) => route.isFirst);
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: primaryColor,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              'GO TO HOME',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Row(
+          children: [
+            Icon(Icons.error_outline, color: errorColor, size: 28),
+            const SizedBox(width: 12),
+            const Text('Payment Failed'),
+          ],
+        ),
+        content: Text(
+          message,
+          style: const TextStyle(fontSize: 16),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            style: TextButton.styleFrom(
+              foregroundColor: primaryColor,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              'TRY AGAIN',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: backgroundColor,
+      appBar: AppBar(
+        backgroundColor: primaryColor,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        title: const Text(
+          'Payment',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: _isLoading
+          ? Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Processing your payment...',
+                    style: TextStyle(
+                      color: lightTextColor,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : SafeArea(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header with secure payment badge
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.lock_rounded,
+                          color: successColor,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Secure Payment',
+                          style: TextStyle(
+                            color: successColor,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  // Main content - Using Expanded to prevent overflow
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          // Use responsive layout based on screen width
+                          if (constraints.maxWidth > 600) {
+                            // Tablet/Desktop layout - Side by side
+                            return Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Left column - Trip Summary
+                                Expanded(
+                                  flex: 3,
+                                  child: _buildTripSummary(),
+                                ),
+                                const SizedBox(width: 16),
+                                // Right column - Payment Methods
+                                Expanded(
+                                  flex: 4,
+                                  child: _buildPaymentMethods(),
+                                ),
+                              ],
+                            );
+                          } else {
+                            // Mobile layout - Stacked
+                            return SingleChildScrollView(
+                              child: Column(
+                                children: [
+                                  // Trip Summary
+                                  SizedBox(
+                                    height: 320, // Fixed height for trip summary
+                                    child: _buildTripSummary(),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  // Payment Methods
+                                  SizedBox(
+                                    height: 320, // Fixed height for payment methods
+                                    child: _buildPaymentMethods(),
+                                  ),
+                                  // Add extra space at bottom to prevent footer overlap
+                                  const SizedBox(height: 80),
+                                ],
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                  
+                  // Bottom payment button with total amount
+                  _buildPaymentFooter(),
+                ],
+              ),
+            ),
+    );
+  }
+
+  Widget _buildTripSummary() {
+    return Card(
+      elevation: 2,
+      shadowColor: Colors.black.withOpacity(0.1),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: lightAccentColor,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.directions_car_rounded,
+                    color: primaryColor,
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Trip Summary',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: textColor,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            // Use Expanded with SingleChildScrollView to prevent overflow
+            Expanded(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildLocationInfo(),
+                    const SizedBox(height: 16),
+                    const Divider(thickness: 1),
+                    const SizedBox(height: 12),
+                    _buildCompactTripDetails(),
+                    const SizedBox(height: 16),
+                    const Divider(thickness: 1),
+                    const SizedBox(height: 12),
+                    _buildFareDetails(),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLocationInfo() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Column(
+          children: [
+            Container(
+              width: 12,
+              height: 12,
+              decoration: BoxDecoration(
+                color: primaryColor,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: primaryColor.withOpacity(0.3),
+                    blurRadius: 4,
+                    spreadRadius: 1,
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 2,
+              height: 30,
+              color: Colors.grey.shade300,
+            ),
+            Container(
+              width: 12,
+              height: 12,
+              decoration: BoxDecoration(
+                color: accentColor,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: accentColor.withOpacity(0.3),
+                    blurRadius: 4,
+                    spreadRadius: 1,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                widget.bookingData['pickup'] ?? 'Pickup',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: textColor,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 24),
+              Text(
+                widget.bookingData['destination'] ?? 'Destination',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: textColor,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCompactTripDetails() {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _buildDetailItem(
+                Icons.calendar_today,
+                'Date',
+                widget.bookingData['date'] ?? '',
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildDetailItem(
+                Icons.access_time,
+                'Time',
+                widget.bookingData['time'] ?? '',
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildDetailItem(
+                Icons.person,
+                'Passenger',
+                _getShortName(widget.bookingData['passengerName'] ?? ''),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildDetailItem(
+                Icons.phone,
+                'Contact',
+                widget.bookingData['passengerPhone'] ?? '',
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        _buildDetailItem(
+          Icons.directions_car,
+          'Vehicle',
+          widget.bookingData['vehicleType'] ?? '',
+        ),
+        if (widget.bookingData['bookingType'] == 'roundTrip' && 
+            widget.bookingData['returnDate'] != null) ...[
+          const SizedBox(height: 12),
+          _buildDetailItem(
+            Icons.calendar_today,
+            'Return Date',
+            widget.bookingData['returnDate'] ?? '',
+          ),
+        ],
+      ],
+    );
+  }
+
+  String _getShortName(String fullName) {
+    if (fullName.isEmpty) return '';
+    final parts = fullName.split(' ');
+    if (parts.length <= 2) return fullName;
+    return '${parts[0]} ${parts[1]}';
+  }
+
+  Widget _buildDetailItem(IconData icon, String label, String value) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: lightAccentColor,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(
+            icon,
+            color: primaryColor,
+            size: 16,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: lightTextColor,
+                ),
+              ),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: textColor,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFareDetails() {
+    final baseFare = int.tryParse(widget.bookingData['baseFare']?.toString() ?? '0') ?? 0;
+    final platformFee = widget.bookingData['platformFee'] ?? 0;
+    final gst = widget.bookingData['gst'] ?? 0;
+    final totalFare = widget.bookingData['totalFare'] ?? 0;
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: lightAccentColor,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.receipt_long,
+                color: primaryColor,
+                size: 16,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              'Fare Details',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: textColor,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        _buildFareRow('Base Fare', '₹$baseFare'),
+        const SizedBox(height: 8),
+        _buildFareRow('Platform Fee', '₹$platformFee'),
+        const SizedBox(height: 8),
+        _buildFareRow('GST (18%)', '₹$gst'),
+        const SizedBox(height: 8),
+        const Divider(),
+        _buildFareRow(
+          'Total Fare',
+          '₹$totalFare',
+          isTotal: true,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFareRow(String label, String value, {bool isTotal = false}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+            fontSize: isTotal ? 16 : 14,
+            color: isTotal ? textColor : lightTextColor,
+          ),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+            fontSize: isTotal ? 16 : 14,
+            color: isTotal ? primaryColor : textColor,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPaymentMethods() {
+    return Card(
+      elevation: 2,
+      shadowColor: Colors.black.withOpacity(0.1),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: lightAccentColor,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.payment,
+                    color: primaryColor,
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Payment Method',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: textColor,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    _buildPaymentOption(
+                      'UPI',
+                      'Pay using Google Pay, PhonePe, etc.',
+                      MaterialCommunityIcons.qrcode_scan,
+                      'upi',
+                    ),
+                    const Divider(),
+                    _buildPaymentOption(
+                      'Credit/Debit Card',
+                      'Pay using Visa, Mastercard, RuPay',
+                      MaterialCommunityIcons.credit_card,
+                      'card',
+                    ),
+                    const Divider(),
+                    _buildPaymentOption(
+                      'Net Banking',
+                      'Pay using your bank account',
+                      MaterialCommunityIcons.bank,
+                      'netbanking',
+                    ),
+                    const Divider(),
+                    _buildPaymentOption(
+                      'Cash on Arrival',
+                      'Pay directly to the driver',
+                      MaterialCommunityIcons.cash,
+                      'cash',
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPaymentOption(
+    String title,
+    String subtitle,
+    IconData icon,
+    String value,
+  ) {
+    final isSelected = _selectedPaymentMethod == value;
+    
+    return InkWell(
+      onTap: () => setState(() => _selectedPaymentMethod = value),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? lightAccentColor.withOpacity(0.5) : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          border: isSelected 
+              ? Border.all(color: accentColor, width: 1)
+              : null,
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: isSelected ? accentColor.withOpacity(0.2) : Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                icon,
+                size: 24,
+                color: isSelected ? primaryColor : Colors.grey.shade600,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                      color: isSelected ? primaryColor : textColor,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      color: lightTextColor,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Radio<String>(
+              value: value,
+              groupValue: _selectedPaymentMethod,
+              onChanged: (value) {
+                if (value != null) {
+                  setState(() => _selectedPaymentMethod = value);
+                }
+              },
+              activeColor: primaryColor,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPaymentFooter() {
+    final totalFare = widget.bookingData['totalFare'] ?? 0;
+    
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cardColor,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: [
+            // Price display
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Total Amount',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: lightTextColor,
+                    ),
+                  ),
+                  Text(
+                    '₹$totalFare',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: primaryColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            // Pay button
+            Expanded(
+              child: ElevatedButton(
+                onPressed: _handlePayment,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: accentColor,
+                  foregroundColor: textColor,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                ),
+                child: Text(
+                  _selectedPaymentMethod == 'cash' ? 'Confirm Booking' : 'Pay Now',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
