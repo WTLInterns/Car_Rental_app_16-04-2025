@@ -12,31 +12,32 @@ import 'package:url_launcher/url_launcher.dart';
 class DriverTrackingScreen extends StatefulWidget {
   final Map<String, dynamic> arguments;
 
-  const DriverTrackingScreen({Key? key, required this.arguments}) : super(key: key);
+  const DriverTrackingScreen({super.key, required this.arguments});
 
   @override
   State<DriverTrackingScreen> createState() => _DriverTrackingScreenState();
 }
 
-class _DriverTrackingScreenState extends State<DriverTrackingScreen> with SingleTickerProviderStateMixin {
+class _DriverTrackingScreenState extends State<DriverTrackingScreen>
+    with SingleTickerProviderStateMixin {
   // Google Maps controller
   final Completer<GoogleMapController> _mapController = Completer();
-  
+
   // Initial camera position (will be updated with driver's location)
   CameraPosition _initialCameraPosition = const CameraPosition(
     target: LatLng(18.5619, 73.9447),
     zoom: 14.0,
   );
-  
+
   // Location data
   LatLng? _driverLocation;
   LatLng? _pickupLocation;
   LatLng? _destinationLocation;
-  
+
   // Route data
   List<LatLng> _driverToPickupRoute = [];
   List<LatLng> _pickupToDestinationRoute = [];
-  
+
   // Trip info
   String _pickup = '';
   String _destination = '';
@@ -45,7 +46,7 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
   String _bookingId = '';
   Map<String, dynamic> _passengerInfo = {};
   Map<String, dynamic> _tripInfo = {};
-  
+
   // State variables
   bool _isLoading = true;
   bool _isFetchingRoute = false;
@@ -53,7 +54,7 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
   bool _arrivedAtPickup = false;
   bool _tripStarted = false;
   String? _locationError;
-  
+
   // Odometer and OTP state
   bool _showOdometerModal = false;
   bool _showOtpModal = false;
@@ -64,46 +65,45 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
   bool _isCompletingTrip = false;
   Map<String, dynamic>? _tripSummary;
   bool _showTripSummary = false;
-  
+
   // Animation controller for notifications
   late AnimationController _animationController;
   late Animation<Offset> _offsetAnimation;
-  
+
   @override
   void initState() {
     super.initState();
-    
+
     // Initialize animation controller
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 500),
       vsync: this,
     );
-    
+
     _offsetAnimation = Tween<Offset>(
       begin: const Offset(0, -1.5),
       end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOut,
-    ));
-    
+    ).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+    );
+
     // Extract route parameters
     _extractRouteParams();
-    
+
     // Request location permission
     _requestLocationPermission();
   }
-  
+
   @override
   void dispose() {
     _animationController.dispose();
     super.dispose();
   }
-  
+
   // Extract route parameters
   void _extractRouteParams() {
     final args = widget.arguments;
-    
+
     setState(() {
       _bookingId = args['bookingId'] ?? '';
       _pickup = args['pickup'] ?? '';
@@ -113,7 +113,7 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
       _distance = _tripInfo['distance'] ?? '';
       _duration = _tripInfo['estimatedTime'] ?? '';
       _statusMessage = args['currentStatus'] ?? 'Heading to pickup';
-      
+
       // Set pickup and destination locations
       if (args['pickupLocation'] != null) {
         _pickupLocation = LatLng(
@@ -123,7 +123,7 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
       } else {
         _pickupLocation = const LatLng(21.1458, 79.0882); // Default
       }
-      
+
       if (args['destinationLocation'] != null) {
         _destinationLocation = LatLng(
           args['destinationLocation']['latitude'] ?? 18.5284,
@@ -134,44 +134,45 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
       }
     });
   }
-  
+
   // Request location permission
   Future<void> _requestLocationPermission() async {
     final status = await permission.Permission.location.request();
-    
+
     if (status.isGranted) {
       _getCurrentLocation();
     } else {
       setState(() {
-        _locationError = 'Location permission denied. Please enable it in app settings.';
+        _locationError =
+            'Location permission denied. Please enable it in app settings.';
         _isLoading = false;
       });
     }
   }
-  
+
   // Get current location
   Future<void> _getCurrentLocation() async {
     final location = Location();
-    
+
     try {
       final currentLocation = await location.getLocation();
-      final latLng = LatLng(currentLocation.latitude!, currentLocation.longitude!);
-      
+      final latLng = LatLng(
+        currentLocation.latitude!,
+        currentLocation.longitude!,
+      );
+
       setState(() {
         _driverLocation = latLng;
-        _initialCameraPosition = CameraPosition(
-          target: latLng,
-          zoom: 14.0,
-        );
+        _initialCameraPosition = CameraPosition(target: latLng, zoom: 14.0);
         _isLoading = false;
       });
-      
+
       // Start location updates
       _startLocationUpdates();
-      
+
       // Fetch route to pickup
       _fetchRoute(_driverLocation!, _pickupLocation!, true);
-      
+
       // Also fetch route from pickup to destination for display
       _fetchRoute(_pickupLocation!, _destinationLocation!, false);
     } catch (e) {
@@ -181,19 +182,22 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
       });
     }
   }
-  
+
   // Start location updates
   void _startLocationUpdates() {
     final location = Location();
-    
+
     location.onLocationChanged.listen((locationData) {
       if (locationData.latitude != null && locationData.longitude != null) {
-        final newLocation = LatLng(locationData.latitude!, locationData.longitude!);
-        
+        final newLocation = LatLng(
+          locationData.latitude!,
+          locationData.longitude!,
+        );
+
         setState(() {
           _driverLocation = newLocation;
         });
-        
+
         // Update route if needed
         if (_driverLocation != null) {
           if (!_tripStarted && _pickupLocation != null) {
@@ -205,24 +209,29 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
       }
     });
   }
-  
+
   // Fetch route between two points
-  Future<void> _fetchRoute(LatLng origin, LatLng destination, bool isToPickup) async {
+  Future<void> _fetchRoute(
+    LatLng origin,
+    LatLng destination,
+    bool isToPickup,
+  ) async {
     setState(() {
       _isFetchingRoute = true;
     });
-    
+
     try {
       final originStr = '${origin.latitude},${origin.longitude}';
       final destinationStr = '${destination.latitude},${destination.longitude}';
-      final url = 'https://maps.googleapis.com/maps/api/directions/json?origin=$originStr&destination=$destinationStr&key=AIzaSyCelDo4I5cPQ72TfCTQW-arhPZ7ALNcp8w&mode=driving';
-      
+      final url =
+          'https://maps.googleapis.com/maps/api/directions/json?origin=$originStr&destination=$destinationStr&key=AIzaSyCelDo4I5cPQ72TfCTQW-arhPZ7ALNcp8w&mode=driving';
+
       final response = await http.get(Uri.parse(url));
       final result = json.decode(response.body);
-      
+
       if (result['status'] == 'OK' && result['routes'].isNotEmpty) {
         final route = result['routes'][0];
-        
+
         // Update trip info if needed
         if (route['legs'] != null && route['legs'].isNotEmpty) {
           final leg = route['legs'][0];
@@ -233,11 +242,11 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
             });
           }
         }
-        
+
         // Decode and set the polyline coordinates
         final points = route['overview_polyline']['points'];
         final decodedCoords = _decodePolyline(points);
-        
+
         setState(() {
           if (isToPickup) {
             _driverToPickupRoute = decodedCoords;
@@ -272,7 +281,7 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
       });
     }
   }
-  
+
   // Decode Google's polyline algorithm
   List<LatLng> _decodePolyline(String encoded) {
     List<LatLng> poly = [];
@@ -281,63 +290,61 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
 
     while (index < len) {
       int b, shift = 0, result = 0;
-      
+
       do {
         b = encoded.codeUnitAt(index++) - 63;
         result |= (b & 0x1f) << shift;
         shift += 5;
       } while (b >= 0x20);
-      
+
       int dlat = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
       lat += dlat;
-      
+
       shift = 0;
       result = 0;
-      
+
       do {
         b = encoded.codeUnitAt(index++) - 63;
         result |= (b & 0x1f) << shift;
         shift += 5;
       } while (b >= 0x20);
-      
+
       int dlng = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
       lng += dlng;
-      
+
       final point = LatLng(lat / 1e5, lng / 1e5);
       poly.add(point);
     }
-    
+
     return poly;
   }
-  
+
   // Fit map to show all coordinates
   Future<void> _fitMapToCoordinates(List<LatLng> coordinates) async {
     if (coordinates.isEmpty) return;
-    
+
     final controller = await _mapController.future;
-    
+
     double minLat = coordinates[0].latitude;
     double maxLat = coordinates[0].latitude;
     double minLng = coordinates[0].longitude;
     double maxLng = coordinates[0].longitude;
-    
+
     for (final coord in coordinates) {
       if (coord.latitude < minLat) minLat = coord.latitude;
       if (coord.latitude > maxLat) maxLat = coord.latitude;
       if (coord.longitude < minLng) minLng = coord.longitude;
       if (coord.longitude > maxLng) maxLng = coord.longitude;
     }
-    
+
     final bounds = LatLngBounds(
       southwest: LatLng(minLat, minLng),
       northeast: LatLng(maxLat, maxLng),
     );
-    
-    await controller.animateCamera(
-      CameraUpdate.newLatLngBounds(bounds, 50.0),
-    );
+
+    await controller.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50.0));
   }
-  
+
   // Handle call passenger
   Future<void> _handleCallPassenger() async {
     final phoneNumber = _passengerInfo['phoneNumber'] ?? '';
@@ -356,29 +363,30 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
       );
     }
   }
-  
+
   // Handle arrived at pickup
   void _handleArrivedAtPickup() {
     setState(() {
       _arrivedAtPickup = true;
       _statusMessage = "Arrived at pickup location";
     });
-    
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Arrived at Pickup'),
-        content: const Text('Please wait for the passenger to arrive.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Arrived at Pickup'),
+            content: const Text('Please wait for the passenger to arrive.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
-  
+
   // Generate OTP
   String _generateOtp() {
     final newOtp = (1000 + Random().nextInt(9000)).toString();
@@ -387,7 +395,7 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
     });
     return newOtp;
   }
-  
+
   // Handle start trip
   void _handleStartTrip() {
     setState(() {
@@ -395,7 +403,7 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
       _isCompletingTrip = false;
     });
   }
-  
+
   // Handle complete trip
   void _handleCompleteTrip() {
     setState(() {
@@ -403,7 +411,7 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
       _isCompletingTrip = true;
     });
   }
-  
+
   // Handle odometer submit
   void _handleOdometerSubmit() {
     if (_isCompletingTrip) {
@@ -413,37 +421,44 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
         );
         return;
       }
-      
+
       // Validate that end odometer is greater than start odometer
       if (int.parse(_endOdometer) <= int.parse(_startOdometer)) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('End odometer reading must be greater than start reading')),
+          const SnackBar(
+            content: Text(
+              'End odometer reading must be greater than start reading',
+            ),
+          ),
         );
         return;
       }
-      
+
       setState(() {
         _showOdometerModal = false;
       });
-      
+
       final newOtp = _generateOtp();
       setState(() {
         _showOtpModal = true;
       });
-      
+
       // In a real app, you would send this OTP to the passenger
       showDialog(
         context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('OTP Generated'),
-          content: Text('OTP $newOtp has been sent to the passenger for verification.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('OK'),
+        builder:
+            (context) => AlertDialog(
+              title: const Text('OTP Generated'),
+              content: Text(
+                'OTP $newOtp has been sent to the passenger for verification.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('OK'),
+                ),
+              ],
             ),
-          ],
-        ),
       );
     } else {
       if (_startOdometer.isEmpty || _startOdometer.trim().isEmpty) {
@@ -452,33 +467,36 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
         );
         return;
       }
-      
+
       setState(() {
         _showOdometerModal = false;
       });
-      
+
       final newOtp = _generateOtp();
       setState(() {
         _showOtpModal = true;
       });
-      
+
       // In a real app, you would send this OTP to the passenger
       showDialog(
         context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('OTP Generated'),
-          content: Text('OTP $newOtp has been sent to the passenger for verification.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('OK'),
+        builder:
+            (context) => AlertDialog(
+              title: const Text('OTP Generated'),
+              content: Text(
+                'OTP $newOtp has been sent to the passenger for verification.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('OK'),
+                ),
+              ],
             ),
-          ],
-        ),
       );
     }
   }
-  
+
   // Handle OTP verification
   void _handleOtpVerify() {
     if (_otp == _generatedOtp) {
@@ -486,12 +504,14 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
         _showOtpModal = false;
         _otp = '';
       });
-      
+
       if (_isCompletingTrip) {
         // Calculate trip summary
-        final distanceTraveled = (int.parse(_endOdometer) - int.parse(_startOdometer)).toString();
-        final estimatedFare = (int.parse(distanceTraveled) * 10).toString(); // Simple calculation
-        
+        final distanceTraveled =
+            (int.parse(_endOdometer) - int.parse(_startOdometer)).toString();
+        final estimatedFare =
+            (int.parse(distanceTraveled) * 10).toString(); // Simple calculation
+
         setState(() {
           _tripSummary = {
             'startOdometer': _startOdometer,
@@ -507,7 +527,7 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
           _tripStarted = true;
           _statusMessage = "Trip started";
         });
-        
+
         // Fetch route to destination
         if (_driverLocation != null && _destinationLocation != null) {
           _fetchRoute(_driverLocation!, _destinationLocation!, false);
@@ -519,69 +539,74 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
       );
     }
   }
-  
+
   // Handle trip summary confirmation
   void _handleTripSummaryConfirm() {
     setState(() {
       _showTripSummary = false;
     });
-    
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Trip Completed'),
-        content: const Text('Trip has been successfully completed.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('OK'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Trip Completed'),
+            content: const Text('Trip has been successfully completed.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('OK'),
+              ),
+            ],
           ),
-        ],
-      ),
     ).then((value) {
       if (value == true) {
         Navigator.pop(context);
       }
     });
   }
-  
+
   // Handle cancel trip
   void _handleCancelTrip() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Cancel Trip'),
-        content: const Text('Are you sure you want to cancel this trip? This may affect your ratings.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('No'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Cancel Trip'),
+            content: const Text(
+              'Are you sure you want to cancel this trip? This may affect your ratings.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('No'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  showDialog(
+                    context: context,
+                    builder:
+                        (context) => AlertDialog(
+                          title: const Text('Trip Cancelled'),
+                          content: const Text('Trip has been cancelled.'),
+                          actions: [
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pop(context);
+                                Navigator.pop(context);
+                              },
+                              child: const Text('OK'),
+                            ),
+                          ],
+                        ),
+                  );
+                },
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                child: const Text('Yes, Cancel'),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              showDialog(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text('Trip Cancelled'),
-                  content: const Text('Trip has been cancelled.'),
-                  actions: [
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        Navigator.pop(context);
-                      },
-                      child: const Text('OK'),
-                    ),
-                  ],
-                ),
-              );
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Yes, Cancel'),
-          ),
-        ],
-      ),
     );
   }
 
@@ -601,7 +626,7 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
         ),
       );
     }
-    
+
     return Scaffold(
       body: Stack(
         children: [
@@ -614,18 +639,22 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
             zoomControlsEnabled: false,
             onMapCreated: (GoogleMapController controller) {
               _mapController.complete(controller);
-              
+
               // Fit map initially when driver location is ready
-              if (_driverLocation != null && _pickupLocation != null && !_tripStarted) {
+              if (_driverLocation != null &&
+                  _pickupLocation != null &&
+                  !_tripStarted) {
                 _fitMapToCoordinates([_driverLocation!, _pickupLocation!]);
-              } else if (_driverLocation != null && _destinationLocation != null && _tripStarted) {
+              } else if (_driverLocation != null &&
+                  _destinationLocation != null &&
+                  _tripStarted) {
                 _fitMapToCoordinates([_driverLocation!, _destinationLocation!]);
               }
             },
             markers: _buildMarkers(),
             polylines: _buildPolylines(),
           ),
-          
+
           // Loading Indicator for Route Fetching
           if (_isFetchingRoute)
             Positioned(
@@ -634,7 +663,10 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
               right: 0,
               child: Center(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.black54,
                     borderRadius: BorderRadius.circular(20),
@@ -647,7 +679,9 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
                         ),
                       ),
                       SizedBox(width: 10),
@@ -660,7 +694,7 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
                 ),
               ),
             ),
-          
+
           // Location Error Message
           if (_locationError != null)
             Positioned(
@@ -688,7 +722,7 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
                 ),
               ),
             ),
-          
+
           // Status Bar
           Positioned(
             top: MediaQuery.of(context).padding.top + 60,
@@ -711,7 +745,7 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
               ),
             ),
           ),
-          
+
           // Header
           Positioned(
             top: 0,
@@ -729,7 +763,11 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   IconButton(
-                    icon: const Icon(MaterialCommunityIcons.arrow_left, color: Colors.white, size: 24),
+                    icon: const Icon(
+                      MaterialCommunityIcons.arrow_left,
+                      color: Colors.white,
+                      size: 24,
+                    ),
                     onPressed: () => Navigator.pop(context),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
@@ -747,7 +785,7 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
               ),
             ),
           ),
-          
+
           // Trip Info Card
           Positioned(
             bottom: 0,
@@ -845,11 +883,11 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
                       ),
                     ],
                   ),
-                  
+
                   const SizedBox(height: 15),
                   const Divider(height: 1, color: Color(0xFFE0E0E0)),
                   const SizedBox(height: 15),
-                  
+
                   // Trip Details
                   Column(
                     children: [
@@ -909,11 +947,11 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
                       ),
                     ],
                   ),
-                  
+
                   const SizedBox(height: 15),
                   const Divider(height: 1, color: Color(0xFFE0E0E0)),
                   const SizedBox(height: 15),
-                  
+
                   // Trip Stats
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -923,9 +961,9 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
                       _buildTripStat('Fare', _tripInfo['fare'] ?? '₹0'),
                     ],
                   ),
-                  
+
                   const SizedBox(height: 15),
-                  
+
                   // Payment Method
                   Row(
                     children: [
@@ -948,23 +986,13 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
                         style: const TextStyle(
                           fontSize: 14,
                           color: Color(0xFF666666),
-                                                  ),
-                      ),
-                      const SizedBox(width: 15),
-                      Expanded(
-                        child: Text(
-                          'Booking ID: $_bookingId',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF666666),
-                          ),
                         ),
                       ),
                     ],
                   ),
-                  
+
                   const SizedBox(height: 20),
-                  
+
                   // Action Buttons
                   Row(
                     children: [
@@ -1019,7 +1047,10 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,
                           foregroundColor: Colors.red,
-                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 12,
+                            horizontal: 20,
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                             side: const BorderSide(color: Colors.red),
@@ -1033,7 +1064,7 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
               ),
             ),
           ),
-          
+
           // Trip Started Notification
           SlideTransition(
             position: _offsetAnimation,
@@ -1044,7 +1075,10 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
                 left: 20,
                 right: 20,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFF4CAF50),
                     borderRadius: BorderRadius.circular(8),
@@ -1080,7 +1114,7 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
               ),
             ),
           ),
-          
+
           // Odometer Modal
           if (_showOdometerModal)
             Positioned.fill(
@@ -1098,7 +1132,9 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          _isCompletingTrip ? 'End Odometer Reading' : 'Start Odometer Reading',
+                          _isCompletingTrip
+                              ? 'End Odometer Reading'
+                              : 'Start Odometer Reading',
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -1112,7 +1148,10 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
                             decoration: const InputDecoration(
                               labelText: 'Enter odometer reading (km)',
                               border: OutlineInputBorder(),
-                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 16,
+                              ),
                             ),
                             onChanged: (value) {
                               setState(() {
@@ -1126,7 +1165,10 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
                             decoration: InputDecoration(
                               labelText: 'Start odometer reading (km)',
                               border: const OutlineInputBorder(),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 16,
+                              ),
                               enabled: false,
                               hintText: _startOdometer,
                             ),
@@ -1137,7 +1179,10 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
                             decoration: const InputDecoration(
                               labelText: 'Enter end odometer reading (km)',
                               border: OutlineInputBorder(),
-                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 16,
+                              ),
                             ),
                             onChanged: (value) {
                               setState(() {
@@ -1174,7 +1219,7 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
                 ),
               ),
             ),
-          
+
           // OTP Modal
           if (_showOtpModal)
             Positioned.fill(
@@ -1192,7 +1237,9 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          _isCompletingTrip ? 'Verify End Trip OTP' : 'Verify Start Trip OTP',
+                          _isCompletingTrip
+                              ? 'Verify End Trip OTP'
+                              : 'Verify Start Trip OTP',
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -1214,7 +1261,10 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
                           decoration: const InputDecoration(
                             labelText: 'Enter 4-digit OTP',
                             border: OutlineInputBorder(),
-                            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 16,
+                            ),
                           ),
                           onChanged: (value) {
                             setState(() {
@@ -1250,7 +1300,7 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
                 ),
               ),
             ),
-          
+
           // Trip Summary Modal
           if (_showTripSummary && _tripSummary != null)
             Positioned.fill(
@@ -1276,11 +1326,24 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
                           ),
                         ),
                         const SizedBox(height: 20),
-                        _buildSummaryItem('Start Odometer', _tripSummary!['startOdometer'] + ' km'),
-                        _buildSummaryItem('End Odometer', _tripSummary!['endOdometer'] + ' km'),
-                        _buildSummaryItem('Distance Traveled', _tripSummary!['distanceTraveled']),
+                        _buildSummaryItem(
+                          'Start Odometer',
+                          _tripSummary!['startOdometer'] + ' km',
+                        ),
+                        _buildSummaryItem(
+                          'End Odometer',
+                          _tripSummary!['endOdometer'] + ' km',
+                        ),
+                        _buildSummaryItem(
+                          'Distance Traveled',
+                          _tripSummary!['distanceTraveled'],
+                        ),
                         const Divider(height: 30),
-                        _buildSummaryItem('Total Fare', _tripSummary!['fare'], isTotal: true),
+                        _buildSummaryItem(
+                          'Total Fare',
+                          _tripSummary!['fare'],
+                          isTotal: true,
+                        ),
                         const SizedBox(height: 20),
                         SizedBox(
                           width: double.infinity,
@@ -1303,7 +1366,7 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
       ),
     );
   }
-  
+
   // Build trip stat widget
   Widget _buildTripStat(String label, String value) {
     return Column(
@@ -1311,10 +1374,7 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
       children: [
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 12,
-            color: Color(0xFF999999),
-          ),
+          style: const TextStyle(fontSize: 12, color: Color(0xFF999999)),
         ),
         const SizedBox(height: 4),
         Text(
@@ -1328,7 +1388,7 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
       ],
     );
   }
-  
+
   // Build summary item widget
   Widget _buildSummaryItem(String label, String value, {bool isTotal = false}) {
     return Padding(
@@ -1349,18 +1409,19 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
             style: TextStyle(
               fontSize: isTotal ? 18 : 14,
               fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
-              color: isTotal ? const Color(0xFF4A90E2) : const Color(0xFF333333),
+              color:
+                  isTotal ? const Color(0xFF4A90E2) : const Color(0xFF333333),
             ),
           ),
         ],
       ),
     );
   }
-  
+
   // Build map markers
   Set<Marker> _buildMarkers() {
     final Set<Marker> markers = {};
-    
+
     // Add driver marker
     if (_driverLocation != null) {
       markers.add(
@@ -1372,19 +1433,21 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
         ),
       );
     }
-    
+
     // Add pickup marker
     if (_pickupLocation != null && !_tripStarted) {
       markers.add(
         Marker(
           markerId: const MarkerId('pickup'),
           position: _pickupLocation!,
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+          icon: BitmapDescriptor.defaultMarkerWithHue(
+            BitmapDescriptor.hueGreen,
+          ),
           infoWindow: InfoWindow(title: 'Pickup: $_pickup'),
         ),
       );
     }
-    
+
     // Add destination marker
     if (_destinationLocation != null) {
       markers.add(
@@ -1396,14 +1459,14 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
         ),
       );
     }
-    
+
     return markers;
   }
-  
+
   // Build map polylines
   Set<Polyline> _buildPolylines() {
     final Set<Polyline> polylines = {};
-    
+
     // Add driver to pickup route
     if (_driverToPickupRoute.isNotEmpty && !_tripStarted) {
       polylines.add(
@@ -1415,19 +1478,20 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> with Single
         ),
       );
     }
-    
+
     // Add pickup to destination route
     if (_pickupToDestinationRoute.isNotEmpty) {
       polylines.add(
         Polyline(
           polylineId: const PolylineId('pickupToDestination'),
           points: _pickupToDestinationRoute,
-          color: _tripStarted ? const Color(0xFF4A90E2) : const Color(0xFFAAAAAA),
+          color:
+              _tripStarted ? const Color(0xFF4A90E2) : const Color(0xFFAAAAAA),
           width: _tripStarted ? 5 : 3,
         ),
       );
     }
-    
+
     return polylines;
   }
 }

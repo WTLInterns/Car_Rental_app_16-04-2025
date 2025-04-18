@@ -12,13 +12,14 @@ import 'package:url_launcher/url_launcher.dart';
 class TrackingScreen extends StatefulWidget {
   final Map<String, dynamic> bookingData;
 
-  const TrackingScreen({Key? key, required this.bookingData}) : super(key: key);
+  const TrackingScreen({super.key, required this.bookingData});
 
   @override
   State<TrackingScreen> createState() => _TrackingScreenState();
 }
 
-class _TrackingScreenState extends State<TrackingScreen> with SingleTickerProviderStateMixin {
+class _TrackingScreenState extends State<TrackingScreen>
+    with SingleTickerProviderStateMixin {
   // Controllers and references
   final Completer<GoogleMapController> _mapController = Completer();
   late AnimationController _animationController;
@@ -35,36 +36,34 @@ class _TrackingScreenState extends State<TrackingScreen> with SingleTickerProvid
     target: LatLng(19.0760, 72.8777), // Mumbai
     zoom: 14.0,
   );
-  
+
   // Route data
   List<LatLng> _driverToPickupRoute = [];
   List<LatLng> _pickupToDestinationRoute = [];
-  
+
   // UI state
   bool _isLoading = true;
   bool _isFetchingRoute = false;
   bool _hasLocationPermission = false;
   bool _driverNearby = false;
   bool _tripStarted = false;
-  bool _tripCompleted = false;
+  final bool _tripCompleted = false;
   bool _notificationShown = false;
   bool _otpVerified = false;
   bool _showOtpModal = false;
-  
+
   // OTP state
   String _otp = '';
   String _generatedOtp = '';
-  
+
   // Trip info
   String? _locationError;
 
-  
   // Booking data
   late String _bookingId;
 
   late String _tripType;
 
-  
   late String _pickup;
   late String _destination;
   late String _distance = 'Calculating...';
@@ -76,47 +75,151 @@ class _TrackingScreenState extends State<TrackingScreen> with SingleTickerProvid
   @override
   void initState() {
     super.initState();
-    
-    // Initialize animation controller
+
     _animationController = AnimationController(
-      vsync: this,
       duration: const Duration(milliseconds: 500),
+      vsync: this,
     );
-    
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(_animationController);
-    _slideAnimation = Tween<double>(begin: MediaQuery.of(context).size.height, end: 90.0)
-        .animate(_animationController);
-    
-    // Extract booking data
-    _extractBookingData();
-    
-    // Request location permission and start tracking
-    _requestLocationPermission();
+
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(_animationController);
+    _slideAnimation = Tween<double>(
+      begin: 50.0,
+      end: 0.0,
+    ).animate(_animationController);
+
+    // Initialize booking data
+    _initializeBookingData();
+
+    // Start location tracking
+    _initializeLocationTracking();
+
+    // Start driver movement simulation
+    _startDriverSimulation();
+
+    // Show first OTP after 30 seconds
+    Future.delayed(const Duration(seconds: 30), () {
+      if (mounted) {
+        _showStartTripOtp();
+      }
+    });
   }
 
-void _extractBookingData() {
+  void _initializeBookingData() {
+    _bookingId = widget.bookingData['bookingId'] ?? '';
+    _tripType = widget.bookingData['tripType'] ?? 'oneWay';
+    _pickup = widget.bookingData['pickup'] ?? '';
+    _destination = widget.bookingData['destination'] ?? '';
+
+    // Initialize source and destination coordinates
+    final sourceLat =
+        widget.bookingData['pickupLocation']?['latitude'] ?? 19.0760;
+    final sourceLng =
+        widget.bookingData['pickupLocation']?['longitude'] ?? 72.8777;
+    final destLat =
+        widget.bookingData['destinationLocation']?['latitude'] ?? 19.0860;
+    final destLng =
+        widget.bookingData['destinationLocation']?['longitude'] ?? 72.8877;
+
+    // Initialize driver location if available from API
+    final driverLat = 
+        widget.bookingData['driverLocation']?['latitude'] ?? 0.0;
+    final driverLng = 
+        widget.bookingData['driverLocation']?['longitude'] ?? 0.0;
+    
+    // Initialize user location if available from API
+    final userLat = 
+        widget.bookingData['userLocation']?['latitude'] ?? 0.0;
+    final userLng = 
+        widget.bookingData['userLocation']?['longitude'] ?? 0.0;
+
+    debugPrint('Driver location: $driverLat, $driverLng');
+    debugPrint('User location: $userLat, $userLng');
+
+    // Set destination location
+    _destinationLocation = LatLng(destLat.toDouble(), destLng.toDouble());
+
+    // Set initial camera position to pickup location
+    _initialCameraPosition = CameraPosition(
+      target: LatLng(sourceLat.toDouble(), sourceLng.toDouble()),
+      zoom: 14.0,
+    );
+
+    // If user location is available from API, use it
+    if (userLat != 0.0 && userLng != 0.0) {
+      _userLocation = LatLng(userLat.toDouble(), userLng.toDouble());
+    }
+
+    // If driver location is available from API, use it
+    if (driverLat != 0.0 && driverLng != 0.0) {
+      _driverLocation = LatLng(driverLat.toDouble(), driverLng.toDouble());
+      
+      // If both driver and user locations are available, 
+      // fetch route between them immediately
+      if (_userLocation != null) {
+        Future.delayed(Duration.zero, () {
+          _fetchDriverToUserRoute(_driverLocation!, _userLocation!);
+        });
+      }
+    }
+
+    // Extract booking data
+    _extractBookingData();
+  }
+
+  Future<void> _initializeLocationTracking() async {
+    try {
+      await _requestLocationPermission();
+      await _getCurrentLocation();
+      _setupLocationTracking();
+    } catch (e) {
+      setState(() {
+        _locationError = 'Error initializing location tracking: $e';
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _showStartTripOtp() {
+    final startOtp = _generateOtp();
+    setState(() {
+      _generatedOtp = startOtp;
+      _showOtpModal = true;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Your start trip OTP is $startOtp'),
+        duration: const Duration(seconds: 5),
+      ),
+    );
+  }
+
+  void _extractBookingData() {
     try {
       final bookingData = widget.bookingData;
-      
+
       _pickup = bookingData['pickup'] ?? 'Pickup location';
       _destination = bookingData['destination'] ?? 'Destination location';
-      _driverInfo = bookingData['driverInfo'] ?? {
-        'name': 'Driver',
-        'phoneNumber': '',
-        'rating': 4.5,
-        'vehicleModel': 'Car',
-        'vehicleColor': 'White',
-        'licensePlate': 'XX-XX-XXXX',
-      };
-      _tripInfo = bookingData['tripInfo'] ?? {
-        'fare': '₹0',
-        'distance': '0 km',
-        'duration': '0 min',
-      };
-      
+      _driverInfo =
+          bookingData['driverInfo'] ??
+          {
+            'name': 'Driver',
+            'phoneNumber': '',
+            'rating': 4.5,
+            'vehicleModel': 'Car',
+            'vehicleColor': 'White',
+            'licensePlate': 'XX-XX-XXXX',
+          };
+      _tripInfo =
+          bookingData['tripInfo'] ??
+          {'fare': '₹0', 'distance': '0 km', 'duration': '0 min'};
+
       // Set initial status message
       _statusMessage = 'Connecting to driver...';
-      
+
       debugPrint('Booking data extracted successfully');
     } catch (e) {
       debugPrint('Error extracting booking data: $e');
@@ -131,11 +234,7 @@ void _extractBookingData() {
         'vehicleColor': 'White',
         'licensePlate': 'XX-XX-XXXX',
       };
-      _tripInfo = {
-        'fare': '₹0',
-        'distance': '0 km',
-        'duration': '0 min',
-      };
+      _tripInfo = {'fare': '₹0', 'distance': '0 km', 'duration': '0 min'};
     }
   }
 
@@ -152,12 +251,13 @@ void _extractBookingData() {
       setState(() {
         _hasLocationPermission = status.isGranted;
       });
-      
+
       if (status.isGranted) {
         _getCurrentLocation();
       } else {
         setState(() {
-          _locationError = 'Location permission denied. Cannot track your ride.';
+          _locationError =
+              'Location permission denied. Cannot track your ride.';
           _userLocation = _defaultUserLocation;
           _isLoading = false;
         });
@@ -175,95 +275,132 @@ void _extractBookingData() {
   // Get current location
   Future<void> _getCurrentLocation() async {
     setState(() => _isLoading = true);
-    
+
     try {
       final locationData = await _location.getLocation();
       final userCurrentLocation = LatLng(
         locationData.latitude!,
         locationData.longitude!,
       );
-      
+
       debugPrint('User location obtained: $userCurrentLocation');
-      
-      // Simulate initial driver position slightly away from user
-      final driverInitialLocation = LatLng(
-        userCurrentLocation.latitude - 0.015,
-        userCurrentLocation.longitude - 0.010,
-      );
-      
+
+      // Only set user location if not already set from API
+      if (_userLocation == null) {
+        setState(() {
+          _userLocation = userCurrentLocation;
+        });
+      }
+
+      // Only simulate driver position if not already set from API
+      if (_driverLocation == null) {
+        // Simulate initial driver position slightly away from user
+        final driverInitialLocation = LatLng(
+          userCurrentLocation.latitude - 0.015,
+          userCurrentLocation.longitude - 0.010,
+        );
+
+        setState(() {
+          _driverLocation = driverInitialLocation;
+        });
+
+        // Fetch initial route: Driver to User
+        _fetchDriverToUserRoute(driverInitialLocation, _userLocation!);
+      }
+
       setState(() {
-        _userLocation = userCurrentLocation;
-        _driverLocation = driverInitialLocation;
         _locationError = null;
         _isLoading = false;
       });
-      
-      // Fetch initial route: Driver to User
-      _fetchDriverToUserRoute(driverInitialLocation, userCurrentLocation);
-      
+
       // Start location tracking
       _setupLocationTracking();
-      
-      // Start driver simulation
-      _startDriverSimulation();
     } catch (e) {
       debugPrint('Error getting location: $e');
-      
-      // Use default locations
-      final driverInitialLocation = LatLng(
-        _defaultUserLocation.latitude - 0.02,
-        _defaultUserLocation.longitude - 0.01,
-      );
-      
+
+      // If user and driver locations are not set from API, use default locations
+      if (_userLocation == null) {
+        setState(() {
+          _userLocation = _defaultUserLocation;
+        });
+      }
+
+      if (_driverLocation == null) {
+        final driverInitialLocation = LatLng(
+          _defaultUserLocation.latitude - 0.02,
+          _defaultUserLocation.longitude - 0.01,
+        );
+
+        setState(() {
+          _driverLocation = driverInitialLocation;
+        });
+
+        // Fetch route with default locations
+        _fetchDriverToUserRoute(driverInitialLocation, _userLocation!);
+      }
+
       setState(() {
-        _userLocation = _defaultUserLocation;
-        _driverLocation = driverInitialLocation;
         _isLoading = false;
       });
-      
-      // Fetch route with default locations
-      _fetchDriverToUserRoute(driverInitialLocation, _defaultUserLocation);
     }
   }
 
   // Setup continuous location tracking
   void _setupLocationTracking() {
     if (!_hasLocationPermission) return;
-    
+
     _location.onLocationChanged.listen((locationData) {
       if (locationData.latitude != null && locationData.longitude != null) {
-        setState(() {
-          _userLocation = LatLng(locationData.latitude!, locationData.longitude!);
-        });
-        debugPrint('User location updated: $_userLocation');
+        // Only update user location from device if it was not provided by API
+        // or if we want real-time tracking (always update)
+        final bool shouldUpdateUserLocation = true; // Set to false if you only want to use API data
+        
+        if (shouldUpdateUserLocation || _userLocation == null) {
+          setState(() {
+            _userLocation = LatLng(
+              locationData.latitude!,
+              locationData.longitude!,
+            );
+          });
+          
+          // If driver location is available and user location changes, update the route
+          if (_driverLocation != null && !_tripStarted) {
+            _fetchDriverToUserRoute(_driverLocation!, _userLocation!);
+          } else if (_tripStarted && _destinationLocation != null) {
+            // If trip has started, update route to destination
+            _fetchUserToDestinationRoute(_userLocation!, _destinationLocation!);
+          }
+          
+          debugPrint('User location updated: $_userLocation');
+        }
       }
     });
   }
 
   // Start driver simulation
   void _startDriverSimulation() {
-    if (_otpVerified || _userLocation == null) return;
-    
+    if (_otpVerified || _driverLocation == null) return;
+
     Timer.periodic(const Duration(seconds: 5), (timer) {
-      if (_otpVerified || _userLocation == null) {
+      if (!mounted || _otpVerified || _userLocation == null || _driverLocation == null) {
         timer.cancel();
         return;
       }
-      
+
       setState(() {
         if (_driverLocation != null && _userLocation != null) {
           // Simple linear interpolation towards the user
           final moveFactor = 0.15; // How much closer the driver gets each interval
-          final newLat = _driverLocation!.latitude + 
+          final newLat = _driverLocation!.latitude +
               (_userLocation!.latitude - _driverLocation!.latitude) * moveFactor;
-          final newLng = _driverLocation!.longitude + 
+          final newLng = _driverLocation!.longitude +
               (_userLocation!.longitude - _driverLocation!.longitude) * moveFactor;
-          
+
           final currentDriverLoc = LatLng(newLat, newLng);
-          
+
           // Calculate distance to user in meters
           final distanceToUser = _calculateDistance(currentDriverLoc, _userLocation!);
-          
+
           // Check if driver is close enough to trigger "nearby" actions
           const arrivalThreshold = 150.0; // meters
           if (distanceToUser < arrivalThreshold && !_notificationShown) {
@@ -272,7 +409,7 @@ void _extractBookingData() {
             _notificationShown = true;
             _statusMessage = 'Driver has arrived!';
           }
-          
+
           // Update status based on progress
           if (!_driverNearby && !_notificationShown) {
             if (distanceToUser < 500) {
@@ -281,64 +418,71 @@ void _extractBookingData() {
               _statusMessage = 'Driver is on the way';
             }
           }
-          
+
           _driverLocation = currentDriverLoc;
+          
+          // Update the route
+          _fetchDriverToUserRoute(_driverLocation!, _userLocation!);
         }
       });
     });
   }
 
   // Calculate distance between two coordinates
-    // Calculate distance between two coordinates
   double _calculateDistance(LatLng loc1, LatLng loc2) {
     const R = 6371e3; // Earth radius in meters
     final phi1 = loc1.latitude * pi / 180;
     final phi2 = loc2.latitude * pi / 180;
     final deltaPhi = (loc2.latitude - loc1.latitude) * pi / 180;
     final deltaLambda = (loc2.longitude - loc1.longitude) * pi / 180;
-    
-    final a = sin(deltaPhi / 2) * sin(deltaPhi / 2) +
-              cos(phi1) * cos(phi2) *
-              sin(deltaLambda / 2) * sin(deltaLambda / 2);
+
+    final a =
+        sin(deltaPhi / 2) * sin(deltaPhi / 2) +
+        cos(phi1) * cos(phi2) * sin(deltaLambda / 2) * sin(deltaLambda / 2);
     final c = 2 * atan2(sqrt(a), sqrt(1 - a));
-    
+
     return R * c;
   }
+
   // Fetch route between two points
   Future<List<LatLng>> _getDirections(LatLng origin, LatLng destination) async {
     setState(() => _isFetchingRoute = true);
-    
+
     try {
-      final apiKey = 'AIzaSyCelDo4I5cPQ72TfCTQW-arhPZ7ALNcp8w'; // Replace with your API key
+      final apiKey =
+          'AIzaSyCelDo4I5cPQ72TfCTQW-arhPZ7ALNcp8w'; // Replace with your API key
       final url = Uri.parse(
         'https://maps.googleapis.com/maps/api/directions/json?'
         'origin=${origin.latitude},${origin.longitude}'
         '&destination=${destination.latitude},${destination.longitude}'
-        '&key=$apiKey'
+        '&key=$apiKey',
       );
-      
+
       final response = await http.get(url);
-      
+
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        
+
         if (data['status'] == 'OK') {
           // Extract route polyline
           final points = data['routes'][0]['overview_polyline']['points'];
           final decodedCoords = _decodePolyline(points);
-          
+
           // Extract distance and duration
-          if (data['routes'][0]['legs'] != null && data['routes'][0]['legs'].isNotEmpty) {
+          if (data['routes'][0]['legs'] != null &&
+              data['routes'][0]['legs'].isNotEmpty) {
             setState(() {
               _distance = data['routes'][0]['legs'][0]['distance']['text'];
               _duration = data['routes'][0]['legs'][0]['duration']['text'];
             });
           }
-          
+
           debugPrint('Directions fetched successfully.');
           return decodedCoords;
         } else {
-          debugPrint('No routes found or error in Directions API response: ${data['status']}');
+          debugPrint(
+            'No routes found or error in Directions API response: ${data['status']}',
+          );
           setState(() {
             _locationError = 'Could not get directions: ${data['status']}';
           });
@@ -347,14 +491,16 @@ void _extractBookingData() {
       } else {
         debugPrint('Error fetching directions: ${response.statusCode}');
         setState(() {
-          _locationError = 'Failed to fetch directions. Check network or API key.';
+          _locationError =
+              'Failed to fetch directions. Check network or API key.';
         });
         return [];
       }
     } catch (e) {
       debugPrint('Error fetching directions: $e');
       setState(() {
-        _locationError = 'Failed to fetch directions. Check network or API key.';
+        _locationError =
+            'Failed to fetch directions. Check network or API key.';
       });
       return [];
     } finally {
@@ -367,50 +513,50 @@ void _extractBookingData() {
     List<LatLng> poly = [];
     int index = 0, len = encoded.length;
     int lat = 0, lng = 0;
-    
+
     while (index < len) {
       int b, shift = 0, result = 0;
-      
+
       do {
         b = encoded.codeUnitAt(index++) - 63;
         result |= (b & 0x1f) << shift;
         shift += 5;
       } while (b >= 0x20);
-      
+
       int dlat = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
       lat += dlat;
-      
+
       shift = 0;
       result = 0;
-      
+
       do {
         b = encoded.codeUnitAt(index++) - 63;
         result |= (b & 0x1f) << shift;
         shift += 5;
       } while (b >= 0x20);
-      
+
       int dlng = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
       lng += dlng;
-      
+
       final p = LatLng(lat / 1E5, lng / 1E5);
       poly.add(p);
     }
-    
+
     return poly;
   }
 
   // Fetch and update the Driver -> User route
   Future<void> _fetchDriverToUserRoute(LatLng driverLoc, LatLng userLoc) async {
     setState(() => _statusMessage = 'Finding route for driver...');
-    
+
     final route = await _getDirections(driverLoc, userLoc);
-    
+
     if (route.isNotEmpty) {
       setState(() {
         _driverToPickupRoute = route;
         _statusMessage = 'Driver is on the way';
       });
-      
+
       // Fit map to the fetched route
       _fitMapToCoordinates([driverLoc, userLoc]);
     } else {
@@ -431,17 +577,20 @@ void _extractBookingData() {
   }
 
   // Fetch and update the User -> Destination route
-  Future<void> _fetchUserToDestinationRoute(LatLng userLoc, LatLng destLoc) async {
+  Future<void> _fetchUserToDestinationRoute(
+    LatLng userLoc,
+    LatLng destLoc,
+  ) async {
     setState(() => _statusMessage = 'Calculating route to destination...');
-    
+
     final route = await _getDirections(userLoc, destLoc);
-    
+
     if (route.isNotEmpty) {
       setState(() {
         _pickupToDestinationRoute = route;
         _statusMessage = 'On the way to destination';
       });
-      
+
       // Fit map to the new route
       _fitMapToCoordinates([userLoc, destLoc]);
     } else {
@@ -452,11 +601,11 @@ void _extractBookingData() {
   // Fit map to show specific coordinates
   Future<void> _fitMapToCoordinates(List<LatLng> coordinates) async {
     if (coordinates.isEmpty) return;
-    
+
     final mapController = await _mapController.future;
-    
+
     final bounds = _calculateBounds(coordinates);
-    
+
     mapController.animateCamera(
       CameraUpdate.newLatLngBounds(bounds, 100.0), // 100 is padding
     );
@@ -465,14 +614,14 @@ void _extractBookingData() {
   // Calculate bounds for a list of coordinates
   LatLngBounds _calculateBounds(List<LatLng> coordinates) {
     double? minLat, maxLat, minLng, maxLng;
-    
+
     for (final coord in coordinates) {
       minLat = minLat == null ? coord.latitude : min(minLat, coord.latitude);
       maxLat = maxLat == null ? coord.latitude : max(maxLat, coord.latitude);
       minLng = minLng == null ? coord.longitude : min(minLng, coord.longitude);
       maxLng = maxLng == null ? coord.longitude : max(maxLng, coord.longitude);
     }
-    
+
     return LatLngBounds(
       southwest: LatLng(minLat!, minLng!),
       northeast: LatLng(maxLat!, maxLng!),
@@ -494,18 +643,20 @@ void _extractBookingData() {
         duration: Duration(seconds: 3),
       ),
     );
-    
+
     setState(() => _driverNearby = true);
-    
+
     // Generate OTP and show modal
     final otpCode = _generateOtp();
     setState(() => _showOtpModal = true);
-    
+
     // Show OTP notification
     Future.delayed(const Duration(seconds: 1), () {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Your OTP is $otpCode. Share with driver to start the trip.'),
+          content: Text(
+            'Your OTP is $otpCode. Share with driver to start the trip.',
+          ),
           duration: const Duration(seconds: 5),
         ),
       );
@@ -516,11 +667,13 @@ void _extractBookingData() {
   void _verifyOtp() {
     if (_userLocation == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Cannot start trip without your location.')),
+        const SnackBar(
+          content: Text('Cannot start trip without your location.'),
+        ),
       );
       return;
     }
-    
+
     if (_otp == _generatedOtp) {
       setState(() {
         _otpVerified = true;
@@ -529,14 +682,14 @@ void _extractBookingData() {
         _driverNearby = false;
         _notificationShown = false;
       });
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('OTP verified successfully! Your trip has started.'),
           duration: Duration(seconds: 3),
         ),
       );
-      
+
       // Fetch route from User to Destination
       if (_destinationLocation != null && _userLocation != null) {
         _fetchUserToDestinationRoute(_userLocation!, _destinationLocation!);
@@ -550,7 +703,7 @@ void _extractBookingData() {
           ),
         );
       }
-      
+
       // Animate the "Trip Started" notification
       _animateNotification();
     } else {
@@ -591,7 +744,7 @@ void _extractBookingData() {
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
-    
+
     if (_isLoading && _userLocation == null) {
       return Scaffold(
         body: Center(
@@ -606,7 +759,7 @@ void _extractBookingData() {
         ),
       );
     }
-    
+
     return Scaffold(
       body: Stack(
         children: [
@@ -619,18 +772,22 @@ void _extractBookingData() {
             zoomControlsEnabled: false,
             onMapCreated: (GoogleMapController controller) {
               _mapController.complete(controller);
-              
+
               // Fit map initially when user location is ready
-              if (_userLocation != null && _driverLocation != null && !_otpVerified) {
+              if (_userLocation != null &&
+                  _driverLocation != null &&
+                  !_otpVerified) {
                 _fitMapToCoordinates([_driverLocation!, _userLocation!]);
-              } else if (_userLocation != null && _destinationLocation != null && _otpVerified) {
+              } else if (_userLocation != null &&
+                  _destinationLocation != null &&
+                  _otpVerified) {
                 _fitMapToCoordinates([_userLocation!, _destinationLocation!]);
               }
             },
             markers: _buildMarkers(),
             polylines: _buildPolylines(),
           ),
-          
+
           // Loading Indicator for Route Fetching
           if (_isFetchingRoute)
             Positioned(
@@ -639,7 +796,10 @@ void _extractBookingData() {
               right: 0,
               child: Center(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.black54,
                     borderRadius: BorderRadius.circular(20),
@@ -652,7 +812,9 @@ void _extractBookingData() {
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
                         ),
                       ),
                       SizedBox(width: 10),
@@ -665,7 +827,7 @@ void _extractBookingData() {
                 ),
               ),
             ),
-          
+
           // Location Error Message
           if (_locationError != null)
             Positioned(
@@ -685,7 +847,7 @@ void _extractBookingData() {
                 ),
               ),
             ),
-          
+
           // Status Bar
           Positioned(
             top: 100,
@@ -694,21 +856,25 @@ void _extractBookingData() {
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
               decoration: BoxDecoration(
-                color: _driverNearby
-                    ? Colors.blue.withOpacity(0.9)
-                    : _tripStarted
+                color:
+                    _driverNearby
+                        ? Colors.blue.withOpacity(0.9)
+                        : _tripStarted
                         ? Colors.green.withOpacity(0.9)
                         : Colors.black.withOpacity(0.7),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
                 _statusMessage,
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
                 textAlign: TextAlign.center,
               ),
             ),
           ),
-          
+
           // Trip Started Notification Banner
           if (_tripStarted)
             AnimatedBuilder(
@@ -728,12 +894,19 @@ void _extractBookingData() {
                       ),
                       child: Row(
                         children: const [
-                          Icon(MaterialCommunityIcons.car_connected, color: Colors.white, size: 24),
+                          Icon(
+                            MaterialCommunityIcons.car_connected,
+                            color: Colors.white,
+                            size: 24,
+                          ),
                           SizedBox(width: 12),
                           Expanded(
                             child: Text(
                               'Trip has started! Enjoy your ride.',
-                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                         ],
@@ -743,7 +916,7 @@ void _extractBookingData() {
                 );
               },
             ),
-          
+
           // Header
           Positioned(
             top: 0,
@@ -789,7 +962,7 @@ void _extractBookingData() {
               ),
             ),
           ),
-          
+
           // Trip Info Card (Bottom Sheet Style)
           Positioned(
             bottom: 20,
@@ -857,7 +1030,8 @@ void _extractBookingData() {
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    (_driverInfo['rating'] ?? 4.5).toStringAsFixed(1),
+                                    (_driverInfo['rating'] ?? 4.5)
+                                        .toStringAsFixed(1),
                                     style: const TextStyle(
                                       fontSize: 14,
                                       color: Color(0xFF666666),
@@ -886,9 +1060,9 @@ void _extractBookingData() {
                         ),
                       ],
                     ),
-                    
+
                     const Divider(height: 30, color: Color(0xFFEEEEEE)),
-                    
+
                     // Trip Details (Pickup/Destination)
                     Column(
                       children: [
@@ -919,7 +1093,7 @@ void _extractBookingData() {
                           width: 1,
                           color: const Color(0xFFE0E0E0),
                         ),
-                                                Row(
+                        Row(
                           children: [
                             const Icon(
                               MaterialCommunityIcons.map_marker,
@@ -942,9 +1116,9 @@ void _extractBookingData() {
                         ),
                       ],
                     ),
-                    
+
                     const SizedBox(height: 15),
-                    
+
                     // Trip Stats
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -971,7 +1145,7 @@ void _extractBookingData() {
               ),
             ),
           ),
-          
+
           // OTP Modal
           if (_showOtpModal)
             Positioned.fill(
@@ -1049,11 +1223,16 @@ void _extractBookingData() {
                               children: [
                                 Expanded(
                                   child: ElevatedButton(
-                                    onPressed: () => setState(() => _showOtpModal = false),
+                                    onPressed:
+                                        () => setState(
+                                          () => _showOtpModal = false,
+                                        ),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.grey.shade200,
                                       foregroundColor: Colors.black87,
-                                      padding: const EdgeInsets.symmetric(vertical: 12),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 12,
+                                      ),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(8),
                                       ),
@@ -1068,7 +1247,9 @@ void _extractBookingData() {
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: const Color(0xFF4A90E2),
                                       foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(vertical: 12),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 12,
+                                      ),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(8),
                                       ),
@@ -1092,14 +1273,10 @@ void _extractBookingData() {
   }
 
   // Build trip stat item
- Widget _buildTripStat(IconData icon, String? value, String label) {
+  Widget _buildTripStat(IconData icon, String? value, String label) {
     return Column(
       children: [
-        Icon(
-          icon,
-          size: 20,
-          color: const Color(0xFF4A90E2),
-        ),
+        Icon(icon, size: 20, color: const Color(0xFF4A90E2)),
         const SizedBox(height: 5),
         Text(
           value ?? 'N/A',
@@ -1111,42 +1288,46 @@ void _extractBookingData() {
         ),
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 12,
-            color: Color(0xFF666666),
-          ),
+          style: const TextStyle(fontSize: 12, color: Color(0xFF666666)),
         ),
       ],
     );
   }
+
   // Build map markers
   Set<Marker> _buildMarkers() {
     final Set<Marker> markers = {};
-    
+
     // Add user marker
     if (_userLocation != null) {
       markers.add(
         Marker(
           markerId: const MarkerId('user_location'),
           position: _userLocation!,
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+          icon: BitmapDescriptor.defaultMarkerWithHue(
+            BitmapDescriptor.hueAzure,
+          ),
           infoWindow: const InfoWindow(title: 'Your Location'),
         ),
       );
     }
-    
+
     // Add driver marker
     if (_driverLocation != null && !_otpVerified) {
       markers.add(
         Marker(
           markerId: const MarkerId('driver_location'),
           position: _driverLocation!,
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-          infoWindow: InfoWindow(title: 'Driver: ${_driverInfo['name'] ?? 'Driver'}'),
+          icon: BitmapDescriptor.defaultMarkerWithHue(
+            BitmapDescriptor.hueGreen,
+          ),
+          infoWindow: InfoWindow(
+            title: 'Driver: ${_driverInfo['name'] ?? 'Driver'}',
+          ),
         ),
       );
     }
-    
+
     // Add destination marker
     if (_destinationLocation != null) {
       markers.add(
@@ -1158,14 +1339,14 @@ void _extractBookingData() {
         ),
       );
     }
-    
+
     return markers;
   }
 
   // Build map polylines
   Set<Polyline> _buildPolylines() {
     final Set<Polyline> polylines = {};
-    
+
     // Add driver to pickup route
     if (_driverToPickupRoute.isNotEmpty && !_otpVerified) {
       polylines.add(
@@ -1177,7 +1358,7 @@ void _extractBookingData() {
         ),
       );
     }
-    
+
     // Add pickup to destination route
     if (_pickupToDestinationRoute.isNotEmpty && _otpVerified) {
       polylines.add(
@@ -1189,7 +1370,7 @@ void _extractBookingData() {
         ),
       );
     }
-    
+
     return polylines;
   }
 }

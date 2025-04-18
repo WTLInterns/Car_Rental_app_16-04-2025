@@ -3,6 +3,10 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
+import 'dart:developer' as developer;
+import 'package:flutter/foundation.dart';
+import 'dart:async'; // For TimeoutException
+import 'package:worldtriplink/screens/user_home_screen.dart';
 
 const String API_BASE_URL = 'https://api.worldtriplink.com/api';
 
@@ -19,17 +23,20 @@ class _PaymentScreenState extends State<PaymentScreen> {
   bool _isLoading = false;
   String _selectedPaymentMethod = 'upi';
   String? _storedUserId;
-  
-  // Enhanced color scheme for professional design
-  final Color primaryColor = const Color(0xFF2E3192);
-  final Color accentColor = const Color(0xFFFFCC00);
-  final Color lightAccentColor = const Color(0xFFFFF9E0);
-  final Color textColor = const Color(0xFF333333);
-  final Color lightTextColor = const Color(0xFF666666);
-  final Color backgroundColor = const Color(0xFFF5F7FA);
-  final Color cardColor = Colors.white;
-  final Color successColor = const Color(0xFF4CAF50);
-  final Color errorColor = const Color(0xFFE53935);
+
+  // Professional color palette
+  final Color primaryColor = const Color(0xFF2E3192);      // Deep blue
+  final Color secondaryColor = const Color(0xFF4A90E2);    // Bright blue
+  final Color accentColor = const Color(0xFFFFCC00);       // Yellow/gold accent
+  final Color backgroundColor = const Color(0xFFF5F7FA);   // Light gray background
+  final Color cardColor = Colors.white;                    // White card background
+  final Color surfaceColor = const Color(0xFFF0F7FF);      // Light blue for inputs/surfaces
+  final Color textColor = const Color(0xFF333333);         // Dark text
+  final Color lightTextColor = const Color(0xFF666666);    // Medium gray text
+  final Color mutedTextColor = const Color(0xFFA0A0A0);    // Light gray text
+  final Color lightAccentColor = const Color(0xFFF0F7FF);  // Light blue background
+  final Color successColor = const Color(0xFF4CAF50);      // Green for success messages
+  final Color errorColor = const Color(0xFFE53935);        // Red for error messages
 
   @override
   void initState() {
@@ -40,16 +47,27 @@ class _PaymentScreenState extends State<PaymentScreen> {
   Future<void> _getUserData() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final userData = prefs.getString('userData');
-      
-      if (userData != null) {
-        final parsedData = json.decode(userData);
-        setState(() {
-          if (parsedData['id'] != null) {
-            _storedUserId = parsedData['id'].toString();
-          }
-        });
+      // Try both 'userId' (int) and 'userData' (json string)
+      String? userId;
+      if (prefs.containsKey('userId')) {
+        userId = prefs.getInt('userId')?.toString();
       }
+      if ((userId == null || userId.isEmpty) && prefs.containsKey('userData')) {
+        final userData = prefs.getString('userData');
+        if (userData != null) {
+          final parsedData = json.decode(userData);
+          if (parsedData['id'] != null) {
+            userId = parsedData['id'].toString();
+          }
+        }
+      }
+      setState(() {
+        _storedUserId = userId;
+      });
+      developer.log(
+        'Loaded userId from SharedPreferences: $_storedUserId',
+        name: 'PaymentScreen',
+      );
     } catch (e) {
       debugPrint('Error retrieving user data: $e');
     }
@@ -57,77 +75,98 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   Future<void> _handlePayment() async {
     setState(() => _isLoading = true);
-    
+    developer.log('Starting payment process', name: 'PaymentScreen');
     try {
-      // Use userId from SharedPreferences if available, otherwise fall back to route params
-      final effectiveUserId = _storedUserId ?? widget.bookingData['userId']?.toString() ?? '0';
-      
-      // Prepare request body
-      final Map<String, String> requestBody = {
-        'cabId': '123', // Default value
-        'modelName': widget.bookingData['vehicleType'] ?? '',
-        'modelType': widget.bookingData['modelType'] ?? 'hatchback',
-        'seats': widget.bookingData['seats'] ?? '4',
-        'fuelType': 'Petrol', // Default value
-        'availability': 'Available',
-        'price': widget.bookingData['baseFare']?.toString() ?? '0',
+      // Always fetch userId from SharedPreferences before making the call
+      final prefs = await SharedPreferences.getInstance();
+      String? effectiveUserId = _storedUserId;
+      if (prefs.containsKey('userId')) {
+        effectiveUserId = prefs.getInt('userId')?.toString();
+      }
+      if ((effectiveUserId == null || effectiveUserId.isEmpty) &&
+          prefs.containsKey('userData')) {
+        final userData = prefs.getString('userData');
+        if (userData != null) {
+          final parsedData = json.decode(userData);
+          if (parsedData['id'] != null) {
+            effectiveUserId = parsedData['id'].toString();
+          }
+        }
+      }
+      effectiveUserId =
+          effectiveUserId ?? widget.bookingData['userId']?.toString() ?? '0';
+      developer.log(
+        'Effective User ID: $effectiveUserId',
+        name: 'PaymentScreen',
+      );
+      // Only include parameters required by the API
+      final Map<String, String> requestParams = {
+        'tripType': widget.bookingData['bookingType'] ?? 'oneWay',
         'pickupLocation': widget.bookingData['pickup'] ?? '',
         'dropLocation': widget.bookingData['destination'] ?? '',
         'date': widget.bookingData['date'] ?? '',
         'time': widget.bookingData['time'] ?? '',
-        'tripType': widget.bookingData['bookingType'] ?? 'oneWay',
+        'Returndate': widget.bookingData['returnDate'] ?? '',
+        'cabId': widget.bookingData['cabId']?.toString() ?? '',
+        'modelName': widget.bookingData['vehicleType'] ?? '',
+        'modelType': widget.bookingData['modelType'] ?? '',
+        'seats': widget.bookingData['seats']?.toString() ?? '',
+        'fuelType': widget.bookingData['fuelType'] ?? '',
+        'availability': widget.bookingData['availability'] ?? '',
+        'price': widget.bookingData['baseFare']?.toString() ?? '0',
         'distance': widget.bookingData['distance']?.toString() ?? '0',
         'name': widget.bookingData['passengerName'] ?? '',
         'email': widget.bookingData['passengerEmail'] ?? '',
         'service': widget.bookingData['platformFee']?.toString() ?? '0',
         'gst': widget.bookingData['gst']?.toString() ?? '0',
         'total': widget.bookingData['totalFare']?.toString() ?? '0',
+        'days': widget.bookingData['days']?.toString() ?? '1',
+        'driverrate': widget.bookingData['driverRate']?.toString() ?? '0',
         'phone': widget.bookingData['passengerPhone'] ?? '',
         'userId': effectiveUserId,
-        'driverrate': '3000', // Default value
-        'paymentMethod': _selectedPaymentMethod,
       };
-      
-      // Add return date for round trips
-      if (widget.bookingData['bookingType'] == 'roundTrip' && 
-          widget.bookingData['returnDate'] != null) {
-        requestBody['returndate'] = widget.bookingData['returnDate'];
-        
-        // Calculate days between dates
-        try {
-          final startDate = DateTime.parse(widget.bookingData['date']);
-          final endDate = DateTime.parse(widget.bookingData['returnDate']);
-          final diffDays = endDate.difference(startDate).inDays;
-          requestBody['days'] = (diffDays > 0 ? diffDays : 1).toString();
-        } catch (e) {
-          requestBody['days'] = '1';
-        }
-      } else {
-        requestBody['days'] = '1';
-      }
-      
-      // Make API call
-      final response = await http.post(
-        Uri.parse('$API_BASE_URL/bookingConfirm'),
-        body: requestBody,
+      final uri = Uri.parse(
+        '$API_BASE_URL/bookingConfirm',
+      ).replace(queryParameters: requestParams);
+      developer.log('POST Request URL: $uri', name: 'PaymentScreen');
+      final response = await http
+          .post(uri, headers: {'Accept': 'application/json'})
+          .timeout(const Duration(seconds: 30));
+      developer.log(
+        'Response Status: ${response.statusCode}',
+        name: 'PaymentScreen',
       );
-      
+      developer.log('Response Body: ${response.body}', name: 'PaymentScreen');
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        
         if (data['status'] == 'success') {
+          developer.log(
+            'Booking confirmed successfully',
+            name: 'PaymentScreen',
+          );
           _showBookingConfirmation(data['bookingId'] ?? 'Unknown');
         } else {
-          _showErrorDialog(data['message'] ?? 'Failed to create booking. Please try again.');
+          final errorMsg = data['message'] ?? 'Failed to create booking';
+          developer.log('Booking failed: $errorMsg', name: 'PaymentScreen');
+          _showErrorDialog(errorMsg);
         }
       } else {
-        throw Exception('Failed to process payment');
+        throw Exception(
+          'Failed to process payment. Status: ${response.statusCode}',
+        );
       }
+    } on TimeoutException {
+      developer.log('Request timeout occurred', name: 'PaymentScreen');
+      _showErrorDialog('Request timed out. Please check your connection.');
+    } on http.ClientException catch (e) {
+      developer.log('Network error: ${e.message}', name: 'PaymentScreen');
+      _showErrorDialog('Network error occurred');
     } catch (e) {
-      _showErrorDialog('Failed to process payment. Please try again.');
-      debugPrint('Payment error: $e');
+      developer.log('Unexpected error: $e', name: 'PaymentScreen');
+      _showErrorDialog('An unexpected error occurred');
     } finally {
       setState(() => _isLoading = false);
+      developer.log('Payment process completed', name: 'PaymentScreen');
     }
   }
 
@@ -135,139 +174,161 @@ class _PaymentScreenState extends State<PaymentScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: Row(
-          children: [
-            Icon(Icons.check_circle, color: successColor, size: 28),
-            const SizedBox(width: 12),
-            const Text('Booking Confirmed'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Your booking has been confirmed!',
-              style: TextStyle(fontSize: 16),
+      builder:
+          (context) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
             ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: lightAccentColor,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: accentColor.withOpacity(0.3), width: 1),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: accentColor.withOpacity(0.2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(Icons.confirmation_number, color: primaryColor, size: 24),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Booking ID',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: lightTextColor,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          bookingId,
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: textColor,
-                          ),
-                        ),
-                      ],
+            title: Row(
+              children: [
+                Icon(Icons.check_circle, color: successColor, size: 28),
+                const SizedBox(width: 12),
+                const Text('Booking Confirmed'),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Your booking has been confirmed!',
+                  style: TextStyle(fontSize: 16),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: lightAccentColor,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: accentColor.withOpacity(0.3),
+                      width: 1,
                     ),
                   ),
-                ],
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: accentColor.withOpacity(0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.confirmation_number,
+                          color: primaryColor,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Booking ID',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: lightTextColor,
+                              ),
+                            ),
+                            Text(
+                              bookingId,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // Close the dialog
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const UserHomeScreen(),
+                    ),
+                    (route) => false,
+                  );
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: primaryColor,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'BACK TO HOME',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'A confirmation has been sent to your email.',
-              style: TextStyle(
-                fontSize: 14,
-                color: lightTextColor,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              // Navigate to home screen
-              Navigator.of(context).popUntil((route) => route.isFirst);
-            },
-            style: TextButton.styleFrom(
-              foregroundColor: primaryColor,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text(
-              'GO TO HOME',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
   void _showErrorDialog(String message) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: Row(
-          children: [
-            Icon(Icons.error_outline, color: errorColor, size: 28),
-            const SizedBox(width: 12),
-            const Text('Payment Failed'),
-          ],
-        ),
-        content: Text(
-          message,
-          style: const TextStyle(fontSize: 16),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            style: TextButton.styleFrom(
-              foregroundColor: primaryColor,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+      builder:
+          (context) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: Row(
+              children: [
+                Icon(Icons.error_outline, color: errorColor, size: 28),
+                const SizedBox(width: 12),
+                const Text('Payment Failed'),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(message, style: const TextStyle(fontSize: 16)),
+                const SizedBox(height: 16),
+                Text(
+                  'Payment Method: ${_selectedPaymentMethod.toUpperCase()}',
+                  style: TextStyle(fontSize: 14, color: lightTextColor),
+                ),
+                Text(
+                  'Amount: ₹${widget.bookingData['totalFare'] ?? '0'}',
+                  style: TextStyle(fontSize: 14, color: lightTextColor),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                style: TextButton.styleFrom(
+                  foregroundColor: primaryColor,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'TRY AGAIN',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
               ),
-            ),
-            child: const Text(
-              'TRY AGAIN',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -288,108 +349,105 @@ class _PaymentScreenState extends State<PaymentScreen> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: _isLoading
-          ? Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Processing your payment...',
-                    style: TextStyle(
-                      color: lightTextColor,
-                      fontSize: 16,
+      body:
+          _isLoading
+              ? Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
                     ),
-                  ),
-                ],
-              ),
-            )
-          : SafeArea(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header with secure payment badge
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.lock_rounded,
-                          color: successColor,
-                          size: 18,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Secure Payment',
-                          style: TextStyle(
+                    const SizedBox(height: 16),
+                    Text(
+                      'Processing your payment...',
+                      style: TextStyle(color: lightTextColor, fontSize: 16),
+                    ),
+                  ],
+                ),
+              )
+              : SafeArea(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Header with secure payment badge
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.lock_rounded,
                             color: successColor,
-                            fontWeight: FontWeight.w500,
+                            size: 18,
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  
-                  // Main content - Using Expanded to prevent overflow
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          // Use responsive layout based on screen width
-                          if (constraints.maxWidth > 600) {
-                            // Tablet/Desktop layout - Side by side
-                            return Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Left column - Trip Summary
-                                Expanded(
-                                  flex: 3,
-                                  child: _buildTripSummary(),
-                                ),
-                                const SizedBox(width: 16),
-                                // Right column - Payment Methods
-                                Expanded(
-                                  flex: 4,
-                                  child: _buildPaymentMethods(),
-                                ),
-                              ],
-                            );
-                          } else {
-                            // Mobile layout - Stacked
-                            return SingleChildScrollView(
-                              child: Column(
-                                children: [
-                                  // Trip Summary
-                                  SizedBox(
-                                    height: 320, // Fixed height for trip summary
-                                    child: _buildTripSummary(),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  // Payment Methods
-                                  SizedBox(
-                                    height: 320, // Fixed height for payment methods
-                                    child: _buildPaymentMethods(),
-                                  ),
-                                  // Add extra space at bottom to prevent footer overlap
-                                  const SizedBox(height: 80),
-                                ],
-                              ),
-                            );
-                          }
-                        },
+                          const SizedBox(width: 8),
+                          Text(
+                            'Secure Payment',
+                            style: TextStyle(
+                              color: successColor,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                  
-                  // Bottom payment button with total amount
-                  _buildPaymentFooter(),
-                ],
+
+                    // Main content - Using Expanded to prevent overflow
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            // Use responsive layout based on screen width
+                            if (constraints.maxWidth > 600) {
+                              // Tablet/Desktop layout - Side by side
+                              return Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Left column - Trip Summary
+                                  Expanded(flex: 3, child: _buildTripSummary()),
+                                  const SizedBox(width: 16),
+                                  // Right column - Payment Methods
+                                  Expanded(
+                                    flex: 4,
+                                    child: _buildPaymentMethods(),
+                                  ),
+                                ],
+                              );
+                            } else {
+                              // Mobile layout - Stacked
+                              return SingleChildScrollView(
+                                child: Column(
+                                  children: [
+                                    // Trip Summary
+                                    SizedBox(
+                                      height:
+                                          320, // Fixed height for trip summary
+                                      child: _buildTripSummary(),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    // Payment Methods
+                                    SizedBox(
+                                      height:
+                                          320, // Fixed height for payment methods
+                                      child: _buildPaymentMethods(),
+                                    ),
+                                    // Add extra space at bottom to prevent footer overlap
+                                    const SizedBox(height: 80),
+                                  ],
+                                ),
+                              );
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+
+                    // Bottom payment button with total amount
+                    _buildPaymentFooter(),
+                  ],
+                ),
               ),
-            ),
     );
   }
 
@@ -397,9 +455,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     return Card(
       elevation: 2,
       shadowColor: Colors.black.withOpacity(0.1),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -479,11 +535,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 ],
               ),
             ),
-            Container(
-              width: 2,
-              height: 30,
-              color: Colors.grey.shade300,
-            ),
+            Container(width: 2, height: 30, color: Colors.grey.shade300),
             Container(
               width: 12,
               height: 12,
@@ -583,7 +635,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
           'Vehicle',
           widget.bookingData['vehicleType'] ?? '',
         ),
-        if (widget.bookingData['bookingType'] == 'roundTrip' && 
+        if (widget.bookingData['bookingType'] == 'roundTrip' &&
             widget.bookingData['returnDate'] != null) ...[
           const SizedBox(height: 12),
           _buildDetailItem(
@@ -612,11 +664,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
             color: lightAccentColor,
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(
-            icon,
-            color: primaryColor,
-            size: 16,
-          ),
+          child: Icon(icon, color: primaryColor, size: 16),
         ),
         const SizedBox(width: 10),
         Expanded(
@@ -625,10 +673,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
             children: [
               Text(
                 label,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: lightTextColor,
-                ),
+                style: TextStyle(fontSize: 12, color: lightTextColor),
               ),
               Text(
                 value,
@@ -647,11 +692,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
   }
 
   Widget _buildFareDetails() {
-    final baseFare = int.tryParse(widget.bookingData['baseFare']?.toString() ?? '0') ?? 0;
+    final baseFare =
+        int.tryParse(widget.bookingData['baseFare']?.toString() ?? '0') ?? 0;
     final platformFee = widget.bookingData['platformFee'] ?? 0;
     final gst = widget.bookingData['gst'] ?? 0;
     final totalFare = widget.bookingData['totalFare'] ?? 0;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -663,11 +709,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 color: lightAccentColor,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(
-                Icons.receipt_long,
-                color: primaryColor,
-                size: 16,
-              ),
+              child: Icon(Icons.receipt_long, color: primaryColor, size: 16),
             ),
             const SizedBox(width: 10),
             Text(
@@ -688,11 +730,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         _buildFareRow('GST (18%)', '₹$gst'),
         const SizedBox(height: 8),
         const Divider(),
-        _buildFareRow(
-          'Total Fare',
-          '₹$totalFare',
-          isTotal: true,
-        ),
+        _buildFareRow('Total Fare', '₹$totalFare', isTotal: true),
       ],
     );
   }
@@ -725,9 +763,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     return Card(
       elevation: 2,
       shadowColor: Colors.black.withOpacity(0.1),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -741,11 +777,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     color: lightAccentColor,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(
-                    Icons.payment,
-                    color: primaryColor,
-                    size: 18,
-                  ),
+                  child: Icon(Icons.payment, color: primaryColor, size: 18),
                 ),
                 const SizedBox(width: 12),
                 Text(
@@ -763,26 +795,26 @@ class _PaymentScreenState extends State<PaymentScreen> {
               child: SingleChildScrollView(
                 child: Column(
                   children: [
-                    _buildPaymentOption(
-                      'UPI',
-                      'Pay using Google Pay, PhonePe, etc.',
-                      MaterialCommunityIcons.qrcode_scan,
-                      'upi',
-                    ),
-                    const Divider(),
-                    _buildPaymentOption(
-                      'Credit/Debit Card',
-                      'Pay using Visa, Mastercard, RuPay',
-                      MaterialCommunityIcons.credit_card,
-                      'card',
-                    ),
-                    const Divider(),
-                    _buildPaymentOption(
-                      'Net Banking',
-                      'Pay using your bank account',
-                      MaterialCommunityIcons.bank,
-                      'netbanking',
-                    ),
+                    // _buildPaymentOption(
+                    //   'UPI',
+                    //   'Pay using Google Pay, PhonePe, etc.',
+                    //   MaterialCommunityIcons.qrcode_scan,
+                    //   'upi',
+                    // ),
+                    // const Divider(),
+                    // _buildPaymentOption(
+                    //   'Credit/Debit Card',
+                    //   'Pay using Visa, Mastercard, RuPay',
+                    //   MaterialCommunityIcons.credit_card,
+                    //   'card',
+                    // ),
+                    // const Divider(),
+                    // _buildPaymentOption(
+                    //   'Net Banking',
+                    //   'Pay using your bank account',
+                    //   MaterialCommunityIcons.bank,
+                    //   'netbanking',
+                    // ),
                     const Divider(),
                     _buildPaymentOption(
                       'Cash on Arrival',
@@ -807,25 +839,29 @@ class _PaymentScreenState extends State<PaymentScreen> {
     String value,
   ) {
     final isSelected = _selectedPaymentMethod == value;
-    
+
     return InkWell(
       onTap: () => setState(() => _selectedPaymentMethod = value),
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
         decoration: BoxDecoration(
-          color: isSelected ? lightAccentColor.withOpacity(0.5) : Colors.transparent,
+          color:
+              isSelected
+                  ? lightAccentColor.withOpacity(0.5)
+                  : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
-          border: isSelected 
-              ? Border.all(color: accentColor, width: 1)
-              : null,
+          border: isSelected ? Border.all(color: accentColor, width: 1) : null,
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: isSelected ? accentColor.withOpacity(0.2) : Colors.grey.shade100,
+                color:
+                    isSelected
+                        ? accentColor.withOpacity(0.2)
+                        : Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
@@ -850,10 +886,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   const SizedBox(height: 4),
                   Text(
                     subtitle,
-                    style: TextStyle(
-                      color: lightTextColor,
-                      fontSize: 13,
-                    ),
+                    style: TextStyle(color: lightTextColor, fontSize: 13),
                   ),
                 ],
               ),
@@ -876,7 +909,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   Widget _buildPaymentFooter() {
     final totalFare = widget.bookingData['totalFare'] ?? 0;
-    
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -901,10 +934,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 children: [
                   Text(
                     'Total Amount',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: lightTextColor,
-                    ),
+                    style: TextStyle(fontSize: 14, color: lightTextColor),
                   ),
                   Text(
                     '₹$totalFare',
@@ -917,7 +947,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 ],
               ),
             ),
-            
+
             // Pay button
             Expanded(
               child: ElevatedButton(
@@ -932,7 +962,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   elevation: 0,
                 ),
                 child: Text(
-                  _selectedPaymentMethod == 'cash' ? 'Confirm Booking' : 'Pay Now',
+                  _selectedPaymentMethod == 'cash'
+                      ? 'Confirm Booking'
+                      : 'Pay Now',
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,

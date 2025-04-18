@@ -21,31 +21,31 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
   bool _isLoading = true;
   String _tripDistance = '0';
   Map<String, dynamic>? _tripInfo;
-  
+
   // Color scheme for consistent styling
-  final Color primaryColor = const Color(0xFF2E3192);
+  final Color primaryColor = Color.fromARGB(255, 87, 87, 93);
   final Color accentColor = const Color(0xFFFFCC00);
   final Color lightAccentColor = const Color(0xFFFFF9E0);
   final Color textColor = const Color(0xFF333333);
   final Color lightTextColor = const Color(0xFF666666);
   final Color backgroundColor = const Color(0xFFF5F7FA);
-  
+
   // Vehicle data organized by category
   Map<String, List<Vehicle>> _vehicleData = {
     'HatchBack': [],
     'Sedan': [],
     'SedanPremium': [],
     'SUV': [],
-    'SUVPlus': []
+    'SUVPlus': [],
   };
-  
+
   // Track availability by category
   Map<String, bool> _noVehiclesAvailable = {
     'HatchBack': true,
     'Sedan': true,
     'SedanPremium': true,
     'SUV': true,
-    'SUVPlus': true
+    'SUVPlus': true,
   };
 
   // Map of vehicle images by category
@@ -74,7 +74,7 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
 
   Future<void> _fetchVehicleData() async {
     setState(() => _isLoading = true);
-    
+
     try {
       final response = await http.post(
         Uri.parse('$API_BASE_URL/cab1'),
@@ -118,16 +118,16 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
 
     final tripDetails = data['tripinfo'][0];
     final calculatedDistance = double.tryParse(_tripDistance) ?? 150;
-    
+
     // Reset availability
     final newNoVehiclesAvailable = Map<String, bool>.from(_noVehiclesAvailable);
     final newVehicleData = <String, List<Vehicle>>{};
-    
+
     // Initialize empty lists for each category
     for (var category in _vehicleData.keys) {
       newVehicleData[category] = [];
     }
-    
+
     // HatchBack vehicles
     if (tripDetails['hatchback'] > 0) {
       newNoVehiclesAvailable['HatchBack'] = false;
@@ -137,18 +137,24 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
           price: (calculatedDistance * tripDetails['hatchback']).round(),
           pricePerKm: tripDetails['hatchback'],
           capacity: '2 bags',
-          features: ['Petrol', 'USB Charging', 'Air Conditioning', 'Music System'],
-          rating: 4.7,
+          features: [
+            'Petrol',
+            'USB Charging',
+            'Air Conditioning',
+            'Music System',
+          ],
+          rating: 4,
           rides: 198,
           arrivalTime: '3 mins',
           available: true,
           modelType: 'hatchback',
           seats: '4',
-          imageUrl: _vehicleImages['hatchback'] ?? 'assets/images/hatchback.png',
-        )
+          imageUrl:
+              _vehicleImages['hatchback'] ?? 'assets/images/hatchback.png',
+        ),
       ];
     }
-    
+
     // Sedan vehicles
     if (tripDetails['sedan'] > 0) {
       newNoVehiclesAvailable['Sedan'] = false;
@@ -158,18 +164,23 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
           price: (calculatedDistance * tripDetails['sedan']).round(),
           pricePerKm: tripDetails['sedan'],
           capacity: '3 bags',
-          features: ['Diesel', 'USB Charging', 'Air Conditioning', 'Music System'],
-          rating: 4.8,
+          features: [
+            'Diesel',
+            'USB Charging',
+            'Air Conditioning',
+            'Music System',
+          ],
+          rating: 4,
           rides: 220,
           arrivalTime: '5 mins',
           available: true,
           modelType: 'sedan',
           seats: '4',
           imageUrl: _vehicleImages['sedan'] ?? 'assets/images/sedan.png',
-        )
+        ),
       ];
     }
-    
+
     // SedanPremium vehicles
     if (tripDetails['sedanpremium'] > 0) {
       newNoVehiclesAvailable['SedanPremium'] = false;
@@ -179,18 +190,26 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
           price: (calculatedDistance * tripDetails['sedanpremium']).round(),
           pricePerKm: tripDetails['sedanpremium'],
           capacity: '4 bags',
-          features: ['Diesel', 'USB Charging', 'Air Conditioning', 'Music System', 'Leather Seats'],
-          rating: 4.9,
+          features: [
+            'Diesel',
+            'USB Charging',
+            'Air Conditioning',
+            'Music System',
+            'Leather Seats',
+          ],
+          rating: 4,
           rides: 180,
           arrivalTime: '7 mins',
           available: true,
           modelType: 'sedanpremium',
           seats: '5',
-          imageUrl: _vehicleImages['sedanpremium'] ?? 'assets/images/sedan_premium.png',
-        )
+          imageUrl:
+              _vehicleImages['sedanpremium'] ??
+              'assets/images/sedan_premium.png',
+        ),
       ];
     }
-    
+
     // SUV vehicles
     if (tripDetails['suv'] > 0) {
       newNoVehiclesAvailable['SUV'] = false;
@@ -200,18 +219,24 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
           price: (calculatedDistance * tripDetails['suv']).round(),
           pricePerKm: tripDetails['suv'],
           capacity: '5 bags',
-          features: ['Diesel', 'USB Charging', 'Air Conditioning', 'Music System', 'Spacious'],
-          rating: 4.7,
+          features: [
+            'Diesel',
+            'USB Charging',
+            'Air Conditioning',
+            'Music System',
+            'Spacious',
+          ],
+          rating: 4,
           rides: 250,
           arrivalTime: '10 mins',
           available: true,
           modelType: 'suv',
           seats: '7',
           imageUrl: _vehicleImages['suv'] ?? 'assets/images/suv.png',
-        )
+        ),
       ];
     }
-    
+
     // SUVPlus vehicles
     if (tripDetails['suvplus'] > 0) {
       newNoVehiclesAvailable['SUVPlus'] = false;
@@ -221,22 +246,28 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
           price: (calculatedDistance * tripDetails['suvplus']).round(),
           pricePerKm: tripDetails['suvplus'],
           capacity: '6 bags',
-          features: ['Diesel', 'USB Charging', 'Air Conditioning', 'Music System', 'Premium Interior'],
-          rating: 4.9,
+          features: [
+            'Diesel',
+            'USB Charging',
+            'Air Conditioning',
+            'Music System',
+            'Premium Interior',
+          ],
+          rating: 4,
           rides: 150,
           arrivalTime: '15 mins',
           available: true,
           modelType: 'suvplus',
           seats: '7',
           imageUrl: _vehicleImages['suvplus'] ?? 'assets/images/suv_plus.png',
-        )
+        ),
       ];
     }
-    
+
     setState(() {
       _vehicleData = newVehicleData;
       _noVehiclesAvailable = newNoVehiclesAvailable;
-      
+
       // Set first available category as selected
       for (var category in _vehicleData.keys) {
         if (!newNoVehiclesAvailable[category]!) {
@@ -254,7 +285,7 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
     final platformFee = (baseFare * 0.05).round(); // 5% platform fee
     final gst = (baseFare * 0.18).round(); // 18% GST
     final totalFare = baseFare + platformFee + gst;
-    
+
     // Prepare data for passenger details screen
     final bookingDetails = {
       ...widget.bookingData,
@@ -269,12 +300,13 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
       'seats': vehicle.seats,
       'imageUrl': vehicle.imageUrl,
     };
-    
+
     // Navigate to passenger details screen
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => PassengerDetailsScreen(bookingData: bookingDetails),
+        builder:
+            (context) => PassengerDetailsScreen(bookingData: bookingDetails),
       ),
     );
   }
@@ -293,44 +325,41 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-           onPressed: () {
+          onPressed: () {
             // Navigate back to CabBookingScreen
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(
-                builder: (context) => const CabBookingScreen(),
-              ),
+              MaterialPageRoute(builder: (context) => const CabBookingScreen()),
             );
           },
         ),
       ),
-      body: _isLoading
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Finding the best vehicles for you...',
-                    style: TextStyle(
-                      color: textColor,
-                      fontWeight: FontWeight.w500,
+      body:
+          _isLoading
+              ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
                     ),
-                  ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Finding the best vehicles for you...',
+                      style: TextStyle(
+                        color: textColor,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+              : Column(
+                children: [
+                  _buildTripSummary(),
+                  Expanded(child: _buildVehicleList()),
                 ],
               ),
-            )
-          : Column(
-              children: [
-                _buildTripSummary(),
-                Expanded(
-                  child: _buildVehicleList(),
-                ),
-              ],
-            ),
       bottomNavigationBar: _isLoading ? null : _buildCategoryNavBar(),
     );
   }
@@ -434,7 +463,10 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: lightAccentColor,
                       borderRadius: BorderRadius.circular(12),
@@ -451,17 +483,11 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
                   const SizedBox(height: 8),
                   Text(
                     widget.bookingData['date'] ?? 'Date',
-                    style: TextStyle(
-                      color: lightTextColor,
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: lightTextColor, fontSize: 12),
                   ),
                   Text(
                     widget.bookingData['time'] ?? 'Time',
-                    style: TextStyle(
-                      color: lightTextColor,
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: lightTextColor, fontSize: 12),
                   ),
                 ],
               ),
@@ -475,7 +501,11 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
-              'Trip Type: ${widget.bookingData['bookingType'] == 'oneWay' ? 'One Way' : widget.bookingData['bookingType'] == 'roundTrip' ? 'Round Trip' : 'Rental'}',
+              'Trip Type: ${widget.bookingData['bookingType'] == 'oneWay'
+                  ? 'One Way'
+                  : widget.bookingData['bookingType'] == 'roundTrip'
+                  ? 'Round Trip'
+                  : 'Rental'}',
               style: TextStyle(
                 fontWeight: FontWeight.w500,
                 color: primaryColor,
@@ -517,9 +547,12 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
   Widget _buildCategoryNavItem(String category, String label) {
     final isSelected = _selectedCategory == category;
     final isAvailable = !_noVehiclesAvailable[category]!;
-    
+
     return InkWell(
-      onTap: isAvailable ? () => setState(() => _selectedCategory = category) : null,
+      onTap:
+          isAvailable
+              ? () => setState(() => _selectedCategory = category)
+              : null,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
@@ -536,9 +569,10 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
           children: [
             Icon(
               _categoryIcons[category] ?? MaterialCommunityIcons.car,
-              color: isAvailable 
-                  ? (isSelected ? accentColor : lightTextColor)
-                  : Colors.grey.shade300,
+              color:
+                  isAvailable
+                      ? (isSelected ? accentColor : lightTextColor)
+                      : Colors.grey.shade300,
               size: 24,
             ),
             const SizedBox(height: 4),
@@ -547,9 +581,10 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: isAvailable 
-                    ? (isSelected ? textColor : lightTextColor)
-                    : Colors.grey.shade400,
+                color:
+                    isAvailable
+                        ? (isSelected ? textColor : lightTextColor)
+                        : Colors.grey.shade400,
               ),
             ),
           ],
@@ -560,7 +595,7 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
 
   Widget _buildVehicleList() {
     final vehicles = _vehicleData[_selectedCategory] ?? [];
-    
+
     if (vehicles.isEmpty) {
       return Center(
         child: Column(
@@ -574,24 +609,18 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
             const SizedBox(height: 16),
             Text(
               'No vehicles available in this category',
-              style: TextStyle(
-                color: lightTextColor,
-                fontSize: 16,
-              ),
+              style: TextStyle(color: lightTextColor, fontSize: 16),
             ),
             const SizedBox(height: 8),
             Text(
               'Please select another category',
-              style: TextStyle(
-                color: Colors.grey.shade500,
-                fontSize: 14,
-              ),
+              style: TextStyle(color: Colors.grey.shade500, fontSize: 14),
             ),
           ],
         ),
       );
     }
-    
+
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: vehicles.length,
@@ -603,9 +632,7 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -628,11 +655,13 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
                     child: Image.asset(
                       vehicle.imageUrl,
                       fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) => Icon(
-                        _categoryIcons[_selectedCategory] ?? MaterialCommunityIcons.car,
-                        size: 40,
-                        color: primaryColor,
-                      ),
+                      errorBuilder:
+                          (context, error, stackTrace) => Icon(
+                            _categoryIcons[_selectedCategory] ??
+                                MaterialCommunityIcons.car,
+                            size: 40,
+                            color: primaryColor,
+                          ),
                     ),
                   ),
                 ),
@@ -684,11 +713,7 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          const Icon(
-                            Icons.star,
-                            color: Colors.amber,
-                            size: 16,
-                          ),
+                          const Icon(Icons.star, color: Colors.amber, size: 16),
                           const SizedBox(width: 4),
                           Text(
                             '${vehicle.rating}',
@@ -715,7 +740,10 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: accentColor,
                         borderRadius: BorderRadius.circular(20),
@@ -732,10 +760,7 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
                     const SizedBox(height: 4),
                     Text(
                       '₹${vehicle.pricePerKm}/km',
-                      style: TextStyle(
-                        color: lightTextColor,
-                        fontSize: 12,
-                      ),
+                      style: TextStyle(color: lightTextColor, fontSize: 12),
                     ),
                     const SizedBox(height: 8),
                     Row(
@@ -775,25 +800,33 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: vehicle.features.map((feature) => Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: primaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: primaryColor.withOpacity(0.3),
-                    width: 1,
-                  ),
-                ),
-                child: Text(
-                  feature,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: primaryColor,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              )).toList(),
+              children:
+                  vehicle.features
+                      .map(
+                        (feature) => Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: primaryColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: primaryColor.withOpacity(0.3),
+                              width: 1,
+                            ),
+                          ),
+                          child: Text(
+                            feature,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: primaryColor,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      )
+                      .toList(),
             ),
             const SizedBox(height: 16),
             SizedBox(
@@ -811,10 +844,7 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
                 ),
                 child: const Text(
                   'Select This Vehicle',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
@@ -835,10 +865,7 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
                 ),
                 label: Text(
                   'View Details',
-                  style: TextStyle(
-                    color: primaryColor,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: primaryColor, fontSize: 14),
                 ),
               ),
             ),
@@ -852,10 +879,7 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
     return AlertDialog(
       title: Text(
         vehicle.type,
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          color: textColor,
-        ),
+        style: TextStyle(fontWeight: FontWeight.bold, color: textColor),
       ),
       content: SingleChildScrollView(
         child: Column(
@@ -871,52 +895,50 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 padding: const EdgeInsets.all(16),
-                child: Image.asset(
-                  vehicle.imageUrl,
-                  fit: BoxFit.contain,
-                ),
+                child: Image.asset(vehicle.imageUrl, fit: BoxFit.contain),
               ),
             ),
             const SizedBox(height: 16),
             _buildDetailRow('Capacity', '${vehicle.seats} Seats'),
             _buildDetailRow('Luggage', vehicle.capacity),
-            _buildDetailRow('Price', '₹${vehicle.price} (₹${vehicle.pricePerKm}/km)'),
-            _buildDetailRow('Rating', '${vehicle.rating} (${vehicle.rides} rides)'),
+            _buildDetailRow(
+              'Price',
+              '₹${vehicle.price} (₹${vehicle.pricePerKm}/km)',
+            ),
+            _buildDetailRow(
+              'Rating',
+              '${vehicle.rating} (${vehicle.rides} rides)',
+            ),
             _buildDetailRow('Arrival Time', vehicle.arrivalTime),
             const SizedBox(height: 16),
             Text(
               'Features',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: textColor,
-              ),
+              style: TextStyle(fontWeight: FontWeight.bold, color: textColor),
             ),
             const SizedBox(height: 8),
-            ...vehicle.features.map((feature) => Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.check_circle,
-                    color: accentColor,
-                    size: 16,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(feature),
-                ],
+            ...vehicle.features.map(
+              (feature) => Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Row(
+                  children: [
+                    Icon(Icons.check_circle, color: accentColor, size: 16),
+                    const SizedBox(width: 8),
+                    Text(feature),
+                  ],
+                ),
               ),
-            )),
+            ),
             const SizedBox(height: 16),
             Text(
               'Fare Breakdown',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: textColor,
-              ),
+              style: TextStyle(fontWeight: FontWeight.bold, color: textColor),
             ),
             const SizedBox(height: 8),
             _buildFareRow('Base Fare', '₹${vehicle.price}'),
-            _buildFareRow('Platform Fee (5%)', '₹${(vehicle.price * 0.05).round()}'),
+            _buildFareRow(
+              'Platform Fee (5%)',
+              '₹${(vehicle.price * 0.05).round()}',
+            ),
             _buildFareRow('GST (18%)', '₹${(vehicle.price * 0.18).round()}'),
             const Divider(),
             _buildFareRow(
@@ -930,10 +952,7 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: Text(
-            'Close',
-            style: TextStyle(color: primaryColor),
-          ),
+          child: Text('Close', style: TextStyle(color: primaryColor)),
         ),
         ElevatedButton(
           onPressed: () {
@@ -950,19 +969,13 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
     );
   }
 
-   Widget _buildDetailRow(String label, String value) {
+  Widget _buildDetailRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              color: lightTextColor,
-              fontSize: 14,
-            ),
-          ),
+          Text(label, style: TextStyle(color: lightTextColor, fontSize: 14)),
           Text(
             value,
             style: TextStyle(
@@ -1007,10 +1020,10 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
 class Vehicle {
   final String type;
   final int price;
-  final double pricePerKm;
+  final int pricePerKm;
   final String capacity;
   final List<String> features;
-  final double rating;
+  final int rating;
   final int rides;
   final String arrivalTime;
   final bool available;

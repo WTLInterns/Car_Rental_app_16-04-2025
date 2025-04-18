@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:worldtriplink/screens/login_screen.dart';
 import 'package:worldtriplink/screens/user_home_screen.dart';
 import 'package:worldtriplink/screens/driver_trips_screen.dart';
-import 'package:worldtriplink/screens/passenger_details_screen.dart'; // Added import
+import 'package:worldtriplink/screens/splash_screen.dart';
+import 'package:worldtriplink/screens/driver_tracking_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -20,12 +20,15 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2E3192)),
         useMaterial3: true,
       ),
-      // Display DriverTripsScreen instead of UserHomeScreen
-      home: const UserHomeScreen(),
+      home: const SplashScreen(),
       routes: {
         '/login': (context) => const LoginScreen(),
         '/user-home': (context) => const UserHomeScreen(),
         '/driver-trips': (context) => const DriverTripsScreen(),
+        '/driver-tracking': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+          return DriverTrackingScreen(arguments: args);
+        },
       },
     );
   }

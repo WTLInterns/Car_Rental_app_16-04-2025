@@ -2,7 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 
 // Professional color palette
-const Color primaryColor = Color(0xFF2E3192);
+const Color primaryColor = Color.fromARGB(
+  255,
+  100,
+  110,
+  203,
+); // Deep blue - primary brand color
+
 const Color accentColor = Color(0xFF4A90E2);
 const Color secondaryColor = Color(0xFFFFCC00);
 const Color backgroundColor = Color(0xFFF8F9FA);
@@ -18,7 +24,8 @@ class OffersScreen extends StatefulWidget {
   State<OffersScreen> createState() => _OffersScreenState();
 }
 
-class _OffersScreenState extends State<OffersScreen> with SingleTickerProviderStateMixin {
+class _OffersScreenState extends State<OffersScreen>
+    with SingleTickerProviderStateMixin {
   int _selectedTab = 0;
   final List<Map<String, dynamic>> _offers = [];
   bool _isLoading = true;
@@ -31,7 +38,8 @@ class _OffersScreenState extends State<OffersScreen> with SingleTickerProviderSt
       'type': 'cab',
       'title': 'Weekend Getaway',
       'discount': '20% OFF',
-      'description': 'Book a cab for weekend trips and get 20% off on your ride.',
+      'description':
+          'Book a cab for weekend trips and get 20% off on your ride.',
       'validTill': 'June 30, 2023',
       'minBooking': '₹500',
       'code': 'WEEKEND20',
@@ -44,7 +52,8 @@ class _OffersScreenState extends State<OffersScreen> with SingleTickerProviderSt
       'type': 'flight',
       'title': 'International Flights',
       'discount': '15% OFF',
-      'description': 'Book international flights and get 15% off on your booking.',
+      'description':
+          'Book international flights and get 15% off on your booking.',
       'validTill': 'July 15, 2023',
       'minBooking': '₹5000',
       'code': 'FLYNOW15',
@@ -57,7 +66,8 @@ class _OffersScreenState extends State<OffersScreen> with SingleTickerProviderSt
       'type': 'hotel',
       'title': 'Luxury Stays',
       'discount': '25% OFF',
-      'description': 'Book luxury hotels and get 25% off on your stay of 3 nights or more.',
+      'description':
+          'Book luxury hotels and get 25% off on your stay of 3 nights or more.',
       'validTill': 'August 31, 2023',
       'minBooking': '3 nights',
       'code': 'LUXURY25',
@@ -90,7 +100,7 @@ class _OffersScreenState extends State<OffersScreen> with SingleTickerProviderSt
       'color': const Color(0xFFFF6B6B),
       'bgColor': const Color(0xFFFFF0F0),
       'image': 'assets/images/hotel_offer.png',
-    }
+    },
   ];
 
   @override
@@ -131,7 +141,7 @@ class _OffersScreenState extends State<OffersScreen> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     final filteredOffers = _filterOffers();
-    
+
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
@@ -145,23 +155,30 @@ class _OffersScreenState extends State<OffersScreen> with SingleTickerProviderSt
             fontSize: 20,
           ),
         ),
-    
       ),
-      body: Column(
-        children: [
-          _buildTabBar(),
-          Expanded(
-            child: _isLoading 
-                ? const Center(
-                    child: CircularProgressIndicator(
-                      color: primaryColor,
-                    ),
-                  )
-                : filteredOffers.isEmpty 
-                    ? _buildEmptyState() 
-                    : _buildOfferList(filteredOffers),
-          ),
-        ],
+      body: SingleChildScrollView(
+        // Add this wrapper
+        child: Column(
+          children: [
+            _buildTabBar(),
+            SizedBox(
+              // Add fixed height for the content
+              height:
+                  MediaQuery.of(context).size.height -
+                  kToolbarHeight - // AppBar height
+                  kBottomNavigationBarHeight - // If you have bottom nav
+                  24, // Padding
+              child:
+                  _isLoading
+                      ? const Center(
+                        child: CircularProgressIndicator(color: primaryColor),
+                      )
+                      : filteredOffers.isEmpty
+                      ? _buildEmptyState()
+                      : _buildOfferList(filteredOffers),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -234,21 +251,38 @@ class _OffersScreenState extends State<OffersScreen> with SingleTickerProviderSt
   Widget _buildOfferList(List<Map<String, dynamic>> offers) {
     return FadeTransition(
       opacity: _animation,
-      child: ListView(
-        padding: const EdgeInsets.all(16),
+      child: Column(
         children: [
           _buildFeaturedOffer(),
           const SizedBox(height: 24),
-          const Text(
-            'Available Offers',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: textColor,
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              'Available Offers',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: textColor,
+              ),
             ),
           ),
           const SizedBox(height: 16),
-          ...offers.map((offer) => _buildOfferCard(offer)),
+          Expanded(
+            // Add Expanded here
+            child: ListView.builder(
+              padding: const EdgeInsets.only(bottom: 24),
+              itemCount: offers.length,
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  child: _buildOfferCard(offers[index]),
+                );
+              },
+            ),
+          ),
         ],
       ),
     );
@@ -299,7 +333,7 @@ class _OffersScreenState extends State<OffersScreen> with SingleTickerProviderSt
               ),
             ),
           ),
-          
+
           // Content
           Padding(
             padding: const EdgeInsets.all(20),
@@ -312,7 +346,10 @@ class _OffersScreenState extends State<OffersScreen> with SingleTickerProviderSt
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
                         decoration: BoxDecoration(
                           color: secondaryColor,
                           borderRadius: BorderRadius.circular(20),
@@ -338,20 +375,22 @@ class _OffersScreenState extends State<OffersScreen> with SingleTickerProviderSt
                       const SizedBox(height: 8),
                       const Text(
                         'Get 30% off on all cab bookings this summer season!',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                        ),
+                        style: TextStyle(color: Colors.white, fontSize: 14),
                       ),
                       const SizedBox(height: 12),
                       Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 4,
+                              vertical: 6,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.white.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(3),
-                              border: Border.all(color: Colors.white.withOpacity(0.3)),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.3),
+                              ),
                             ),
                             child: const Row(
                               children: [
@@ -423,212 +462,223 @@ class _OffersScreenState extends State<OffersScreen> with SingleTickerProviderSt
   }
 
   Widget _buildOfferCard(Map<String, dynamic> offer) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        minHeight: 280, // Minimum height for the card
+        maxHeight: 350, // Maximum height for the card
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header with discount badge
-            Container(
-              height: 100,
-              decoration: BoxDecoration(
-                color: offer['bgColor'],
-              ),
-              child: Stack(
-                children: [
-                  // Background pattern
-                  Positioned(
-                    right: -20,
-                    bottom: -20,
-                    child: Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: offer['color'].withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(40),
+      child: Container(
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min, // Important for proper sizing
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header with discount badge
+              Container(
+                height: 100,
+                decoration: BoxDecoration(color: offer['bgColor']),
+                child: Stack(
+                  children: [
+                    // Background pattern
+                    Positioned(
+                      right: -20,
+                      bottom: -20,
+                      child: Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          color: offer['color'].withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(40),
+                        ),
                       ),
                     ),
-                  ),
-                  
-                  // Content
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
+
+                    // Content
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      _getIcon(offer['type']),
+                                      color: offer['color'],
+                                      size: 18,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Flexible(
+                                      child: Text(
+                                        '${offer['type'][0].toUpperCase()}${offer['type'].substring(1)} Offer',
+                                        style: TextStyle(
+                                          color: offer['color'],
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  offer['title'],
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: textColor,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: offer['color'],
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              offer['discount'],
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Offer details
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      offer['description'],
+                      style: const TextStyle(
+                        color: lightTextColor,
+                        fontSize: 14,
+                        height: 1.4,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Offer details row - Fix overflow by making it wrap
+                    Wrap(
+                      spacing: 24,
+                      runSpacing: 16,
+                      children: [
+                        _buildOfferDetail(
+                          MaterialCommunityIcons.calendar_range,
+                          'Valid till',
+                          offer['validTill'],
+                        ),
+                        _buildOfferDetail(
+                          MaterialCommunityIcons.currency_inr,
+                          'Min. booking',
+                          offer['minBooking'],
+                        ),
+                      ],
+                    ),
+
+                    const Divider(height: 32),
+
+                    // Promo code and apply button
+                    Row(
                       children: [
                         Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(
-                                    _getIcon(offer['type']),
-                                    color: offer['color'],
-                                    size: 18,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Flexible(
-                                    child: Text(
-                                      '${offer['type'][0].toUpperCase()}${offer['type'].substring(1)} Offer',
-                                      style: TextStyle(
-                                        color: offer['color'],
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              color: backgroundColor,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: offer['color'].withOpacity(0.3),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    offer['code'],
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: offer['color'],
                                     ),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                offer['title'],
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: textColor,
                                 ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
+                                const SizedBox(width: 8),
+                                Icon(
+                                  MaterialCommunityIcons.content_copy,
+                                  color: offer['color'],
+                                  size: 16,
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: offer['color'],
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            offer['discount'],
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
+                        const SizedBox(width: 12),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: offer['color'],
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
                             ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            elevation: 0,
+                          ),
+                          onPressed: () {},
+                          child: const Text(
+                            'Apply',
+                            style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ),
                       ],
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            
-            // Offer details
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    offer['description'],
-                    style: const TextStyle(
-                      color: lightTextColor,
-                      fontSize: 14,
-                      height: 1.4,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  // Offer details row - Fix overflow by making it wrap
-                  Wrap(
-                    spacing: 24,
-                    runSpacing: 16,
-                    children: [
-                      _buildOfferDetail(
-                        MaterialCommunityIcons.calendar_range,
-                        'Valid till',
-                        offer['validTill'],
-                      ),
-                      _buildOfferDetail(
-                        MaterialCommunityIcons.currency_inr,
-                        'Min. booking',
-                        offer['minBooking'],
-                      ),
-                    ],
-                  ),
-                  
-                  const Divider(height: 32),
-                  
-                  // Promo code and apply button
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          decoration: BoxDecoration(
-                            color: backgroundColor,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: offer['color'].withOpacity(0.3),
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  offer['code'],
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                    color: offer['color'],
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Icon(
-                                MaterialCommunityIcons.content_copy,
-                                color: offer['color'],
-                                size: 16,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: offer['color'],
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          elevation: 0,
-                        ),
-                        onPressed: () {},
-                        child: const Text(
-                          'Apply',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -640,11 +690,7 @@ class _OffersScreenState extends State<OffersScreen> with SingleTickerProviderSt
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            icon,
-            size: 16,
-            color: mutedTextColor,
-          ),
+          Icon(icon, size: 16, color: mutedTextColor),
           const SizedBox(width: 6),
           Expanded(
             child: Column(
@@ -652,10 +698,7 @@ class _OffersScreenState extends State<OffersScreen> with SingleTickerProviderSt
               children: [
                 Text(
                   label,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: mutedTextColor,
-                  ),
+                  style: const TextStyle(fontSize: 12, color: mutedTextColor),
                 ),
                 Text(
                   value,
@@ -703,10 +746,7 @@ class _OffersScreenState extends State<OffersScreen> with SingleTickerProviderSt
           const SizedBox(height: 8),
           Text(
             'Check back later for new offers',
-            style: TextStyle(
-              fontSize: 14,
-              color: mutedTextColor,
-            ),
+            style: TextStyle(fontSize: 14, color: mutedTextColor),
           ),
           const SizedBox(height: 24),
           ElevatedButton.icon(

@@ -19,7 +19,7 @@ class CabBookingScreen extends StatefulWidget {
 class _CabBookingScreenState extends State<CabBookingScreen> {
   // Form key for validation
   final _formKey = GlobalKey<FormState>();
-  
+
   String _bookingType = 'oneWay';
   final TextEditingController _pickupController = TextEditingController();
   final TextEditingController _dropController = TextEditingController();
@@ -32,20 +32,24 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
   List<dynamic> _pickupSuggestions = [];
   List<dynamic> _dropSuggestions = [];
   bool _isLoadingLocation = false;
-  
-  // Color scheme for consistent styling
-  final Color primaryColor = const Color(0xFF2E3192);
-  final Color accentColor = const Color(0xFFFFCC00);
-  final Color lightAccentColor = const Color(0xFFFFF9E0);
-  final Color textColor = const Color(0xFF333333);
-  final Color lightTextColor = const Color(0xFF666666);
-  final Color backgroundColor = const Color(0xFFF5F7FA);
+
+  // Color scheme for consistent styling - matching the app's professional style
+  final Color primaryColor = const Color(0xFF2E3192);      // Deep blue
+  final Color secondaryColor = const Color(0xFF4A90E2);    // Bright blue
+  final Color accentColor = const Color(0xFFFFCC00);       // Yellow/gold accent
+  final Color backgroundColor = const Color(0xFFF5F7FA);   // Light gray background
+  final Color cardColor = Colors.white;                    // White card background
+  final Color surfaceColor = const Color(0xFFF0F7FF);      // Light blue for inputs/surfaces
+  final Color textColor = const Color(0xFF333333);         // Dark text
+  final Color lightTextColor = const Color(0xFF666666);    // Medium gray text
+  final Color mutedTextColor = const Color(0xFFA0A0A0);    // Light gray text
+  final Color lightAccentColor = const Color(0xFFF0F7FF);  // Light blue background
 
   @override
   void initState() {
     super.initState();
     _getCurrentLocation();
-    
+
     // Set default date and time
     _selectedDate = DateTime.now();
     _selectedTime = TimeOfDay.now();
@@ -61,7 +65,7 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
   Future<void> _getCurrentLocation() async {
     setState(() => _isLoadingLocation = true);
     Location location = Location();
-    
+
     bool serviceEnabled;
     PermissionStatus permissionGranted;
 
@@ -92,18 +96,20 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
       _reverseGeocode(locationData);
     } catch (e) {
       setState(() => _isLoadingLocation = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not get location: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not get location: $e')));
     }
   }
 
   Future<void> _reverseGeocode(LocationData location) async {
     try {
-      final response = await http.get(Uri.parse(
-        'https://maps.googleapis.com/maps/api/geocode/json?'
-        'latlng=${location.latitude},${location.longitude}&key=$googleMapsApiKey'
-      ));
+      final response = await http.get(
+        Uri.parse(
+          'https://maps.googleapis.com/maps/api/geocode/json?'
+          'latlng=${location.latitude},${location.longitude}&key=$googleMapsApiKey',
+        ),
+      );
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -114,9 +120,9 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
         }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not get address: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not get address: $e')));
     }
   }
 
@@ -133,10 +139,12 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
     }
 
     try {
-      final response = await http.get(Uri.parse(
-        'https://maps.googleapis.com/maps/api/place/autocomplete/json?'
-        'input=$query&key=$googleMapsApiKey&components=country:in'
-      ));
+      final response = await http.get(
+        Uri.parse(
+          'https://maps.googleapis.com/maps/api/place/autocomplete/json?'
+          'input=$query&key=$googleMapsApiKey&components=country:in',
+        ),
+      );
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -154,10 +162,11 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
   }
 
   Future<void> _selectDate(BuildContext context, bool isReturnDate) async {
-    final DateTime initialDate = isReturnDate && _selectedDate != null 
-        ? _selectedDate!.add(const Duration(days: 1))
-        : DateTime.now();
-        
+    final DateTime initialDate =
+        isReturnDate && _selectedDate != null
+            ? _selectedDate!.add(const Duration(days: 1))
+            : DateTime.now();
+
     final picked = await showDatePicker(
       context: context,
       initialDate: initialDate,
@@ -171,12 +180,17 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
               onPrimary: Colors.white,
               onSurface: textColor,
             ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: primaryColor,
+              ),
+            ),
           ),
           child: child!,
         );
       },
     );
-    
+
     if (picked != null) {
       setState(() {
         if (isReturnDate) {
@@ -184,8 +198,8 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
         } else {
           _selectedDate = picked;
           // If return date is before the new selected date, update it
-          if (_bookingType == 'roundTrip' && 
-              _selectedReturnDate != null && 
+          if (_bookingType == 'roundTrip' &&
+              _selectedReturnDate != null &&
               _selectedReturnDate!.isBefore(picked)) {
             _selectedReturnDate = picked.add(const Duration(days: 1));
           }
@@ -205,13 +219,33 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
               primary: primaryColor,
               onPrimary: Colors.white,
               onSurface: textColor,
+              surface: surfaceColor,
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: primaryColor,
+              ),
+            ),
+            timePickerTheme: TimePickerThemeData(
+              backgroundColor: cardColor,
+              hourMinuteShape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              dayPeriodBorderSide: BorderSide(color: secondaryColor.withOpacity(0.2)),
+              dayPeriodColor: surfaceColor,
+              dayPeriodTextColor: primaryColor,
+              dayPeriodShape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              hourMinuteColor: surfaceColor,
+              hourMinuteTextColor: primaryColor,
             ),
           ),
           child: child!,
         );
       },
     );
-    
+
     if (picked != null) {
       setState(() => _selectedTime = picked);
     }
@@ -235,9 +269,7 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
             // Navigate back to UserHomeScreen
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(
-                builder: (context) => const UserHomeScreen(),
-              ),
+              MaterialPageRoute(builder: (context) => const UserHomeScreen()),
             );
           },
         ),
@@ -274,7 +306,11 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
           children: [
             Row(
               children: [
-                Icon(MaterialCommunityIcons.car_multiple, color: primaryColor, size: 20),
+                Icon(
+                  MaterialCommunityIcons.car_multiple,
+                  color: secondaryColor,
+                  size: 20,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   'Trip Type',
@@ -289,11 +325,23 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
             const SizedBox(height: 16),
             Row(
               children: [
-                _buildTripTypeButton('One Way', MaterialCommunityIcons.arrow_right_thick, 'oneWay'),
+                _buildTripTypeButton(
+                  'One Way',
+                  MaterialCommunityIcons.arrow_right_thick,
+                  'oneWay',
+                ),
                 const SizedBox(width: 8),
-                _buildTripTypeButton('Round Trip', MaterialCommunityIcons.autorenew, 'roundTrip'),
+                _buildTripTypeButton(
+                  'Round Trip',
+                  MaterialCommunityIcons.autorenew,
+                  'roundTrip',
+                ),
                 const SizedBox(width: 8),
-                _buildTripTypeButton('Rental', MaterialCommunityIcons.car_convertible, 'rental'),
+                _buildTripTypeButton(
+                  'Rental',
+                  MaterialCommunityIcons.car_convertible,
+                  'rental',
+                ),
               ],
             ),
           ],
@@ -310,10 +358,10 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
         borderRadius: BorderRadius.circular(8),
         child: Container(
           decoration: BoxDecoration(
-            color: isSelected ? lightAccentColor : Colors.grey[100],
+            color: isSelected ? surfaceColor : Colors.grey[100],
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: isSelected ? accentColor : Colors.grey[300]!,
+              color: isSelected ? secondaryColor : Colors.grey[300]!,
               width: 1.5,
             ),
           ),
@@ -321,13 +369,13 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
           child: Column(
             children: [
               Icon(
-                icon, 
-                color: isSelected ? accentColor : Colors.grey[400], 
-                size: 24
+                icon,
+                color: isSelected ? secondaryColor : Colors.grey[400],
+                size: 24,
               ),
               const SizedBox(height: 8),
               Text(
-                label, 
+                label,
                 style: TextStyle(
                   color: isSelected ? textColor : Colors.grey[600],
                   fontWeight: FontWeight.w600,
@@ -352,7 +400,11 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
           children: [
             Row(
               children: [
-                Icon(MaterialCommunityIcons.map_marker_path, color: primaryColor, size: 20),
+                Icon(
+                  MaterialCommunityIcons.map_marker_path,
+                  color: secondaryColor,
+                  size: 20,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   'Locations',
@@ -365,42 +417,56 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            _buildLocationInput('Pickup Location', _pickupController, _pickupSuggestions, 'pickup'),
+            _buildLocationInput(
+              'Pickup Location',
+              _pickupController,
+              _pickupSuggestions,
+              'pickup',
+            ),
             const SizedBox(height: 16),
-            _buildLocationInput('Drop Location', _dropController, _dropSuggestions, 'drop'),
+            _buildLocationInput(
+              'Drop Location',
+              _dropController,
+              _dropSuggestions,
+              'drop',
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildLocationInput(String label, TextEditingController controller, 
-                            List<dynamic> suggestions, String type) {
+  Widget _buildLocationInput(
+    String label,
+    TextEditingController controller,
+    List<dynamic> suggestions,
+    String type,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label, 
-          style: TextStyle(
-            color: lightTextColor,
-            fontWeight: FontWeight.w500,
-          ),
+          label,
+          style: TextStyle(color: lightTextColor, fontWeight: FontWeight.w500),
         ),
         const SizedBox(height: 8),
         TextFormField(
           controller: controller,
           decoration: InputDecoration(
             filled: true,
-            fillColor: Colors.white,
+            fillColor: surfaceColor,
             hintText: 'Enter $label',
-            hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
+            hintStyle: TextStyle(color: mutedTextColor, fontSize: 14),
             prefixIcon: Icon(
               MaterialCommunityIcons.map_marker,
-              color: primaryColor.withOpacity(0.7),
+              color: secondaryColor,
               size: 20,
             ),
             suffixIcon: type == 'pickup' ? _buildLocationIcon() : null,
-            contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            contentPadding: const EdgeInsets.symmetric(
+              vertical: 12,
+              horizontal: 16,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(color: Colors.grey[300]!),
@@ -411,7 +477,7 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: primaryColor),
+              borderSide: BorderSide(color: secondaryColor),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
@@ -431,7 +497,7 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
             margin: const EdgeInsets.only(top: 4),
             constraints: const BoxConstraints(maxHeight: 200),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: cardColor,
               borderRadius: BorderRadius.circular(8),
               boxShadow: [
                 BoxShadow(
@@ -444,45 +510,49 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
             child: ListView.builder(
               shrinkWrap: true,
               itemCount: suggestions.length,
-              itemBuilder: (context, index) => Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () {
-                    controller.text = suggestions[index]['description'];
-                    setState(() {
-                      if (type == 'pickup') {
-                        _pickupSuggestions = [];
-                      } else {
-                        _dropSuggestions = [];
-                      }
-                    });
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                    child: Row(
-                      children: [
-                        Icon(
-                          MaterialCommunityIcons.map_marker_outline,
-                          color: Colors.grey[600],
-                          size: 18,
+              itemBuilder:
+                  (context, index) => Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        controller.text = suggestions[index]['description'];
+                        setState(() {
+                          if (type == 'pickup') {
+                            _pickupSuggestions = [];
+                          } else {
+                            _dropSuggestions = [];
+                          }
+                        });
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 8,
+                          horizontal: 16,
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            suggestions[index]['description'],
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: textColor,
+                        child: Row(
+                          children: [
+                            Icon(
+                              MaterialCommunityIcons.map_marker_outline,
+                              color: secondaryColor,
+                              size: 18,
                             ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                suggestions[index]['description'],
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: textColor,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
-                ),
-              ),
             ),
           ),
       ],
@@ -490,26 +560,26 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
   }
 
   Widget _buildLocationIcon() {
-    return _isLoadingLocation 
+    return _isLoadingLocation
         ? Padding(
-            padding: const EdgeInsets.all(12),
-            child: SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
-              ),
+          padding: const EdgeInsets.all(12),
+          child: SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(secondaryColor),
             ),
-          )
+          ),
+        )
         : IconButton(
-            icon: Icon(
-              MaterialCommunityIcons.crosshairs_gps,
-              color: primaryColor,
-            ),
-            onPressed: _getCurrentLocation,
-            tooltip: 'Use current location',
-          );
+          icon: Icon(
+            MaterialCommunityIcons.crosshairs_gps,
+            color: secondaryColor,
+          ),
+          onPressed: _getCurrentLocation,
+          tooltip: 'Use current location',
+        );
   }
 
   Widget _buildDateTimeCard() {
@@ -523,7 +593,11 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
           children: [
             Row(
               children: [
-                Icon(MaterialCommunityIcons.calendar_clock, color: primaryColor, size: 20),
+                Icon(
+                  MaterialCommunityIcons.calendar_clock,
+                  color: secondaryColor,
+                  size: 20,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   'Schedule',
@@ -538,7 +612,7 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
             const SizedBox(height: 16),
             _buildDateTimeRow(
               'Pickup Date',
-              _selectedDate != null 
+              _selectedDate != null
                   ? DateFormat('dd MMM yyyy').format(_selectedDate!)
                   : 'Select date',
               MaterialCommunityIcons.calendar,
@@ -548,7 +622,7 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
               const SizedBox(height: 16),
               _buildDateTimeRow(
                 'Return Date',
-                _selectedReturnDate != null 
+                _selectedReturnDate != null
                     ? DateFormat('dd MMM yyyy').format(_selectedReturnDate!)
                     : 'Select return date',
                 MaterialCommunityIcons.calendar,
@@ -558,7 +632,7 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
             const SizedBox(height: 16),
             _buildDateTimeRow(
               'Pickup Time',
-              _selectedTime != null 
+              _selectedTime != null
                   ? _selectedTime!.format(context)
                   : 'Select time',
               MaterialCommunityIcons.clock_outline,
@@ -580,15 +654,21 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
                   TextFormField(
                     decoration: InputDecoration(
                       filled: true,
-                      fillColor: Colors.white,
+                      fillColor: surfaceColor,
                       hintText: 'Enter duration in hours',
-                      hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
+                      hintStyle: TextStyle(
+                        color: mutedTextColor,
+                        fontSize: 14,
+                      ),
                       prefixIcon: Icon(
                         MaterialCommunityIcons.timer_outline,
-                        color: primaryColor.withOpacity(0.7),
+                        color: secondaryColor,
                         size: 20,
                       ),
-                      contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                      contentPadding: const EdgeInsets.symmetric(
+                        vertical: 12,
+                        horizontal: 16,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                         borderSide: BorderSide(color: Colors.grey[300]!),
@@ -599,7 +679,7 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: primaryColor),
+                        borderSide: BorderSide(color: secondaryColor),
                       ),
                     ),
                     keyboardType: TextInputType.number,
@@ -609,7 +689,8 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
                         if (value == null || value.isEmpty) {
                           return 'Please enter rental duration';
                         }
-                        if (int.tryParse(value) == null || int.parse(value) < 1) {
+                        if (int.tryParse(value) == null ||
+                            int.parse(value) < 1) {
                           return 'Please enter a valid duration';
                         }
                       }
@@ -625,20 +706,25 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
     );
   }
 
-  Widget _buildDateTimeRow(String label, String value, IconData icon, VoidCallback onTap) {
+  Widget _buildDateTimeRow(
+    String label,
+    String value,
+    IconData icon,
+    VoidCallback onTap,
+  ) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: surfaceColor,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: Colors.grey[300]!),
         ),
         child: Row(
           children: [
-            Icon(icon, size: 20, color: primaryColor),
+            Icon(icon, size: 20, color: secondaryColor),
             const SizedBox(width: 12),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -663,10 +749,7 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
               ],
             ),
             const Spacer(),
-            Icon(
-              Icons.arrow_drop_down,
-              color: Colors.grey[600],
-            ),
+            Icon(Icons.arrow_drop_down, color: secondaryColor),
           ],
         ),
       ),
@@ -677,7 +760,9 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
     // Validate form
     if (!_formKey.currentState!.validate()) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill all required fields correctly')),
+        const SnackBar(
+          content: Text('Please fill all required fields correctly'),
+        ),
       );
       return;
     }
@@ -712,9 +797,10 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
       'time': _selectedTime!.format(context),
       'bookingType': _bookingType,
       'hours': _hours,
-      'returnDate': _selectedReturnDate != null 
-          ? DateFormat('yyyy-MM-dd').format(_selectedReturnDate!)
-          : '',
+      'returnDate':
+          _selectedReturnDate != null
+              ? DateFormat('yyyy-MM-dd').format(_selectedReturnDate!)
+              : '',
     };
 
     // Navigate to vehicle selection
@@ -734,16 +820,15 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
           backgroundColor: accentColor,
           foregroundColor: textColor,
           padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           elevation: 2,
         ),
         onPressed: _handleBookNow,
         child: const Text(
           'Continue to Select Vehicle',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
       ),
     );

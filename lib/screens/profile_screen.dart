@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
-
+import 'login_screen.dart';
 // Professional color palette
 const Color primaryColor = Color(0xFF2E3192);
 const Color accentColor = Color(0xFF4A90E2);
@@ -23,7 +23,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   String _userName = 'User';
   String _userEmail = 'user@example.com';
   String _userPhone = '+91 9876543210';
-  String _membership = 'Gold Member';
+  final String _membership = 'Gold Member';
   bool _isLoading = true;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -50,11 +50,23 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
 
   Future<void> _loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
-    await Future.delayed(const Duration(milliseconds: 500)); // Simulate network delay
+    
+    // Check if user is logged in
+    final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+    if (!isLoggedIn) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+        (route) => false,
+      );
+      return;
+    }
+
+    await Future.delayed(const Duration(milliseconds: 500));
     setState(() {
-      _userName = prefs.getString('username') ?? 'Rahul Sharma';
-      _userEmail = prefs.getString('email') ?? 'rahul.sharma@example.com';
-      _userPhone = prefs.getString('phone') ?? '+91 9876543210';
+      _userName = prefs.getString('username') ?? 'User';
+      _userEmail = prefs.getString('email') ?? 'user@example.com';
+      _userPhone = prefs.getString('phone') ?? '+91 0000000000';
       _isLoading = false;
     });
     _animationController.forward();
@@ -80,8 +92,20 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
             ),
             onPressed: () async {
               final prefs = await SharedPreferences.getInstance();
+              // Clear all user data
               await prefs.remove('isLoggedIn');
-              Navigator.popUntil(ctx, (route) => route.isFirst);
+              await prefs.remove('userId');
+              await prefs.remove('role');
+              await prefs.remove('username');
+              await prefs.remove('email');
+              await prefs.remove('phone');
+              
+              // Navigate back to login screen
+              Navigator.pushAndRemoveUntil(
+                ctx,
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
+                (route) => false,
+              );
             },
             child: const Text("Logout"),
           ),

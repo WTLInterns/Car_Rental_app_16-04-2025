@@ -5,18 +5,28 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:worldtriplink/screens/tracking_screen.dart';
 
-// Professional color palette
-const Color primaryColor = Color(0xFF2E3192);
-const Color accentColor = Color(0xFF4A90E2);
-const Color secondaryColor = Color(0xFFFFCC00);
-const Color backgroundColor = Color(0xFFF8F9FA);
-const Color cardColor = Colors.white;
-const Color textColor = Color(0xFF333333);
-const Color lightTextColor = Color(0xFF666666);
-const Color mutedTextColor = Color(0xFF999999);
-const Color successColor = Color(0xFF4CAF50);
-const Color warningColor = Color(0xFFFF9800);
-const Color dangerColor = Color(0xFFF44336);
+// Professional color palette - matching login screen
+const Color primaryColor = Color(0xFF2E3192);      // Deep blue
+const Color secondaryColor = Color(0xFF4A90E2);    // Bright blue
+const Color accentColor = Color(0xFFFFCC00);       // Yellow/gold accent
+
+// Background colors
+const Color backgroundColor = Color(0xFFF5F7FA);   // Light gray background
+const Color cardColor = Colors.white;              // White card background
+const Color surfaceColor = Color(0xFFF0F7FF);      // Light blue surface color
+
+// Text colors
+const Color textColor = Color(0xFF333333);         // Dark text
+const Color lightTextColor = Color(0xFF666666);    // Medium gray text
+const Color mutedTextColor = Color(0xFFA0A0A0);    // Light gray text
+
+// Status colors
+const Color successColor = Color(0xFF4CAF50);      // Green for success states
+const Color warningColor = Color(0xFFFF9800);      // Orange for warning states
+const Color dangerColor = Color(0xFFF44336);       // Red for error/danger states
+
+// Accent shade
+const Color lightAccentColor = Color(0xFFF0F7FF);  // Light blue for subtle highlights
 
 class Trip {
   final String bookingId;
@@ -56,16 +66,26 @@ class Trip {
   factory Trip.fromJson(Map<String, dynamic> json) {
     return Trip(
       bookingId: json['bookingId'] ?? json['bookid'] ?? 'N/A',
-      fromLocation: json['fromLocation'] ?? json['userPickup'] ?? 'Unknown location',
+      fromLocation:
+          json['fromLocation'] ?? json['userPickup'] ?? 'Unknown location',
       toLocation: json['toLocation'] ?? json['userDrop'] ?? 'Unknown location',
       startDate: json['startDate'] ?? json['date'] ?? 'N/A',
       time: json['time'] ?? 'N/A',
       car: (json['car'] ?? json['vendorCab']?['carName'] ?? 'cab').toString(),
-      amount: (json['amount'] as num?)?.toDouble() ?? 0.0,
-      status: json['status'] is String ? int.tryParse(json['status']) ?? 0 : json['status'] as int? ?? 0,
+      amount:
+          json['amount'] is num
+              ? (json['amount'] as num).toDouble()
+              : double.tryParse(json['amount']?.toString() ?? '') ?? 0.0,
+      status:
+          json['status'] is String
+              ? int.tryParse(json['status']) ?? 0
+              : json['status'] as int? ?? 0,
       name: json['name'] ?? json['vendorDriver']?['driverName'] ?? 'Unknown',
       phone: json['phone'] ?? json['vendorDriver']?['contactNo'] ?? 'N/A',
-      distance: (json['distance'] as num?)?.toDouble(),
+      distance:
+          json['distance'] is num
+              ? (json['distance'] as num).toDouble()
+              : double.tryParse(json['distance']?.toString() ?? '') ?? 0.0,
       vendorDriver: json['vendorDriver'] as Map<String, dynamic>?,
       vendorCab: json['vendorCab'] as Map<String, dynamic>?,
       carRentalUser: json['carRentalUser'] as Map<String, dynamic>?,
@@ -98,7 +118,7 @@ class _TripsScreenState extends State<TripsScreen> {
     super.initState();
     _loadUserData();
     // Add sample trip data for testing
-    _addSampleTrip();
+    // _addSampleTrip();
   }
 
   void _addSampleTrip() {
@@ -136,18 +156,17 @@ class _TripsScreenState extends State<TripsScreen> {
   Future<void> _loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
     final userDataString = prefs.getString('userData');
-    
+
     setState(() {
-      _userId = prefs.getInt('userId')?.toString() ?? prefs.getString('userId') ?? '';
+      _userId =
+          prefs.getInt('userId')?.toString() ?? prefs.getString('userId') ?? '';
       if (userDataString != null) {
         try {
           _userData = json.decode(userDataString);
-        } catch (e) {
-          print('Error parsing user data: $e');
-        }
+        } catch (e) {}
       }
     });
-    
+
     _getUserTripInfo();
   }
 
@@ -157,29 +176,34 @@ class _TripsScreenState extends State<TripsScreen> {
       final response = await http.get(
         Uri.parse('https://api.worldtriplink.com/api/by-user/$_userId'),
       );
-  
+
       print('API Response: ${response.statusCode}');
       print('Response Body: ${response.body}');
-  
+
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         List<dynamic> tripsData;
-        
+
         if (responseData is List) {
           tripsData = responseData;
-        } else if (responseData is Map && responseData.containsKey('data') && responseData['data'] is List) {
+        } else if (responseData is Map &&
+            responseData.containsKey('data') &&
+            responseData['data'] is List) {
           tripsData = responseData['data'];
         } else {
           tripsData = [responseData];
         }
-        
+
         print('Decoded JSON: ${tripsData.runtimeType}');
-        
-        final List<Trip> loadedTrips = tripsData.map((tripJson) {
-          print('Processing trip: ${tripJson['bookingId'] ?? tripJson['bookid']}');
-          return Trip.fromJson(tripJson);
-        }).toList();
-  
+
+        final List<Trip> loadedTrips =
+            tripsData.map((tripJson) {
+              print(
+                'Processing trip: ${tripJson['bookingId'] ?? tripJson['bookid']}',
+              );
+              return Trip.fromJson(tripJson);
+            }).toList();
+
         print('Successfully loaded ${loadedTrips.length} trips');
         setState(() {
           _trips = loadedTrips;
@@ -210,38 +234,145 @@ class _TripsScreenState extends State<TripsScreen> {
     }).toList();
   }
 
+  // Attempt to extract coordinates from a location string (simplified approach)
+  Map<String, double> _extractCoordinatesFromAddress(String address) {
+    // This is a very basic implementation that looks for coordinates in the address string
+    // In a real app, you would use the Geocoding API to convert addresses to coordinates
+    
+    // Default coordinates (Mumbai)
+    double latitude = 19.0760;
+    double longitude = 72.8777;
+    
+    // Example: if location contains "Pune", use Pune coordinates
+    if (address.toLowerCase().contains('pune')) {
+      latitude = 18.5204;
+      longitude = 73.8567;
+    } 
+    // Example: if location contains "Mumbai", use Mumbai coordinates
+    else if (address.toLowerCase().contains('mumbai')) {
+      latitude = 19.0760;
+      longitude = 72.8777;
+    }
+    // Example: if location contains "Delhi", use Delhi coordinates
+    else if (address.toLowerCase().contains('delhi')) {
+      latitude = 28.6139;
+      longitude = 77.2090;
+    }
+    // Example: if location contains "Bangalore", use Bangalore coordinates
+    else if (address.toLowerCase().contains('bangalore') || address.toLowerCase().contains('bengaluru')) {
+      latitude = 12.9716;
+      longitude = 77.5946;
+    }
+    
+    return {
+      'latitude': latitude,
+      'longitude': longitude
+    };
+  }
+
   void _handleTrackPress(Trip trip) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => TrackingScreen(
-          bookingData: {
-            'bookingId': trip.bookingId,
-            'pickup': trip.fromLocation,
-            'destination': trip.toLocation,
-            'tripType': trip.tripType,
-            'driverInfo': {
-              'name': trip.vendorDriver?['driverName'] ?? trip.name,
-              'rating': 4.5, // Default rating
-              'vehicleModel': trip.vendorCab?['carName'] ?? trip.car,
-              'vehicleColor': 'White', // Default color
-              'licensePlate': trip.vendorCab?['vehicleNo'] ?? trip.vendorCab?['rCNo'] ?? 'MH-XX-XXXX',
-              'phoneNumber': trip.vendorDriver?['contactNo'] ?? trip.vendorDriver?['altContactNo'] ?? trip.phone,
-            },
-            'tripInfo': {
-              'estimatedTime': '30 mins', // Estimated time
-              'distance': trip.distance != null ? '${trip.distance} km' : '10 km',
-              'fare': '₹${trip.amount}',
-              'paymentMethod': 'Cash', // Default payment method
-            },
-            'currentStatus': 'On the way',
-            'vendorDriver': trip.vendorDriver,
-            'vendorCab': trip.vendorCab,
-            'carRentalUser': trip.carRentalUser,
-          },
+    try {
+      // Extract user and driver location coordinates
+      final double userLatitude = trip.carRentalUser?['userlatitude']?.toDouble() ?? 0.0;
+      final double userLongitude = trip.carRentalUser?['userlongitude']?.toDouble() ?? 0.0;
+      
+      final double driverLatitude = trip.vendorDriver?['driverLatitude']?.toDouble() ?? 0.0;
+      final double driverLongitude = trip.vendorDriver?['driverLongitude']?.toDouble() ?? 0.0;
+      
+      // If user coordinates not available, try to geocode from pickup address
+      Map<String, double> pickupCoords = {
+        'latitude': userLatitude,
+        'longitude': userLongitude
+      };
+      
+      if (userLatitude == 0.0 || userLongitude == 0.0) {
+        pickupCoords = _extractCoordinatesFromAddress(trip.fromLocation);
+      }
+      
+      // If destination coordinates not available, try to geocode from destination address
+      Map<String, double> destCoords = _extractCoordinatesFromAddress(trip.toLocation);
+      
+      // Prepare booking data with null checks and default values
+      final Map<String, dynamic> bookingData = {
+        'bookingId': trip.bookingId,
+        'pickup': trip.fromLocation,
+        'destination': trip.toLocation,
+        'tripType': trip.tripType,
+        'driverInfo': {
+          'name': trip.vendorDriver?['driverName'] ?? trip.name ?? 'Driver',
+          'rating': trip.vendorDriver?['rating'] ?? 4.5,
+          'vehicleModel': trip.vendorCab?['carName'] ?? trip.car ?? 'Vehicle',
+          'vehicleColor': trip.vendorCab?['carColor'] ?? 'White',
+          'licensePlate':
+              trip.vendorCab?['vehicleNo'] ??
+              trip.vendorCab?['rCNo'] ??
+              'Not Available',
+          'phoneNumber':
+              trip.vendorDriver?['contactNo'] ??
+              trip.vendorDriver?['altContactNo'] ??
+              trip.phone ??
+              'Not Available',
+        },
+        'tripInfo': {
+          'estimatedTime': '30 mins',
+          'distance':
+              trip.distance != null ? '${trip.distance} km' : 'Calculating...',
+          'fare': '₹${trip.amount.toStringAsFixed(2)}',
+          'paymentMethod': 'Cash',
+          'status': trip.status,
+        },
+        'currentStatus': _getTripStatus(trip.status),
+        'vendorDriver': trip.vendorDriver ?? {},
+        'vendorCab': trip.vendorCab ?? {},
+        'carRentalUser': trip.carRentalUser ?? {},
+        // Add coordinates for map
+        'pickupLocation': {
+          'latitude': pickupCoords['latitude'],
+          'longitude': pickupCoords['longitude']
+        },
+        'destinationLocation': {
+          'latitude': destCoords['latitude'],
+          'longitude': destCoords['longitude']
+        },
+        'driverLocation': {
+          'latitude': driverLatitude,
+          'longitude': driverLongitude
+        },
+        'userLocation': {
+          'latitude': pickupCoords['latitude'],
+          'longitude': pickupCoords['longitude']
+        },
+      };
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => TrackingScreen(bookingData: bookingData),
         ),
-      ),
-    );
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error loading tracking screen: ${e.toString()}'),
+          backgroundColor: dangerColor,
+        ),
+      );
+    }
+  }
+
+  String _getTripStatus(int status) {
+    switch (status) {
+      case 0:
+        return 'Driver Assigned';
+      case 1:
+        return 'On the way';
+      case 2:
+        return 'Completed';
+      case 3:
+        return 'Cancelled';
+      default:
+        return 'Pending';
+    }
   }
 
   void _handleModifyPress(Trip trip) {
@@ -311,24 +442,30 @@ class _TripsScreenState extends State<TripsScreen> {
     );
   }
 
-  Widget _buildActionButton(IconData icon, String text, Color color, VoidCallback onPressed) {
+  Widget _buildActionButton(
+    IconData icon,
+    String text,
+    Color color,
+    VoidCallback onPressed,
+  ) {
     return GestureDetector(
       onTap: onPressed,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: surfaceColor,
           borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: secondaryColor.withOpacity(0.3), width: 1),
         ),
         child: Row(
           children: [
-            Icon(icon, size: 16, color: color),
+            Icon(icon, size: 16, color: secondaryColor),
             const SizedBox(width: 5),
             Text(
               text,
               style: TextStyle(
                 fontSize: 14,
-                color: color,
+                color: secondaryColor,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -348,51 +485,58 @@ class _TripsScreenState extends State<TripsScreen> {
         title: const Text(
           'My Trips',
           style: TextStyle(
-            color: textColor,
+            color: Colors.white,
             fontWeight: FontWeight.bold,
             fontSize: 20,
           ),
         ),
-        backgroundColor: cardColor,
+        backgroundColor: primaryColor,
         elevation: 0,
-        iconTheme: const IconThemeData(color: textColor),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: Column(
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              color: cardColor,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  offset: const Offset(0, 2),
-                  blurRadius: 4,
-                ),
-              ],
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _buildTabButton('Upcoming', 0),
-                  _buildTabButton('Completed', 1),
-                  _buildTabButton('Cancelled', 2),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFF5F7FA), Colors.white],
+          ),
+        ),
+        child: Column(
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                color: cardColor,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    offset: const Offset(0, 2),
+                    blurRadius: 4,
+                  ),
                 ],
               ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _buildTabButton('Upcoming', 0),
+                    _buildTabButton('Completed', 1),
+                    _buildTabButton('Cancelled', 2),
+                  ],
+                ),
+              ),
             ),
-          ),
-          Expanded(
-            child: _isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(
-                      color: primaryColor,
-                    ),
-                  )
-                : filteredTrips.isEmpty
-                    ? _buildNoTrips()
-                    : RefreshIndicator(
-                        color: primaryColor,
+            Expanded(
+              child:
+                  _isLoading
+                      ? Center(
+                        child: CircularProgressIndicator(color: accentColor),
+                      )
+                      : filteredTrips.isEmpty
+                      ? _buildNoTrips()
+                      : RefreshIndicator(
+                        color: accentColor,
                         onRefresh: _getUserTripInfo,
                         child: ListView.builder(
                           padding: const EdgeInsets.all(16),
@@ -403,8 +547,9 @@ class _TripsScreenState extends State<TripsScreen> {
                           },
                         ),
                       ),
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -414,11 +559,11 @@ class _TripsScreenState extends State<TripsScreen> {
     return GestureDetector(
       onTap: () => setState(() => _activeTab = index),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
         decoration: BoxDecoration(
           border: Border(
             bottom: BorderSide(
-              color: isActive ? primaryColor : Colors.transparent,
+              color: isActive ? accentColor : Colors.transparent,
               width: 3,
             ),
           ),
@@ -445,50 +590,70 @@ class _TripsScreenState extends State<TripsScreen> {
     final tabColors = [warningColor, successColor, dangerColor];
 
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            tabIcons[_activeTab],
-            size: 70,
-            color: tabColors[_activeTab].withOpacity(0.5),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'No ${tabNames[_activeTab]} Trips',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: tabColors[_activeTab],
+      child: Container(
+        width: MediaQuery.of(context).size.width * 0.9,
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
             ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            _activeTab == 0
-                ? 'Book a trip to see it here'
-                : 'Your ${tabNames[_activeTab].toLowerCase()} trips will appear here',
-            style: const TextStyle(
-              fontSize: 14,
-              color: lightTextColor,
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              tabIcons[_activeTab],
+              size: 70,
+              color: tabColors[_activeTab].withOpacity(0.5),
             ),
-          ),
-          const SizedBox(height: 30),
-          if (_activeTab == 0)
-            ElevatedButton(
-              onPressed: () {
-                // Navigate to booking screen
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: primaryColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+            const SizedBox(height: 20),
+            Text(
+              'No ${tabNames[_activeTab]} Trips',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: primaryColor,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              _activeTab == 0
+                  ? 'Book a trip to see it here'
+                  : 'Your ${tabNames[_activeTab].toLowerCase()} trips will appear here',
+              style: const TextStyle(fontSize: 14, color: lightTextColor),
+            ),
+            const SizedBox(height: 30),
+            if (_activeTab == 0)
+              ElevatedButton(
+                onPressed: () {
+                  // Navigate to booking screen
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: accentColor,
+                  foregroundColor: textColor,
+                  minimumSize: const Size(double.infinity, 50),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'Book a Trip',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),
-              child: const Text('Book a Trip'),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -498,11 +663,11 @@ class _TripsScreenState extends State<TripsScreen> {
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: cardColor,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
             offset: const Offset(0, 2),
           ),
         ],
@@ -513,10 +678,10 @@ class _TripsScreenState extends State<TripsScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: primaryColor.withOpacity(0.05),
+              color: surfaceColor,
               borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(12),
-                topRight: Radius.circular(12),
+                topLeft: Radius.circular(20),
+                topRight: Radius.circular(20),
               ),
             ),
             child: Row(
@@ -524,20 +689,14 @@ class _TripsScreenState extends State<TripsScreen> {
               children: [
                 Row(
                   children: [
-                    Icon(
-                      _getTripIcon(trip.car),
-                      size: 18,
-                      color: primaryColor,
-                    ),
+                    Icon(_getTripIcon(trip.car), size: 18, color: primaryColor),
                     const SizedBox(width: 8),
                     Text(
-                      trip.car.isNotEmpty
-                          ? trip.car
-                          : 'Cab Booking',
+                      trip.car.isNotEmpty ? trip.car : 'Cab Booking',
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: textColor,
+                        color: primaryColor,
                       ),
                     ),
                   ],
@@ -546,14 +705,14 @@ class _TripsScreenState extends State<TripsScreen> {
                   trip.status == 0
                       ? 'Confirmed'
                       : trip.status == 2
-                          ? 'Completed'
-                          : 'Cancelled',
+                      ? 'Completed'
+                      : 'Cancelled',
                   _getStatusColor(trip.status),
                 ),
               ],
             ),
           ),
-          
+
           // Trip details
           Padding(
             padding: const EdgeInsets.all(16),
@@ -565,10 +724,7 @@ class _TripsScreenState extends State<TripsScreen> {
                   children: [
                     const Text(
                       'Booking ID: ',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: lightTextColor,
-                      ),
+                      style: TextStyle(fontSize: 12, color: lightTextColor),
                     ),
                     Text(
                       trip.bookingId,
@@ -581,13 +737,17 @@ class _TripsScreenState extends State<TripsScreen> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Route information with improved design
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: backgroundColor,
-                    borderRadius: BorderRadius.circular(8),
+                    color: surfaceColor,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: const Color(0xFFE0E0E0),
+                      width: 1,
+                    ),
                   ),
                   child: Column(
                     children: [
@@ -595,14 +755,14 @@ class _TripsScreenState extends State<TripsScreen> {
                         Icons.location_on_outlined,
                         'From',
                         trip.fromLocation,
-                        accentColor,
+                        secondaryColor,
                       ),
                       Padding(
                         padding: const EdgeInsets.only(left: 9),
                         child: Container(
                           height: 30,
                           width: 1,
-                          color: accentColor.withOpacity(0.3),
+                          color: secondaryColor.withOpacity(0.3),
                         ),
                       ),
                       _buildLocationRow(
@@ -614,9 +774,9 @@ class _TripsScreenState extends State<TripsScreen> {
                     ],
                   ),
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 // Trip details in a row
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -638,11 +798,11 @@ class _TripsScreenState extends State<TripsScreen> {
                     ),
                   ],
                 ),
-                
+
                 const SizedBox(height: 16),
                 const Divider(height: 1, color: Color(0xFFEEEEEE)),
                 const SizedBox(height: 16),
-                
+
                 // Action buttons
                 _buildActionButtons(trip),
               ],
@@ -653,7 +813,12 @@ class _TripsScreenState extends State<TripsScreen> {
     );
   }
 
-  Widget _buildLocationRow(IconData icon, String label, String location, Color color) {
+  Widget _buildLocationRow(
+    IconData icon,
+    String label,
+    String location,
+    Color color,
+  ) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -662,6 +827,10 @@ class _TripsScreenState extends State<TripsScreen> {
           decoration: BoxDecoration(
             color: color.withOpacity(0.1),
             shape: BoxShape.circle,
+            border: Border.all(
+              color: color.withOpacity(0.3),
+              width: 1,
+            ),
           ),
           child: Icon(icon, size: 14, color: color),
         ),
@@ -702,18 +871,19 @@ class _TripsScreenState extends State<TripsScreen> {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: primaryColor.withOpacity(0.1),
+            color: surfaceColor,
             shape: BoxShape.circle,
+            border: Border.all(
+              color: secondaryColor.withOpacity(0.3),
+              width: 1,
+            ),
           ),
-          child: Icon(icon, size: 16, color: primaryColor),
+          child: Icon(icon, size: 16, color: secondaryColor),
         ),
         const SizedBox(height: 8),
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 12,
-            color: lightTextColor,
-          ),
+          style: const TextStyle(fontSize: 12, color: lightTextColor),
         ),
         const SizedBox(height: 4),
         Text(
@@ -728,25 +898,6 @@ class _TripsScreenState extends State<TripsScreen> {
     );
   }
 
-  // Widget _buildStatusContainer(String status, Color color) {
-  //   return Container(
-  //     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-  //     decoration: BoxDecoration(
-  //       color: color.withOpacity(0.1),
-  //       borderRadius: BorderRadius.circular(20),
-  //       border: Border.all(color: color, width: 1),
-  //     ),
-  //     child: Text(
-  //       status,
-  //       style: TextStyle(
-  //         color: color,
-  //         fontSize: 12,
-  //         fontWeight: FontWeight.bold,
-  //       ),
-  //     ),
-  //   );
-  // }
-
   Widget _buildActionButtons(Trip trip) {
     if (trip.status == 0) {
       return Row(
@@ -756,7 +907,7 @@ class _TripsScreenState extends State<TripsScreen> {
             child: _buildActionButton(
               MaterialCommunityIcons.map_marker,
               'Track',
-              primaryColor,
+              secondaryColor,
               () => _handleTrackPress(trip),
             ),
           ),
@@ -765,7 +916,7 @@ class _TripsScreenState extends State<TripsScreen> {
             child: _buildActionButton(
               MaterialCommunityIcons.pencil_outline,
               'Modify',
-              accentColor,
+              secondaryColor,
               () => _handleModifyPress(trip),
             ),
           ),
@@ -774,7 +925,7 @@ class _TripsScreenState extends State<TripsScreen> {
             child: _buildActionButton(
               MaterialCommunityIcons.close,
               'Cancel',
-              dangerColor,
+              secondaryColor,
               () => _handleCancelPress(trip),
             ),
           ),
@@ -788,7 +939,7 @@ class _TripsScreenState extends State<TripsScreen> {
             child: _buildActionButton(
               MaterialCommunityIcons.receipt,
               'Invoice',
-              primaryColor,
+              secondaryColor,
               () => _handleInvoicePress(trip),
             ),
           ),
@@ -797,7 +948,7 @@ class _TripsScreenState extends State<TripsScreen> {
             child: _buildActionButton(
               MaterialCommunityIcons.star_outline,
               'Rate',
-              accentColor,
+              secondaryColor,
               () => _handleRatePress(trip),
             ),
           ),
@@ -806,7 +957,7 @@ class _TripsScreenState extends State<TripsScreen> {
             child: _buildActionButton(
               MaterialCommunityIcons.refresh,
               'Rebook',
-              successColor,
+              secondaryColor,
               () => _handleRebookPress(trip),
             ),
           ),
@@ -820,7 +971,7 @@ class _TripsScreenState extends State<TripsScreen> {
             child: _buildActionButton(
               MaterialCommunityIcons.information_outline,
               'Details',
-              primaryColor,
+              secondaryColor,
               () => _handleDetailsPress(trip),
             ),
           ),
@@ -829,7 +980,7 @@ class _TripsScreenState extends State<TripsScreen> {
             child: _buildActionButton(
               MaterialCommunityIcons.refresh,
               'Rebook',
-              successColor,
+              secondaryColor,
               () => _handleRebookPress(trip),
             ),
           ),
@@ -838,7 +989,7 @@ class _TripsScreenState extends State<TripsScreen> {
             child: _buildActionButton(
               MaterialCommunityIcons.help_circle_outline,
               'Support',
-              accentColor,
+              secondaryColor,
               () => _handleSupportPress(trip),
             ),
           ),
@@ -846,33 +997,6 @@ class _TripsScreenState extends State<TripsScreen> {
       );
     }
   }
-
-  // Widget _buildActionButton(IconData icon, String text, Color color, VoidCallback onPressed) {
-  //   return ElevatedButton(
-  //     onPressed: onPressed,
-  //     style: ElevatedButton.styleFrom(
-  //       backgroundColor: color.withOpacity(0.1),
-  //       foregroundColor: color,
-  //       elevation: 0,
-  //       padding: const EdgeInsets.symmetric(vertical: 10),
-  //       shape: RoundedRectangleBorder(
-  //         borderRadius: BorderRadius.circular(8),
-  //         side: BorderSide(color: color.withOpacity(0.3)),
-  //       ),
-  //     ),
-  //     child: Column(
-  //       mainAxisSize: MainAxisSize.min,
-  //       children: [
-  //         Icon(icon, size: 16),
-  //         const SizedBox(height: 4),
-  //         Text(
-  //           text,
-  //           style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
 
   IconData _getTripIcon(String type) {
     switch (type.toLowerCase()) {

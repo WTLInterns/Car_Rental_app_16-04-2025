@@ -72,6 +72,15 @@ class _LoginScreenState extends State<LoginScreen> {
         await prefs.setString('role', data['role']);
         await prefs.setBool('isLoggedIn', true);
         
+        // Store complete user data
+        final userData = {
+          'userId': data['userId'],
+          'role': data['role'],
+          'name': data['username'] ?? '',
+          'email': data['email'] ?? '',
+        };
+        await prefs.setString('userData', json.encode(userData));
+        
         // Store login timestamp for 20-day validity
         await prefs.setInt('loginTimestamp', DateTime.now().millisecondsSinceEpoch);
         

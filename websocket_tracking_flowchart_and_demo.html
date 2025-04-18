@@ -1,0 +1,131 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>WebSocket Real-Time Tracking Flow & Demo</title><style>body{font-family:sans-serif;background:#f8f9fa;margin:0;padding:0;}h2{color:#2E3192;}#flowchart{background:#fff;border-radius:8px;padding:20px;margin:20px auto;max-width:900px;box-shadow:0 2px 8px #0001;}#demo{background:#fff;border-radius:8px;padding:20px;margin:20px auto;max-width:900px;box-shadow:0 2px 8px #0001;}#map{height:350px;width:100%;border-radius:8px;margin-bottom:16px;}label{display:block;margin-top:10px;}input[type=text]{padding:6px 10px;border-radius:4px;border:1px solid #ccc;width:100%;margin-bottom:10px;}button{background:#2E3192;color:#fff;padding:8px 18px;border:none;border-radius:4px;cursor:pointer;}button:active{background:#1a1d6b;}#status{margin:10px 0 0 0;color:#4A90E2;}#role{margin-bottom:10px;}svg{display:block;margin:auto;}</style></head><body><div id="flowchart"><h2>Flowchart: Real-Time Tracking with WebSocket</h2><svg width="800" height="400"><rect x="20" y="30" width="140" height="40" fill="#4A90E2" rx="8"/><text x="90" y="55" fill="#fff" font-size="16" text-anchor="middle">Login (User/Driver)</text><rect x="200" y="30" width="180" height="40" fill="#2E3192" rx="8"/><text x="290" y="55" fill="#fff" font-size="16" text-anchor="middle">Get Booking ID</text><rect x="420" y="30" width="180" height="40" fill="#FFCC00" rx="8"/><text x="510" y="55" fill="#333" font-size="16" text-anchor="middle">Connect WebSocket<br/>ws://server/bookingId</text><rect x="650" y="30" width="120" height="40" fill="#4A90E2" rx="8"/><text x="710" y="55" fill="#fff" font-size="16" text-anchor="middle">Start Tracking</text><line x1="160" y1="50" x2="200" y2="50" stroke="#888" stroke-width="2" marker-end="url(#arrow)"/><line x1="380" y1="50" x2="420" y2="50" stroke="#888" stroke-width="2" marker-end="url(#arrow)"/><line x1="600" y1="50" x2="650" y2="50" stroke="#888" stroke-width="2" marker-end="url(#arrow)"/><rect x="200" y="120" width="180" height="40" fill="#2E3192" rx="8"/><text x="290" y="145" fill="#fff" font-size="15" text-anchor="middle">Send Location (lat/lng)</text><rect x="420" y="120" width="180" height="40" fill="#FFCC00" rx="8"/><text x="510" y="145" fill="#333" font-size="15" text-anchor="middle">Receive Location Update</text><rect x="650" y="120" width="120" height="40" fill="#4A90E2" rx="8"/><text x="710" y="145" fill="#fff" font-size="15" text-anchor="middle">Update Map UI</text><line x1="380" y1="140" x2="420" y2="140" stroke="#888" stroke-width="2" marker-end="url(#arrow)"/><line x1="600" y1="140" x2="650" y2="140" stroke="#888" stroke-width="2" marker-end="url(#arrow)"/><line x1="290" y1="70" x2="290" y2="120" stroke="#888" stroke-width="2" marker-end="url(#arrow)"/><line x1="510" y1="70" x2="510" y2="120" stroke="#888" stroke-width="2" marker-end="url(#arrow)"/><defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="10" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L10,5 L0,10 z" fill="#888"/></marker></defs></svg><ul><li>Both user and driver login and obtain the <b>booking ID</b>.</li><li>Each connects to the WebSocket server using the booking ID as a channel/room.</li><li>On location change, client sends new latitude/longitude via WebSocket and updates via REST API (for persistence).</li><li>Server broadcasts location updates to the other party (driver/user) with the same booking ID.</li><li>Clients update the map UI in real time as new locations are received.</li></ul></div><div id="demo"><h2>HTML Demo: Real-Time Location Tracking (WebSocket)</h2><div id="map"></div><label for="role">Role:</label><select id="role"><option value="driver">Driver</option><option value="user">User</option></select><label for="bookingId">Booking ID:</label><input type="text" id="bookingId" value="12345"><label for="lat">Latitude:</label><input type="text" id="lat" value="19.0760"><label for="lng">Longitude:</label><input type="text" id="lng" value="72.8777"><button onclick="connectWS()">Connect & Start Tracking</button><button onclick="sendLocation()">Send Location Update</button><div id="status"></div></div><script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCelDo4I5cPQ72TfCTQW-arhPZ7ALNcp8w&libraries=places"></script><script>
+let ws=null;
+let map=null;
+let userMarker=null;
+let driverMarker=null;
+let role='driver';
+let bookingId='';
+let userLatLng=null;
+let driverLatLng=null;
+let directionsService=null;
+let directionsRenderer=null;
+
+function connectWS(){
+  role=document.getElementById('role').value;
+  bookingId=document.getElementById('bookingId').value;
+  const lat=parseFloat(document.getElementById('lat').value);
+  const lng=parseFloat(document.getElementById('lng').value);
+  if(map===null){
+    map=new google.maps.Map(document.getElementById('map'),{center:{lat:lat,lng:lng},zoom:13});
+    directionsService=new google.maps.DirectionsService();
+    directionsRenderer=new google.maps.DirectionsRenderer({suppressMarkers:true});
+    directionsRenderer.setMap(map);
+  }
+  if(role==='driver'){
+    driverLatLng={lat:lat,lng:lng};
+    setDriverMarker(driverLatLng);
+  }else{
+    userLatLng={lat:lat,lng:lng};
+    setUserMarker(userLatLng);
+  }
+  if(ws){ws.close();}
+  document.getElementById('status').innerText='Connecting...';
+  ws=new WebSocket('wss://echo.websocket.org');
+  ws.onopen=function(){
+    document.getElementById('status').innerText='Connected as '+role+' (Booking ID: '+bookingId+')';
+    // Send initial location so the other party sees it
+    sendLocation(true);
+  };
+  ws.onmessage=function(event){
+    try{
+      const data=JSON.parse(event.data);
+      if(data.bookingId===bookingId&&data.role!==role){
+        if(data.role==='driver'){
+          driverLatLng={lat:data.lat,lng:data.lng};
+          setDriverMarker(driverLatLng);
+        }else{
+          userLatLng={lat:data.lat,lng:data.lng};
+          setUserMarker(userLatLng);
+        }
+        drawRouteAndDistance();
+        document.getElementById('status').innerText='Received location from '+data.role;
+      }
+    }catch(e){}
+  };
+  ws.onclose=function(){document.getElementById('status').innerText='Disconnected';};
+  ws.onerror=function(){document.getElementById('status').innerText='WebSocket error';};
+  drawRouteAndDistance();
+}
+
+function setUserMarker(latlng){
+  if(userMarker){userMarker.setMap(null);}
+  userMarker=new google.maps.Marker({position:latlng,map:map,label:'U',title:'User',icon:{url:'http://maps.google.com/mapfiles/ms/icons/blue-dot.png'}});
+  fitMapToMarkers();
+}
+
+function setDriverMarker(latlng){
+  if(driverMarker){driverMarker.setMap(null);}
+  driverMarker=new google.maps.Marker({position:latlng,map:map,label:'D',title:'Driver',icon:{url:'http://maps.google.com/mapfiles/ms/icons/red-dot.png'}});
+  fitMapToMarkers();
+}
+
+function sendLocation(isInitial){
+  if(!ws||ws.readyState!==1){
+    if(!isInitial) document.getElementById('status').innerText='WebSocket not connected';
+    return;
+  }
+  const lat=parseFloat(document.getElementById('lat').value);
+  const lng=parseFloat(document.getElementById('lng').value);
+  const msg={bookingId:bookingId,role:role,lat:lat,lng:lng};
+  ws.send(JSON.stringify(msg));
+  if(role==='driver'){
+    driverLatLng={lat:lat,lng:lng};
+    setDriverMarker(driverLatLng);
+  }else{
+    userLatLng={lat:lat,lng:lng};
+    setUserMarker(userLatLng);
+  }
+  drawRouteAndDistance();
+  if(!isInitial) document.getElementById('status').innerText='Location sent';
+}
+
+function drawRouteAndDistance(){
+  if(userLatLng&&driverLatLng){
+    const origin=role==='driver'?driverLatLng:userLatLng;
+    const destination=role==='driver'?userLatLng:driverLatLng;
+    directionsService.route({origin:origin,destination:destination,travelMode:'DRIVING'},function(response,status){
+      if(status==='OK'){
+        directionsRenderer.setDirections(response);
+        const route=response.routes[0].legs[0];
+        let distance=route.distance.text;
+        let duration=route.duration.text;
+        let infoDiv=document.getElementById('routeInfo');
+        if(!infoDiv){
+          infoDiv=document.createElement('div');
+          infoDiv.id='routeInfo';
+          infoDiv.style.marginTop='10px';
+          infoDiv.style.fontWeight='bold';
+          document.getElementById('demo').appendChild(infoDiv);
+        }
+        infoDiv.innerHTML='Distance: '+distance+' | Duration: '+duration+'<br>Pickup: '+route.start_address+'<br>Drop: '+route.end_address;
+      }else{
+        if(directionsRenderer){directionsRenderer.set('directions',null);}
+        let infoDiv=document.getElementById('routeInfo');
+        if(infoDiv){infoDiv.innerHTML='';}
+      }
+    });
+  }else{
+    if(directionsRenderer){directionsRenderer.set('directions',null);}
+    let infoDiv=document.getElementById('routeInfo');
+    if(infoDiv){infoDiv.innerHTML='';}
+  }
+}
+
+function fitMapToMarkers(){
+  if(!map) return;
+  let bounds=new google.maps.LatLngBounds();
+  if(userLatLng) bounds.extend(userLatLng);
+  if(driverLatLng) bounds.extend(driverLatLng);
+  if(userLatLng||driverLatLng) map.fitBounds(bounds);
+}
+</script></body></html>

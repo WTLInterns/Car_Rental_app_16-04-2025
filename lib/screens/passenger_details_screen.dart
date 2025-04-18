@@ -15,23 +15,27 @@ class PassengerDetailsScreen extends StatefulWidget {
 
 class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
   final _formKey = GlobalKey<FormState>();
-  
+
   final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
-  
+
   String _userId = '';
   bool _isLoading = true;
-  
-  // Color scheme for consistent styling
-  final Color primaryColor = const Color(0xFF2E3192);
-  final Color accentColor = const Color(0xFFFFCC00);
-  final Color lightAccentColor = const Color(0xFFFFF9E0);
-  final Color textColor = const Color(0xFF333333);
-  final Color lightTextColor = const Color(0xFF666666);
-  final Color backgroundColor = const Color(0xFFF5F7FA);
-  
+
+  // Color scheme for consistent styling - matching professional design
+  final Color primaryColor = const Color(0xFF2E3192);      // Deep blue
+  final Color secondaryColor = const Color(0xFF4A90E2);    // Bright blue
+  final Color accentColor = const Color(0xFFFFCC00);       // Yellow/gold accent
+  final Color backgroundColor = const Color(0xFFF5F7FA);   // Light gray background
+  final Color cardColor = Colors.white;                    // White card background
+  final Color surfaceColor = const Color(0xFFF0F7FF);      // Light blue for inputs/surfaces
+  final Color textColor = const Color(0xFF333333);         // Dark text
+  final Color lightTextColor = const Color(0xFF666666);    // Medium gray text
+  final Color mutedTextColor = const Color(0xFFA0A0A0);    // Light gray text
+  final Color lightAccentColor = const Color(0xFFF0F7FF);  // Light blue background
+
   Map<String, String> _errors = {
     'firstName': '',
     'lastName': '',
@@ -47,31 +51,31 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
 
   Future<void> _loadUserData() async {
     setState(() => _isLoading = true);
-    
+
     try {
       final prefs = await SharedPreferences.getInstance();
       final userData = prefs.getString('userData');
-      
+
       if (userData != null) {
         final parsedData = json.decode(userData);
-        
+
         setState(() {
           if (parsedData['username'] != null) {
             _firstNameController.text = parsedData['username'];
           }
-          
+
           if (parsedData['lastName'] != null) {
             _lastNameController.text = parsedData['lastName'];
           }
-          
+
           if (parsedData['email'] != null) {
             _emailController.text = parsedData['email'];
           }
-          
+
           if (parsedData['phone'] != null) {
             _phoneController.text = parsedData['phone'];
           }
-          
+
           if (parsedData['id'] != null) {
             _userId = parsedData['id'].toString();
           }
@@ -92,17 +96,17 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
       'email': '',
       'phone': '',
     };
-    
+
     if (_firstNameController.text.trim().isEmpty) {
       newErrors['firstName'] = 'First name is required';
       isValid = false;
     }
-    
+
     if (_lastNameController.text.trim().isEmpty) {
       newErrors['lastName'] = 'Last name is required';
       isValid = false;
     }
-    
+
     if (_emailController.text.trim().isEmpty) {
       newErrors['email'] = 'Email is required';
       isValid = false;
@@ -110,7 +114,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
       newErrors['email'] = 'Please enter a valid email';
       isValid = false;
     }
-    
+
     if (_phoneController.text.trim().isEmpty) {
       newErrors['phone'] = 'Phone number is required';
       isValid = false;
@@ -118,7 +122,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
       newErrors['phone'] = 'Please enter a valid 10-digit phone number';
       isValid = false;
     }
-    
+
     setState(() => _errors = newErrors);
     return isValid;
   }
@@ -134,16 +138,17 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
       );
       return;
     }
-    
+
     // Prepare data for payment screen
     final paymentData = {
       ...widget.bookingData,
-      'passengerName': '${_firstNameController.text} ${_lastNameController.text}',
+      'passengerName':
+          '${_firstNameController.text} ${_lastNameController.text}',
       'passengerEmail': _emailController.text,
       'passengerPhone': _phoneController.text,
       'userId': _userId,
     };
-    
+
     // Navigate to payment screen
     Navigator.push(
       context,
@@ -172,42 +177,41 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                builder: (context) => SelectVehicleScreen(
-                  bookingData: widget.bookingData,
-                ),
+                builder:
+                    (context) =>
+                        SelectVehicleScreen(bookingData: widget.bookingData),
               ),
             );
           },
         ),
       ),
-      body: _isLoading
-          ? Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
+      body:
+          _isLoading
+              ? Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
+                ),
+              )
+              : SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildTripSummary(),
+                    const SizedBox(height: 24),
+                    _buildPassengerForm(),
+                    const SizedBox(height: 24),
+                    _buildProceedButton(),
+                  ],
+                ),
               ),
-            )
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildTripSummary(),
-                  const SizedBox(height: 24),
-                  _buildPassengerForm(),
-                  const SizedBox(height: 24),
-                  _buildProceedButton(),
-                ],
-              ),
-            ),
     );
   }
 
   Widget _buildTripSummary() {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -261,11 +265,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                 shape: BoxShape.circle,
               ),
             ),
-            Container(
-              width: 2,
-              height: 30,
-              color: Colors.grey.shade300,
-            ),
+            Container(width: 2, height: 30, color: Colors.grey.shade300),
             Container(
               width: 12,
               height: 12,
@@ -283,18 +283,12 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
             children: [
               Text(
                 widget.bookingData['pickup'] ?? 'Pickup',
-                style: TextStyle(
-                  fontWeight: FontWeight.w500,
-                  color: textColor,
-                ),
+                style: TextStyle(fontWeight: FontWeight.w500, color: textColor),
               ),
               const SizedBox(height: 24),
               Text(
                 widget.bookingData['destination'] ?? 'Destination',
-                style: TextStyle(
-                  fontWeight: FontWeight.w500,
-                  color: textColor,
-                ),
+                style: TextStyle(fontWeight: FontWeight.w500, color: textColor),
               ),
             ],
           ),
@@ -343,7 +337,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
             ),
           ],
         ),
-        if (widget.bookingData['bookingType'] == 'roundTrip' && 
+        if (widget.bookingData['bookingType'] == 'roundTrip' &&
             widget.bookingData['returnDate'] != null) ...[
           const SizedBox(height: 16),
           _buildDetailItem(
@@ -352,14 +346,10 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
             widget.bookingData['returnDate'],
           ),
         ],
-        if (widget.bookingData['bookingType'] == 'rental' && 
+        if (widget.bookingData['bookingType'] == 'rental' &&
             widget.bookingData['hours'] != null) ...[
           const SizedBox(height: 16),
-          _buildDetailItem(
-            Icons.timer,
-            'Hours',
-            widget.bookingData['hours'],
-          ),
+          _buildDetailItem(Icons.timer, 'Hours', widget.bookingData['hours']),
         ],
       ],
     );
@@ -374,11 +364,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
             color: lightAccentColor,
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(
-            icon,
-            color: primaryColor,
-            size: 16,
-          ),
+          child: Icon(icon, color: primaryColor, size: 16),
         ),
         const SizedBox(width: 8),
         Expanded(
@@ -387,17 +373,11 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
             children: [
               Text(
                 label,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: lightTextColor,
-                ),
+                style: TextStyle(fontSize: 12, color: lightTextColor),
               ),
               Text(
                 value,
-                style: TextStyle(
-                  fontWeight: FontWeight.w500,
-                  color: textColor,
-                ),
+                style: TextStyle(fontWeight: FontWeight.w500, color: textColor),
                 overflow: TextOverflow.ellipsis,
               ),
             ],
@@ -425,17 +405,13 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
     final platformFee = widget.bookingData['platformFee'] ?? 0;
     final gst = widget.bookingData['gst'] ?? 0;
     final totalFare = widget.bookingData['totalFare'] ?? 0;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            Icon(
-              Icons.receipt_long,
-              color: primaryColor,
-              size: 20,
-            ),
+            Icon(Icons.receipt_long, color: primaryColor, size: 20),
             const SizedBox(width: 8),
             Text(
               'Fare Details',
@@ -455,11 +431,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
         _buildFareRow('GST (18%)', '₹$gst'),
         const SizedBox(height: 8),
         const Divider(),
-        _buildFareRow(
-          'Total Fare',
-          '₹$totalFare',
-          isTotal: true,
-        ),
+        _buildFareRow('Total Fare', '₹$totalFare', isTotal: true),
       ],
     );
   }
@@ -491,9 +463,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
   Widget _buildPassengerForm() {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -503,11 +473,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
             children: [
               Row(
                 children: [
-                  Icon(
-                    Icons.person,
-                    color: primaryColor,
-                    size: 24,
-                  ),
+                  Icon(Icons.person, color: primaryColor, size: 24),
                   const SizedBox(width: 8),
                   Text(
                     'Passenger Details',
@@ -580,10 +546,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
       children: [
         Text(
           required ? '$label *' : label,
-          style: TextStyle(
-            fontWeight: FontWeight.w500,
-            color: textColor,
-          ),
+          style: TextStyle(fontWeight: FontWeight.w500, color: textColor),
         ),
         const SizedBox(height: 8),
         TextField(
@@ -638,10 +601,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
         ),
         child: const Text(
           'Proceed to Payment',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
       ),
     );

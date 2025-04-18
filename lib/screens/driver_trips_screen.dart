@@ -5,6 +5,9 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
+// Add this import at the top of the file
+import 'driver_profile_screen.dart';
+import 'driver_tracking_screen.dart';
 
 // Professional color palette
 const Color primaryColor = Color(0xFF2E3192);
@@ -19,8 +22,41 @@ const Color successColor = Color(0xFF4CAF50);
 const Color errorColor = Color(0xFFFF5252);
 const Color warningColor = Color(0xFFFF9800);
 
+class DummyTrip {
+  final String bookingId;
+  final String passengerName;
+  final String passengerPhone;
+  final String pickup;
+  final String destination;
+  final double pickupLat;
+  final double pickupLng;
+  final double destLat;
+  final double destLng;
+  final String status;
+  final String fare;
+  final String date;
+  final String time;
+
+  DummyTrip({
+    required this.bookingId,
+    required this.passengerName,
+    required this.passengerPhone,
+    required this.pickup,
+    required this.destination,
+    required this.pickupLat,
+    required this.pickupLng,
+    required this.destLat,
+    required this.destLng,
+    required this.status,
+    required this.fare,
+    required this.date,
+    required this.time,
+  });
+}
+
+
 class DriverTripsScreen extends StatefulWidget {
-  const DriverTripsScreen({Key? key}) : super(key: key);
+  const DriverTripsScreen({super.key});
 
   @override
   State<DriverTripsScreen> createState() => _DriverTripsScreenState();
@@ -29,11 +65,30 @@ class DriverTripsScreen extends StatefulWidget {
 class _DriverTripsScreenState extends State<DriverTripsScreen> with SingleTickerProviderStateMixin {
   String activeTab = 'upcoming';
   Map<String, dynamic>? driver;
+  String _userId = '';
   List<dynamic> tripInfo = [];
+  List<DummyTrip> dummyTrips = [
+    DummyTrip(
+      bookingId: 'TRIP001',
+      passengerName: 'John Doe',
+      passengerPhone: '+91 9876543210',
+      pickup: 'Pune Station',
+      destination: 'Hinjewadi Phase 1',
+      pickupLat: 18.5294,
+      pickupLng: 73.8744,
+      destLat: 18.5912,
+      destLng: 73.7380,
+      status: 'upcoming',
+      fare: '₹350',
+      date: '2024-02-20',
+      time: '14:30',
+    ),
+  ];
   bool isLoading = true;
   bool isRefreshing = false;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+  int _selectedIndex = 0; 
 
   @override
   void initState() {
@@ -49,6 +104,22 @@ class _DriverTripsScreenState extends State<DriverTripsScreen> with SingleTicker
     getDriverData();
   }
 
+  void _onItemTapped(int index) {
+    if (index == 1) {
+      // Navigate to profile screen
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const DriverProfileScreen(),
+        ),
+      );
+    } else {
+      setState(() {
+        _selectedIndex = index;
+      });
+    }
+  }
+
   @override
   void dispose() {
     _animationController.dispose();
@@ -58,14 +129,36 @@ class _DriverTripsScreenState extends State<DriverTripsScreen> with SingleTicker
   Future<void> getDriverData() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final driverData = prefs.getString('userData');
-      if (driverData != null) {
-        debugPrint('Driver: $driverData');
+      final userDataString = prefs.getString('userData');
+      debugPrint('Fetched userData from SharedPreferences: $userDataString');
+      
+      // First try to get userId from userData
+      String userId = '';
+      if (userDataString != null) {
+        final userData = json.decode(userDataString);
         setState(() {
-          driver = json.decode(driverData);
+          driver = userData;
+          userId = userData['userId']?.toString() ?? '';
         });
-        debugPrint('Driver ID: ${driver?['userId']}');
+      }
+      
+      // If userId is still empty, try other sources
+      if (userId.isEmpty) {
+        userId = prefs.getInt('userId')?.toString() ?? '';
+      }
+      
+      setState(() {
+        _userId = userId;
+      });
+      
+      debugPrint('Driver ID after all checks: $_userId');
+      
+      if (_userId.isNotEmpty) {
         await getTripInfoByDriverId();
+      } else {
+        debugPrint('No valid userId found in any storage location');
+        // Navigate back to login if no valid user data is found
+        Navigator.pushReplacementNamed(context, '/login');
       }
     } catch (error) {
       debugPrint('Error fetching driver data: $error');
@@ -80,27 +173,30 @@ class _DriverTripsScreenState extends State<DriverTripsScreen> with SingleTicker
 
   Future<void> getTripInfoByDriverId() async {
     try {
-      if (driver != null && driver?['userId'] != null) {
+      if (_userId.isNotEmpty) {
+        debugPrint('Fetching trips for userId: $_userId');
         setState(() {
           isRefreshing = true;
         });
-        
         final response = await http.get(
-          Uri.parse('https://api.worldtriplink.com/api/by-driver/${driver!['userId']}'),
+          Uri.parse('https://api.worldtriplink.com/api/by-driver/$_userId'),
         );
-        
+        debugPrint('Trip API response status: ${response.statusCode}');
+        debugPrint('Trip API response body: ${response.body.substring(0, response.body.length > 300 ? 300 : response.body.length)}');
         if (response.statusCode == 200) {
           setState(() {
             tripInfo = json.decode(response.body);
             isRefreshing = false;
           });
-          debugPrint(response.body);
+          debugPrint('Decoded tripInfo: ${tripInfo.toString()}');
         } else {
           _showErrorSnackBar('Server error: ${response.statusCode}');
           setState(() {
             isRefreshing = false;
           });
         }
+      } else {
+        debugPrint('UserId is null or empty, cannot fetch trips.');
       }
     } catch (error) {
       debugPrint('Error fetching trip info: $error');
@@ -152,36 +248,39 @@ class _DriverTripsScreenState extends State<DriverTripsScreen> with SingleTicker
     final String generatedOtp = (1000 + random.nextInt(9000)).toString();
     
     // Navigate to tracking screen with proper data mapping
-    Navigator.pushNamed(
+    Navigator.push(
       context,
-      '/driver-tracking',
-      arguments: {
-        'bookingId': booking['bookingId'] ?? booking['bookid'] ?? "",
-        'pickup': booking['userPickup'] ?? booking['fromLocation'] ?? "",
-        'destination': booking['userDrop'] ?? booking['toLocation'] ?? "",
-        'pickupLocation': {
-          'latitude': pickupLat,
-          'longitude': pickupLng,
-        },
-        'destinationLocation': {
-          'latitude': destLat,
-          'longitude': destLng,
-        },
-        'passengerInfo': {
-          'name': booking['name'] ?? (booking['email'] != null ? booking['email'].split('@')[0] : 'Unknown User'),
-          'rating': 4.5, // Default rating since it's not in the API
-          'phoneNumber': booking['phone'] ?? 'N/A',
-        },
-        'tripInfo': {
-          'estimatedTime': "35 mins", // Estimated time not in API
-          'distance': "${booking['distance'] ?? 0} km",
-          'fare': "₹${booking['amount'] ?? 0}",
-          'paymentMethod': booking['payment'] ?? "Cash"
-        },
-        'currentStatus': "Heading to pickup",
-        'tripType': booking['tripType'] ?? booking['userTripType'] ?? "oneWay",
-        'generatedOtp': generatedOtp // Add OTP for verification
-      },
+      MaterialPageRoute(
+        builder: (context) => DriverTrackingScreen(
+          arguments: {
+            'bookingId': booking['bookingId'] ?? booking['bookid'] ?? "",
+            'pickup': booking['userPickup'] ?? booking['fromLocation'] ?? "",
+            'destination': booking['userDrop'] ?? booking['toLocation'] ?? "",
+            'pickupLocation': {
+              'latitude': pickupLat,
+              'longitude': pickupLng,
+            },
+            'destinationLocation': {
+              'latitude': destLat,
+              'longitude': destLng,
+            },
+            'passengerInfo': {
+              'name': booking['name'] ?? (booking['email'] != null ? booking['email'].split('@')[0] : 'Unknown User'),
+              'rating': 4.5, // Default rating since it's not in the API
+              'phoneNumber': booking['phone'] ?? 'N/A',
+            },
+            'tripInfo': {
+              'estimatedTime': "35 mins", // Estimated time not in API
+              'distance': "${booking['distance'] ?? 0} km",
+              'fare': "₹${booking['amount'] ?? 0}",
+              'paymentMethod': booking['payment'] ?? "Cash"
+            },
+            'currentStatus': "Heading to pickup",
+            'tripType': booking['tripType'] ?? booking['userTripType'] ?? "oneWay",
+            'generatedOtp': generatedOtp // Add OTP for verification
+          },
+        ),
+      ),
     );
   }
 
@@ -219,6 +318,7 @@ class _DriverTripsScreenState extends State<DriverTripsScreen> with SingleTicker
           // App Bar
           Container(
             decoration: BoxDecoration(
+              color: primaryColor,
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.1),
@@ -264,6 +364,7 @@ class _DriverTripsScreenState extends State<DriverTripsScreen> with SingleTicker
               margin: const EdgeInsets.all(16),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
+                color: cardColor,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
@@ -344,9 +445,9 @@ class _DriverTripsScreenState extends State<DriverTripsScreen> with SingleTicker
           
           // Tabs
           Container(
-            color: cardColor,
             margin: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
+              color: cardColor,
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
@@ -425,9 +526,26 @@ class _DriverTripsScreenState extends State<DriverTripsScreen> with SingleTicker
           ),
         ],
       ),
+     bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(MaterialCommunityIcons.car_multiple),
+            label: 'Trips',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(MaterialCommunityIcons.account_circle),
+            label: 'Profile',
+          ),
+        ],
+        currentIndex: _selectedIndex,
+        selectedItemColor: secondaryColor,
+        unselectedItemColor: mutedTextColor,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        onTap: _onItemTapped,
+      ),
     );
   }
-
   Widget _buildTab(String tabId, String label) {
     final isActive = activeTab == tabId;
     
@@ -957,6 +1075,62 @@ class _DriverTripsScreenState extends State<DriverTripsScreen> with SingleTicker
       ),
     );
   }
+
+
+ 
+
+void _handleTrackTrip(DummyTrip trip) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DriverTrackingScreen(
+          arguments: {
+            'bookingId': trip.bookingId,
+            'pickup': trip.pickup,
+            'destination': trip.destination,
+            'pickupLocation': {
+              'latitude': trip.pickupLat,
+              'longitude': trip.pickupLng,
+            },
+            'destinationLocation': {
+              'latitude': trip.destLat,
+              'longitude': trip.destLng,
+            },
+            'passengerInfo': {
+              'name': trip.passengerName,
+              'phoneNumber': trip.passengerPhone,
+              'rating': '4.5',
+            },
+            'tripInfo': {
+              'fare': trip.fare,
+              'date': trip.date,
+              'time': trip.time,
+              'paymentMethod': 'Cash',
+            },
+          },
+        ),
+      ),
+    );
+  }
+
+ Widget _buildLocationRow(IconData icon, String text) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: lightTextColor),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(fontSize: 14),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+
+
 
   Widget _buildInfoItem(IconData icon, String label, String value) {
     return Expanded(

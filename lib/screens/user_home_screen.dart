@@ -7,15 +7,35 @@ import 'package:worldtriplink/screens/offers_screen.dart';
 import 'package:worldtriplink/screens/profile_screen.dart';
 import 'package:worldtriplink/screens/cab_booking_screen.dart';
 
-// Professional color palette
-const Color primaryColor = Color(0xFF2E3192);
-const Color accentColor = Color(0xFF4A90E2);
-const Color secondaryColor = Color(0xFFFFCC00);
-const Color backgroundColor = Color(0xFFF8F9FA);
-const Color cardColor = Colors.white;
-const Color textColor = Color(0xFF333333);
-const Color lightTextColor = Color(0xFF666666);
-const Color mutedTextColor = Color(0xFF999999);
+// Primary colors
+const Color primaryColor = Color(0xFF2E3192);      // Deep blue
+const Color secondaryColor = Color(0xFF4A90E2);    // Bright blue
+const Color accentColor = Color(0xFFFFCC00);       // Yellow/gold
+
+// Background colors
+const Color backgroundColor = Color(0xFFF5F7FA);   // Light gray-blue
+const Color cardColor = Colors.white;              // White for cards
+const Color surfaceColor = Color(0xFFF0F7FF);      // Light blue for inputs/surfaces
+
+// Text colors
+const Color textColor = Color(0xFF333333);         // Dark gray for text
+const Color lightTextColor = Color(0xFF666666);    // Medium gray for secondary text
+const Color mutedTextColor = Color(0xFFA0A0A0);    // Light gray for placeholders
+
+// Status colors
+const Color successColor = Color(0xFF4CAF50);      // Green
+const Color warningColor = Color(0xFFFF9800);      // Orange
+const Color dangerColor = Color(0xFFF44336);       // Red
+const Color infoColor = Color(0xFF4A90E2);         // Blue (matching secondary)
+
+// Gradient colors
+const List<Color> primaryGradient = [
+  Color(0xFF2E3192),
+  Color(0xFF4A90E2),
+];
+
+// Accent shades (for subtle highlights)
+const Color lightAccentColor = Color(0xFFF0F7FF);  // Light blue background
 
 class UserHomeScreen extends StatefulWidget {
   const UserHomeScreen({super.key});
@@ -60,10 +80,13 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
       appBar: AppBar(
         backgroundColor: primaryColor,
         elevation: 0,
-        title: Image.asset(
-          'assets/images/logo.png',
-          height: 32,
-          fit: BoxFit.contain,
+        title: const Text(
+          'World Trip Link',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+          ),
         ),
         actions: [
           IconButton(
@@ -84,9 +107,13 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
       type: BottomNavigationBarType.fixed,
       selectedItemColor: primaryColor,
       unselectedItemColor: mutedTextColor,
-      selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+      selectedLabelStyle: const TextStyle(
+        fontWeight: FontWeight.w600,
+        fontSize: 12,
+      ),
       unselectedLabelStyle: const TextStyle(fontSize: 12),
       elevation: 8,
+      backgroundColor: Colors.white,
       items: const [
         BottomNavigationBarItem(
           icon: Icon(Icons.home_outlined),
@@ -170,11 +197,22 @@ class _HomeContentState extends State<_HomeContent> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: primaryColor,
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: primaryGradient,
+                ),
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(30),
                   bottomRight: Radius.circular(30),
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: primaryColor.withOpacity(0.2),
+                    offset: const Offset(0, 4),
+                    blurRadius: 12,
+                  ),
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -237,10 +275,10 @@ class _HomeContentState extends State<_HomeContent> {
                     height: 50,
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(25),
+                      borderRadius: BorderRadius.circular(10),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withOpacity(0.08),
                           blurRadius: 10,
                           offset: const Offset(0, 2),
                         ),
@@ -252,15 +290,12 @@ class _HomeContentState extends State<_HomeContent> {
                         Icon(
                           MaterialCommunityIcons.magnify,
                           size: 22,
-                          color: primaryColor,
+                          color: secondaryColor,
                         ),
                         const SizedBox(width: 10),
                         const Text(
                           'Where do you want to go?',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: mutedTextColor,
-                          ),
+                          style: TextStyle(fontSize: 16, color: mutedTextColor),
                         ),
                       ],
                     ),
@@ -304,26 +339,28 @@ class _HomeContentState extends State<_HomeContent> {
                           icon: MaterialCommunityIcons.car,
                           label: 'Cab',
                           iconColor: secondaryColor,
-                          bgColor: secondaryColor.withOpacity(0.1),
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const CabBookingScreen(),
-                            ),
-                          ),
+                          bgColor: surfaceColor,
+                          onTap:
+                              () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (context) => const CabBookingScreen(),
+                                ),
+                              ),
                         ),
                         _buildServiceCard(
                           icon: MaterialCommunityIcons.bus,
                           label: 'Bus',
-                          iconColor: accentColor,
-                          bgColor: accentColor.withOpacity(0.1),
+                          iconColor: primaryColor,
+                          bgColor: surfaceColor,
                           onTap: () {},
                         ),
                         _buildServiceCard(
                           icon: MaterialCommunityIcons.airplane,
                           label: 'Flight',
-                          iconColor: Colors.green,
-                          bgColor: Colors.green.withOpacity(0.1),
+                          iconColor: secondaryColor,
+                          bgColor: surfaceColor,
                           onTap: () {},
                         ),
                       ],
@@ -396,6 +433,7 @@ class _HomeContentState extends State<_HomeContent> {
             decoration: BoxDecoration(
               color: bgColor,
               borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: iconColor.withOpacity(0.1), width: 1),
             ),
             child: Icon(icon, size: 32, color: iconColor),
           ),
@@ -414,25 +452,25 @@ class _HomeContentState extends State<_HomeContent> {
   }
 
   Widget _buildFeaturedRides() {
-    final List<Map<String, dynamic>> _cabs = [
+    final List<Map<String, dynamic>> cabs = [
       {
         'name': 'Premium Sedan',
         'price': '₹15/km',
         'image': 'assets/images/sedan.png',
-        'features': ['AC', '4 Seats', 'Free WiFi']
+        'features': ['AC', '4 Seats', 'Free WiFi'],
       },
       {
         'name': 'Luxury SUV',
         'price': '₹20/km',
         'image': 'assets/images/suv.png',
-        'features': ['AC', '6 Seats', 'Luggage']
+        'features': ['AC', '6 Seats', 'Luggage'],
       },
       {
         'name': 'Electric Vehicle',
         'price': '₹18/km',
         'image': 'assets/images/suv_plus.png',
-        'features': ['AC', '4 Seats', 'Eco-friendly']
-      }
+        'features': ['AC', '4 Seats', 'Eco-friendly'],
+      },
     ];
 
     return SizedBox(
@@ -440,9 +478,9 @@ class _HomeContentState extends State<_HomeContent> {
       height: 300,
       child: PageView.builder(
         controller: _pageController,
-        itemCount: _cabs.length,
+        itemCount: cabs.length,
         itemBuilder: (context, index) {
-          final cab = _cabs[index];
+          final cab = cabs[index];
           return Container(
             margin: const EdgeInsets.only(right: 12, bottom: 8),
             decoration: BoxDecoration(
@@ -466,7 +504,7 @@ class _HomeContentState extends State<_HomeContent> {
                   Container(
                     height: 140,
                     decoration: BoxDecoration(
-                      color: primaryColor.withOpacity(0.05),
+                      color: surfaceColor,
                       borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(16),
                         topRight: Radius.circular(16),
@@ -503,7 +541,7 @@ class _HomeContentState extends State<_HomeContent> {
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: secondaryColor,
+                                color: accentColor,
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
@@ -521,34 +559,39 @@ class _HomeContentState extends State<_HomeContent> {
                         Wrap(
                           spacing: 8,
                           runSpacing: 8,
-                          children: (cab['features'] as List<String>)
-                              .map<Widget>(
-                                (feature) => Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 6,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: accentColor.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Text(
-                                    feature,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                      color: accentColor,
+                          children:
+                              (cab['features'] as List<String>)
+                                  .map<Widget>(
+                                    (feature) => Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 6,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: surfaceColor,
+                                        borderRadius: BorderRadius.circular(20),
+                                        border: Border.all(
+                                          color: secondaryColor.withOpacity(0.3),
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        feature,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                          color: secondaryColor,
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                ),
-                              )
-                              .toList(),
+                                  )
+                                  .toList(),
                         ),
                         const SizedBox(height: 16),
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: primaryColor,
-                            foregroundColor: Colors.white,
+                            backgroundColor: accentColor,
+                            foregroundColor: textColor,
                             elevation: 0,
                             minimumSize: const Size(double.infinity, 44),
                             shape: RoundedRectangleBorder(
@@ -587,7 +630,7 @@ class _HomeContentState extends State<_HomeContent> {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [primaryColor, accentColor],
+          colors: [primaryColor, secondaryColor],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -617,16 +660,13 @@ class _HomeContentState extends State<_HomeContent> {
               const SizedBox(height: 8),
               const Text(
                 'Use code WELCOME50 on your first booking.',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.white70,
-                ),
+                style: TextStyle(fontSize: 14, color: Colors.white70),
               ),
               const SizedBox(height: 16),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: primaryColor,
+                  backgroundColor: accentColor,
+                  foregroundColor: textColor,
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 24,
@@ -646,9 +686,7 @@ class _HomeContentState extends State<_HomeContent> {
                 },
                 child: const Text(
                   'Book Now',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
             ],
@@ -660,8 +698,15 @@ class _HomeContentState extends State<_HomeContent> {
               width: 60,
               height: 60,
               decoration: BoxDecoration(
-                color: secondaryColor,
+                color: accentColor,
                 borderRadius: BorderRadius.circular(30),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 5,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: const Center(
                 child: Text(
