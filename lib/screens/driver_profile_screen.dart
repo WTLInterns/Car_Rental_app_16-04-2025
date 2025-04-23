@@ -2,19 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'dart:convert';
+import 'package:url_launcher/url_launcher.dart';
 
-// Professional color palette (same as driver_trips_screen.dart)
-const Color primaryColor = Color(0xFF2E3192);
-const Color secondaryColor = Color(0xFF4A90E2);
-const Color accentColor = Color(0xFFFFCC00);
-const Color backgroundColor = Color(0xFFF8F9FA);
-const Color cardColor = Colors.white;
-const Color textColor = Color(0xFF333333);
-const Color lightTextColor = Color(0xFF666666);
-const Color mutedTextColor = Color(0xFF999999);
-const Color successColor = Color(0xFF4CAF50);
-const Color errorColor = Color(0xFFFF5252);
-const Color warningColor = Color(0xFFFF9800);
+// Updated color palette to match driver_trips_screen.dart
+const Color primaryColor = Color(0xFF3057E3);      // Royal blue
+const Color secondaryColor = Color(0xFF3057E3);    // Same blue for consistency
+const Color accentColor = Color(0xFFFFCC00);       // Yellow/gold accent
+const Color backgroundColor = Color(0xFFF3F5F9);   // Light gray background
+const Color cardColor = Colors.white;              // White card background
+const Color textColor = Color(0xFF333333);         // Dark text
+const Color lightTextColor = Color(0xFF666666);    // Medium gray text
+const Color mutedTextColor = Color(0xFFAAAAAA);    // Light gray text
+const Color successColor = Color(0xFF4CAF50);      // Green for success
+const Color errorColor = Color(0xFFE53935);        // Red for errors
+const Color warningColor = Color(0xFFFF9800);      // Orange for warnings
 
 class DriverProfileScreen extends StatefulWidget {
   const DriverProfileScreen({super.key});
@@ -71,14 +72,15 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Logout Confirmation'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Logout Confirmation', style: TextStyle(fontWeight: FontWeight.bold)),
         content: const Text('Are you sure you want to logout?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text('Cancel', style: TextStyle(color: primaryColor)),
           ),
-          TextButton(
+          ElevatedButton(
             onPressed: () async {
               final prefs = await SharedPreferences.getInstance();
               await prefs.clear();
@@ -88,7 +90,12 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                 (route) => false
               );
             },
-            child: const Text('Logout', style: TextStyle(color: errorColor)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: errorColor,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: const Text('Logout'),
           ),
         ],
       ),
@@ -100,7 +107,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
     return Scaffold(
       backgroundColor: backgroundColor,
       body: isLoading
-          ? const Center(child: CircularProgressIndicator(color: secondaryColor))
+          ? const Center(child: CircularProgressIndicator(color: primaryColor))
           : CustomScrollView(
               slivers: [
                 // App Bar
@@ -124,7 +131,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                           end: Alignment.bottomCenter,
                           colors: [
                             primaryColor,
-                            secondaryColor,
+                            primaryColor.withOpacity(0.8),
                           ],
                         ),
                       ),
@@ -142,10 +149,20 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                                 style: TextStyle(
                                   fontSize: 40,
                                   fontWeight: FontWeight.bold,
-                                  color: secondaryColor,
+                                  color: primaryColor,
                                 ),
                               ),
                             ),
+                            const SizedBox(height: 8),
+                            if (driver?['name'] != null)
+                              Text(
+                                driver!['name'],
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.white,
+                                ),
+                              ),
                           ],
                         ),
                       ),
@@ -171,36 +188,43 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
-                                  'Personal Information',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: textColor,
-                                  ),
+                                Row(
+                                  children: [
+                                    Icon(MaterialCommunityIcons.account_details, 
+                                      color: primaryColor, size: 22),
+                                    const SizedBox(width: 8),
+                                    const Text(
+                                      'Personal Information',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: textColor,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                                 const SizedBox(height: 16),
                                 _buildInfoRow(
-                                  Icons.person,
+                                  MaterialCommunityIcons.account,
                                   'Name',
                                   driver?['name'] ?? 'Not available',
                                 ),
                                 const Divider(height: 24),
                                 _buildInfoRow(
-                                  Icons.email,
+                                  MaterialCommunityIcons.email_outline,
                                   'Email',
                                   driver?['email'] ?? 'Not available',
                                 ),
                                 const Divider(height: 24),
                                 _buildInfoRow(
-                                  Icons.phone,
+                                  MaterialCommunityIcons.phone_outline,
                                   'Phone',
                                   driver?['phone'] ?? 'Not available',
                                 ),
                                 if (driver?['address'] != null) ...[
                                   const Divider(height: 24),
                                   _buildInfoRow(
-                                    Icons.location_on,
+                                    MaterialCommunityIcons.map_marker_outline,
                                     'Address',
                                     driver?['address'] ?? 'Not available',
                                   ),
@@ -223,13 +247,20 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
-                                  'Vehicle Information',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: textColor,
-                                  ),
+                                Row(
+                                  children: [
+                                    Icon(MaterialCommunityIcons.car_info, 
+                                      color: primaryColor, size: 22),
+                                    const SizedBox(width: 8),
+                                    const Text(
+                                      'Vehicle Information',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: textColor,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                                 const SizedBox(height: 16),
                                 _buildInfoRow(
@@ -239,7 +270,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                                 ),
                                 const Divider(height: 24),
                                 _buildInfoRow(
-                                  MaterialCommunityIcons.car_info,
+                                  MaterialCommunityIcons.license,
                                   'Vehicle Number',
                                   driver?['vehicleNumber'] ?? 'Not available',
                                 ),
@@ -267,53 +298,72 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // const Text(
-                                //   'Account Settings',
-                                //   style: TextStyle(
-                                //     fontSize: 18,
-                                //     fontWeight: FontWeight.bold,
-                                //     color: textColor,
-                                //   ),
-                                // ),
+                                Row(
+                                  children: [
+                                    Icon(MaterialCommunityIcons.cog_outline, 
+                                      color: primaryColor, size: 22),
+                                    const SizedBox(width: 8),
+                                    const Text(
+                                      'Account Settings',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: textColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                                 // const SizedBox(height: 16),
                                 // ListTile(
-                                //   leading: const Icon(Icons.lock, color: secondaryColor),
+                                //   leading: Icon(MaterialCommunityIcons.lock_outline, color: primaryColor),
                                 //   title: const Text('Change Password'),
                                 //   trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                                 //   onTap: () {
                                 //     // Navigate to change password screen
+                                //     ScaffoldMessenger.of(context).showSnackBar(
+                                //       const SnackBar(content: Text('Coming soon'))
+                                //     );
                                 //   },
                                 // ),
                                 // const Divider(height: 8),
                                 // ListTile(
-                                //   leading: const Icon(Icons.notifications, color: secondaryColor),
+                                //   leading: Icon(MaterialCommunityIcons.bell_outline, color: primaryColor),
                                 //   title: const Text('Notification Settings'),
                                 //   trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                                 //   onTap: () {
                                 //     // Navigate to notification settings
+                                //     ScaffoldMessenger.of(context).showSnackBar(
+                                //       const SnackBar(content: Text('Coming soon'))
+                                //     );
                                 //   },
                                 // ),
                                 // const Divider(height: 8),
                                 // ListTile(
-                                //   leading: const Icon(Icons.help, color: secondaryColor),
+                                //   leading: Icon(MaterialCommunityIcons.help_circle_outline, color: primaryColor),
                                 //   title: const Text('Help & Support'),
                                 //   trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                                 //   onTap: () {
                                 //     // Navigate to help & support
+                                //     ScaffoldMessenger.of(context).showSnackBar(
+                                //       const SnackBar(content: Text('Coming soon'))
+                                //     );
                                 //   },
                                 // ),
                                 // const Divider(height: 8),
                                 // ListTile(
-                                //   leading: const Icon(Icons.info, color: secondaryColor),
+                                //   leading: Icon(MaterialCommunityIcons.information_outline, color: primaryColor),
                                 //   title: const Text('About App'),
                                 //   trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                                 //   onTap: () {
                                 //     // Navigate to about app
+                                //     ScaffoldMessenger.of(context).showSnackBar(
+                                //       const SnackBar(content: Text('Coming soon'))
+                                //     );
                                 //   },
                                 // ),
                                 const Divider(height: 8),
                                 ListTile(
-                                  leading: const Icon(Icons.logout, color: errorColor),
+                                  leading: const Icon(MaterialCommunityIcons.logout, color: errorColor),
                                   title: const Text('Logout', 
                                     style: TextStyle(color: errorColor),
                                   ),
@@ -366,7 +416,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
             ),
           ],
           currentIndex: _selectedIndex,
-          selectedItemColor: secondaryColor,
+          selectedItemColor: primaryColor,
           unselectedItemColor: mutedTextColor,
           backgroundColor: Colors.transparent,
           elevation: 0,
@@ -380,7 +430,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, color: secondaryColor, size: 20),
+        Icon(icon, color: primaryColor, size: 20),
         const SizedBox(width: 16),
         Expanded(
           child: Column(
@@ -394,12 +444,16 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                 ),
               ),
               const SizedBox(height: 4),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: textColor,
+              InkWell(
+                onTap: label == 'Phone' ? () => makePhoneCall(value) : null,
+                child: Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: label == 'Phone' ? primaryColor : textColor,
+                    decoration: label == 'Phone' ? TextDecoration.underline : TextDecoration.none,
+                  ),
                 ),
               ),
             ],
@@ -407,5 +461,33 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
         ),
       ],
     );
+  }
+  
+  Future<void> makePhoneCall(String phoneNumber) async {
+    if (phoneNumber == 'Not available') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Phone number not available'))
+      );
+      return;
+    }
+    
+    final Uri launchUri = Uri(
+      scheme: 'tel',
+      path: phoneNumber,
+    );
+    
+    try {
+      if (await canLaunchUrl(launchUri)) {
+        await launchUrl(launchUri);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not launch phone dialer'))
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${e.toString()}'))
+      );
+    }
   }
 }

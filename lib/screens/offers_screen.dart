@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
+import 'package:flutter/services.dart';
+import 'package:worldtriplink/screens/user_home_screen.dart';
 
 // Professional color palette
-const Color primaryColor = Color.fromARGB(
-  255,
-  100,
-  110,
-  203,
-); // Deep blue - primary brand color
+const Color primaryColor = Color(0xFF4A90E2); 
 
 const Color accentColor = Color(0xFF4A90E2);
 const Color secondaryColor = Color(0xFFFFCC00);
@@ -145,41 +142,63 @@ class _OffersScreenState extends State<OffersScreen>
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
-        backgroundColor: cardColor,
+        backgroundColor: primaryColor,
         elevation: 0,
         title: const Text(
           'Offers & Deals',
           style: TextStyle(
-            color: textColor,
+            color: Colors.white,
             fontWeight: FontWeight.bold,
             fontSize: 20,
           ),
         ),
-      ),
-      body: SingleChildScrollView(
-        // Add this wrapper
-        child: Column(
-          children: [
-            _buildTabBar(),
-            SizedBox(
-              // Add fixed height for the content
-              height:
-                  MediaQuery.of(context).size.height -
-                  kToolbarHeight - // AppBar height
-                  kBottomNavigationBarHeight - // If you have bottom nav
-                  24, // Padding
-              child:
-                  _isLoading
-                      ? const Center(
-                        child: CircularProgressIndicator(color: primaryColor),
-                      )
-                      : filteredOffers.isEmpty
-                      ? _buildEmptyState()
-                      : _buildOfferList(filteredOffers),
-            ),
-          ],
+        centerTitle: true,
+        leading: Container(
+          margin: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: primaryColor.withOpacity(0.8),
+            shape: BoxShape.circle,
+          ),
+          child: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+            onPressed: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const UserHomeScreen()),
+              );
+            },
+          ),
         ),
+        actions: [
+          Container(
+            margin: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: primaryColor.withOpacity(0.8),
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.notifications_outlined, color: Colors.white, size: 20),
+              onPressed: () {},
+            ),
+          ),
+        ],
       ),
+      body: _isLoading
+        ? const Center(
+            child: CircularProgressIndicator(color: primaryColor),
+          )
+        : filteredOffers.isEmpty
+          ? _buildEmptyState()
+          : Column(
+              children: [
+                _buildTabBar(),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: _buildOfferList(filteredOffers),
+                  ),
+                ),
+              ],
+            ),
     );
   }
 
@@ -252,11 +271,14 @@ class _OffersScreenState extends State<OffersScreen>
     return FadeTransition(
       opacity: _animation,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildFeaturedOffer(),
-          const SizedBox(height: 24),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: _buildFeaturedOffer(),
+          ),
           const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
+            padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Text(
               'Available Offers',
               style: TextStyle(
@@ -266,22 +288,17 @@ class _OffersScreenState extends State<OffersScreen>
               ),
             ),
           ),
-          const SizedBox(height: 16),
-          Expanded(
-            // Add Expanded here
-            child: ListView.builder(
-              padding: const EdgeInsets.only(bottom: 24),
-              itemCount: offers.length,
-              itemBuilder: (context, index) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  child: _buildOfferCard(offers[index]),
-                );
-              },
-            ),
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(16),
+            itemCount: offers.length,
+            itemBuilder: (context, index) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: _buildOfferCard(offers[index]),
+              );
+            },
           ),
         ],
       ),
@@ -290,7 +307,7 @@ class _OffersScreenState extends State<OffersScreen>
 
   Widget _buildFeaturedOffer() {
     return Container(
-      height: 180,
+      width: double.infinity,
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
@@ -382,19 +399,16 @@ class _OffersScreenState extends State<OffersScreen>
                         children: [
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 4,
-                              vertical: 6,
+                              horizontal: 10,
+                              vertical: 8,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(3),
-                              border: Border.all(
-                                color: Colors.white.withOpacity(0.3),
-                              ),
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Row(
+                            child: Row(
                               children: [
-                                Text(
+                                const Text(
                                   'SUMMER30',
                                   style: TextStyle(
                                     color: Colors.white,
@@ -402,11 +416,17 @@ class _OffersScreenState extends State<OffersScreen>
                                     fontSize: 14,
                                   ),
                                 ),
-                                SizedBox(width: 8),
-                                Icon(
-                                  MaterialCommunityIcons.content_copy,
-                                  color: Colors.white,
-                                  size: 14,
+                                const SizedBox(width: 8),
+                                GestureDetector(
+                                  onTap: () {
+                                    // Copy promo code to clipboard
+                                    _copyPromoCode(context, 'SUMMER30');
+                                  },
+                                  child: const Icon(
+                                    MaterialCommunityIcons.content_copy,
+                                    color: Colors.white,
+                                    size: 14,
+                                  ),
                                 ),
                               ],
                             ),
@@ -462,223 +482,223 @@ class _OffersScreenState extends State<OffersScreen>
   }
 
   Widget _buildOfferCard(Map<String, dynamic> offer) {
-    return ConstrainedBox(
-      constraints: BoxConstraints(
-        minHeight: 280, // Minimum height for the card
-        maxHeight: 350, // Maximum height for the card
+    return Container(
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: Container(
-        decoration: BoxDecoration(
-          color: cardColor,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min, // Important for proper sizing
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header with discount badge
-              Container(
-                height: 100,
-                decoration: BoxDecoration(color: offer['bgColor']),
-                child: Stack(
-                  children: [
-                    // Background pattern
-                    Positioned(
-                      right: -20,
-                      bottom: -20,
-                      child: Container(
-                        width: 80,
-                        height: 80,
-                        decoration: BoxDecoration(
-                          color: offer['color'].withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(40),
-                        ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header with discount badge
+            Container(
+              height: 100,
+              decoration: BoxDecoration(color: offer['bgColor']),
+              child: Stack(
+                children: [
+                  // Background pattern
+                  Positioned(
+                    right: -20,
+                    bottom: -20,
+                    child: Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        color: offer['color'].withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(40),
                       ),
                     ),
+                  ),
 
-                    // Content
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(
-                                      _getIcon(offer['type']),
-                                      color: offer['color'],
-                                      size: 18,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Flexible(
-                                      child: Text(
-                                        '${offer['type'][0].toUpperCase()}${offer['type'].substring(1)} Offer',
-                                        style: TextStyle(
-                                          color: offer['color'],
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  offer['title'],
-                                  style: const TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    color: textColor,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: offer['color'],
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              offer['discount'],
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Offer details
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      offer['description'],
-                      style: const TextStyle(
-                        color: lightTextColor,
-                        fontSize: 14,
-                        height: 1.4,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Offer details row - Fix overflow by making it wrap
-                    Wrap(
-                      spacing: 24,
-                      runSpacing: 16,
+                  // Content
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
                       children: [
-                        _buildOfferDetail(
-                          MaterialCommunityIcons.calendar_range,
-                          'Valid till',
-                          offer['validTill'],
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    _getIcon(offer['type']),
+                                    color: offer['color'],
+                                    size: 18,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Flexible(
+                                    child: Text(
+                                      '${offer['type'][0].toUpperCase()}${offer['type'].substring(1)} Offer',
+                                      style: TextStyle(
+                                        color: offer['color'],
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                offer['title'],
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: textColor,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
                         ),
-                        _buildOfferDetail(
-                          MaterialCommunityIcons.currency_inr,
-                          'Min. booking',
-                          offer['minBooking'],
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: offer['color'],
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            offer['discount'],
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
                         ),
                       ],
                     ),
+                  ),
+                ],
+              ),
+            ),
 
-                    const Divider(height: 32),
+            // Offer details
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    offer['description'],
+                    style: const TextStyle(
+                      color: lightTextColor,
+                      fontSize: 14,
+                      height: 1.4,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 16),
 
-                    // Promo code and apply button
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
+                  // Offer details row - Fix overflow by making it wrap
+                  Wrap(
+                    spacing: 24,
+                    runSpacing: 16,
+                    children: [
+                      _buildOfferDetail(
+                        MaterialCommunityIcons.calendar_range,
+                        'Valid till',
+                        offer['validTill'],
+                      ),
+                      _buildOfferDetail(
+                        MaterialCommunityIcons.currency_inr,
+                        'Min. booking',
+                        offer['minBooking'],
+                      ),
+                    ],
+                  ),
+
+                  const Divider(height: 32),
+
+                  // Promo code and apply button
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: backgroundColor,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: offer['color'].withOpacity(0.3),
                             ),
-                            decoration: BoxDecoration(
-                              color: backgroundColor,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: offer['color'].withOpacity(0.3),
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Flexible(
-                                  child: Text(
-                                    offer['code'],
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                      color: offer['color'],
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  offer['code'],
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                    color: offer['color'],
                                   ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                const SizedBox(width: 8),
-                                Icon(
+                              ),
+                              const SizedBox(width: 8),
+                              GestureDetector(
+                                onTap: () {
+                                  // Copy promo code to clipboard
+                                  _copyPromoCode(context, offer['code']);
+                                },
+                                child: Icon(
                                   MaterialCommunityIcons.content_copy,
                                   color: offer['color'],
                                   size: 16,
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: offer['color'],
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            elevation: 0,
+                      ),
+                      const SizedBox(width: 12),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: offer['color'],
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
                           ),
-                          onPressed: () {},
-                          child: const Text(
-                            'Apply',
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
                           ),
+                          elevation: 0,
                         ),
-                      ],
-                    ),
-                  ],
-                ),
+                        onPressed: () {},
+                        child: const Text(
+                          'Apply',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -782,5 +802,15 @@ class _OffersScreenState extends State<OffersScreen>
       default:
         return MaterialCommunityIcons.tag;
     }
+  }
+
+  void _copyPromoCode(BuildContext context, String code) {
+    Clipboard.setData(ClipboardData(text: code));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Promo code $code copied to clipboard!'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 }

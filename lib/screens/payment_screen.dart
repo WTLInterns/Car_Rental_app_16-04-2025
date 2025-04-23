@@ -21,19 +21,19 @@ class PaymentScreen extends StatefulWidget {
 
 class _PaymentScreenState extends State<PaymentScreen> {
   bool _isLoading = false;
-  String _selectedPaymentMethod = 'upi';
+  String _selectedPaymentMethod = 'cash';
   String? _storedUserId;
 
   // Professional color palette
-  final Color primaryColor = const Color(0xFF2E3192);      // Deep blue
-  final Color secondaryColor = const Color(0xFF4A90E2);    // Bright blue
+  final Color primaryColor = const Color(0xFF3057E3);      // Royal blue from the image
+  final Color secondaryColor = const Color(0xFF3057E3);    // Same blue for consistency
   final Color accentColor = const Color(0xFFFFCC00);       // Yellow/gold accent
-  final Color backgroundColor = const Color(0xFFF5F7FA);   // Light gray background
+  final Color backgroundColor = const Color(0xFFF3F5F9);   // Light gray background
   final Color cardColor = Colors.white;                    // White card background
-  final Color surfaceColor = const Color(0xFFF0F7FF);      // Light blue for inputs/surfaces
+  final Color surfaceColor = Colors.white;                 // White for inputs/surfaces
   final Color textColor = const Color(0xFF333333);         // Dark text
   final Color lightTextColor = const Color(0xFF666666);    // Medium gray text
-  final Color mutedTextColor = const Color(0xFFA0A0A0);    // Light gray text
+  final Color mutedTextColor = const Color(0xFFAAAAAA);    // Light gray text
   final Color lightAccentColor = const Color(0xFFF0F7FF);  // Light blue background
   final Color successColor = const Color(0xFF4CAF50);      // Green for success messages
   final Color errorColor = const Color(0xFFE53935);        // Red for error messages
@@ -131,7 +131,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
       developer.log('POST Request URL: $uri', name: 'PaymentScreen');
       final response = await http
           .post(uri, headers: {'Accept': 'application/json'})
-          .timeout(const Duration(seconds: 30));
+          .timeout(const Duration(seconds: 15));
       developer.log(
         'Response Status: ${response.statusCode}',
         name: 'PaymentScreen',
@@ -420,16 +420,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                 child: Column(
                                   children: [
                                     // Trip Summary
-                                    SizedBox(
-                                      height:
-                                          320, // Fixed height for trip summary
-                                      child: _buildTripSummary(),
-                                    ),
+                                    _buildTripSummary(),
                                     const SizedBox(height: 16),
                                     // Payment Methods
                                     SizedBox(
-                                      height:
-                                          320, // Fixed height for payment methods
+                                      height: 320, // Fixed height for payment methods
                                       child: _buildPaymentMethods(),
                                     ),
                                     // Add extra space at bottom to prevent footer overlap
@@ -460,6 +455,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Row(
               children: [
@@ -487,26 +483,15 @@ class _PaymentScreenState extends State<PaymentScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            // Use Expanded with SingleChildScrollView to prevent overflow
-            Expanded(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildLocationInfo(),
-                    const SizedBox(height: 16),
-                    const Divider(thickness: 1),
-                    const SizedBox(height: 12),
-                    _buildCompactTripDetails(),
-                    const SizedBox(height: 16),
-                    const Divider(thickness: 1),
-                    const SizedBox(height: 12),
-                    _buildFareDetails(),
-                  ],
-                ),
-              ),
-            ),
+            _buildLocationInfo(),
+            const SizedBox(height: 16),
+            const Divider(thickness: 1),
+            const SizedBox(height: 12),
+            _buildCompactTripDetails(),
+            const SizedBox(height: 16),
+            const Divider(thickness: 1),
+            const SizedBox(height: 12),
+            _buildFareDetails(),
           ],
         ),
       ),
@@ -514,74 +499,108 @@ class _PaymentScreenState extends State<PaymentScreen> {
   }
 
   Widget _buildLocationInfo() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
       children: [
-        Column(
+        // Pickup location
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              width: 12,
-              height: 12,
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
+                color: primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.location_on,
                 color: primaryColor,
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 2),
-                boxShadow: [
-                  BoxShadow(
-                    color: primaryColor.withOpacity(0.3),
-                    blurRadius: 4,
-                    spreadRadius: 1,
-                  ),
-                ],
+                size: 18,
               ),
             ),
-            Container(width: 2, height: 30, color: Colors.grey.shade300),
-            Container(
-              width: 12,
-              height: 12,
-              decoration: BoxDecoration(
-                color: accentColor,
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 2),
-                boxShadow: [
-                  BoxShadow(
-                    color: accentColor.withOpacity(0.3),
-                    blurRadius: 4,
-                    spreadRadius: 1,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'PICKUP',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: lightTextColor,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    widget.bookingData['pickup'] ?? 'Pickup location',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: textColor,
+                    ),
                   ),
                 ],
               ),
             ),
           ],
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        
+        // Connection line
+        Padding(
+          padding: const EdgeInsets.only(left: 14),
+          child: Row(
             children: [
-              Text(
-                widget.bookingData['pickup'] ?? 'Pickup',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: textColor,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 24),
-              Text(
-                widget.bookingData['destination'] ?? 'Destination',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: textColor,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+              Container(
+                width: 2,
+                height: 30,
+                color: Colors.grey.shade300,
               ),
             ],
           ),
+        ),
+        
+        // Drop location
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: accentColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.flag,
+                color: accentColor,
+                size: 18,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'DROP',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: lightTextColor,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    widget.bookingData['destination'] ?? 'Drop location',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: textColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -795,26 +814,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
               child: SingleChildScrollView(
                 child: Column(
                   children: [
-                    // _buildPaymentOption(
-                    //   'UPI',
-                    //   'Pay using Google Pay, PhonePe, etc.',
-                    //   MaterialCommunityIcons.qrcode_scan,
-                    //   'upi',
-                    // ),
-                    // const Divider(),
-                    // _buildPaymentOption(
-                    //   'Credit/Debit Card',
-                    //   'Pay using Visa, Mastercard, RuPay',
-                    //   MaterialCommunityIcons.credit_card,
-                    //   'card',
-                    // ),
-                    // const Divider(),
-                    // _buildPaymentOption(
-                    //   'Net Banking',
-                    //   'Pay using your bank account',
-                    //   MaterialCommunityIcons.bank,
-                    //   'netbanking',
-                    // ),
+                    _buildPaymentOption(
+                      'UPI',
+                      'Pay using Google Pay, PhonePe, etc.',
+                      MaterialCommunityIcons.qrcode_scan,
+                      'upi',
+                    ),
                     const Divider(),
                     _buildPaymentOption(
                       'Cash on Arrival',
@@ -953,8 +958,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
               child: ElevatedButton(
                 onPressed: _handlePayment,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: accentColor,
-                  foregroundColor: textColor,
+                  backgroundColor: primaryColor,
+                  foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),

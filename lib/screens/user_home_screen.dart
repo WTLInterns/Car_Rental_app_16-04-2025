@@ -8,12 +8,12 @@ import 'package:worldtriplink/screens/profile_screen.dart';
 import 'package:worldtriplink/screens/cab_booking_screen.dart';
 
 // Primary colors
-const Color primaryColor = Color(0xFF2E3192);      // Deep blue
-const Color secondaryColor = Color(0xFF4A90E2);    // Bright blue
+const Color primaryColor = Color(0xFF4A90E2);      // Blue
+const Color secondaryColor = Color(0xFF4A90E2);    // Blue
 const Color accentColor = Color(0xFFFFCC00);       // Yellow/gold
 
 // Background colors
-const Color backgroundColor = Color(0xFFF5F7FA);   // Light gray-blue
+const Color backgroundColor = Colors.white;        // White background
 const Color cardColor = Colors.white;              // White for cards
 const Color surfaceColor = Color(0xFFF0F7FF);      // Light blue for inputs/surfaces
 
@@ -30,7 +30,7 @@ const Color infoColor = Color(0xFF4A90E2);         // Blue (matching secondary)
 
 // Gradient colors
 const List<Color> primaryGradient = [
-  Color(0xFF2E3192),
+  Color(0xFF4A90E2),
   Color(0xFF4A90E2),
 ];
 
@@ -77,24 +77,26 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: primaryColor,
-        elevation: 0,
-        title: const Text(
-          'World Trip Link',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined, color: Colors.white),
-            onPressed: () {},
-          ),
-        ],
-      ),
+      appBar: _currentIndex == 0
+        ? AppBar(
+            backgroundColor: primaryColor,
+            elevation: 0,
+            title: const Text(
+              'World Trip Link',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+              ),
+            ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.notifications_outlined, color: Colors.white),
+                onPressed: () {},
+              ),
+            ],
+          )
+        : null,
       body: _screens[_currentIndex],
       bottomNavigationBar: _buildBottomNav(),
     );
@@ -195,24 +197,9 @@ class _HomeContentState extends State<_HomeContent> {
           children: [
             // Greeting Section with Search
             Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: primaryGradient,
-                ),
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(30),
-                  bottomRight: Radius.circular(30),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: primaryColor.withOpacity(0.2),
-                    offset: const Offset(0, 4),
-                    blurRadius: 12,
-                  ),
-                ],
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+              decoration: const BoxDecoration(
+                color: Colors.white,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -228,7 +215,7 @@ class _HomeContentState extends State<_HomeContent> {
                             style: const TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              color: textColor,
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -236,7 +223,7 @@ class _HomeContentState extends State<_HomeContent> {
                             'Where are you going today?',
                             style: TextStyle(
                               fontSize: 16,
-                              color: Colors.white70,
+                              color: lightTextColor,
                             ),
                           ),
                         ],
@@ -245,25 +232,18 @@ class _HomeContentState extends State<_HomeContent> {
                         width: 50,
                         height: 50,
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: primaryColor,
                           borderRadius: BorderRadius.circular(25),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
                         ),
                         child: Center(
                           child: Text(
                             widget.userName.isNotEmpty
                                 ? widget.userName[0].toUpperCase()
                                 : 'U',
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
-                              color: primaryColor,
+                              color: Colors.white,
                             ),
                           ),
                         ),
@@ -274,23 +254,17 @@ class _HomeContentState extends State<_HomeContent> {
                   Container(
                     height: 50,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: backgroundColor,
                       borderRadius: BorderRadius.circular(10),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
-                          blurRadius: 10,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
+                      border: Border.all(color: Colors.grey.withOpacity(0.2)),
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 15),
                     child: Row(
                       children: [
                         Icon(
-                          MaterialCommunityIcons.magnify,
+                          Icons.search,
                           size: 22,
-                          color: secondaryColor,
+                          color: Colors.grey,
                         ),
                         const SizedBox(width: 10),
                         const Text(
@@ -310,69 +284,45 @@ class _HomeContentState extends State<_HomeContent> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Our Services',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: textColor,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: cardColor,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 2),
+                  // Service Cards Row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildServiceCard(
+                        icon: Icons.directions_car,
+                        label: 'Cab',
+                        iconColor: Colors.amber,
+                        bgColor: Colors.amber.withOpacity(0.2),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const CabBookingScreen(),
+                          ),
                         ),
-                      ],
-                    ),
-                    padding: const EdgeInsets.all(20),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _buildServiceCard(
-                          icon: MaterialCommunityIcons.car,
-                          label: 'Cab',
-                          iconColor: secondaryColor,
-                          bgColor: surfaceColor,
-                          onTap:
-                              () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder:
-                                      (context) => const CabBookingScreen(),
-                                ),
-                              ),
-                        ),
-                        _buildServiceCard(
-                          icon: MaterialCommunityIcons.bus,
-                          label: 'Bus',
-                          iconColor: primaryColor,
-                          bgColor: surfaceColor,
-                          onTap: () {},
-                        ),
-                        _buildServiceCard(
-                          icon: MaterialCommunityIcons.airplane,
-                          label: 'Flight',
-                          iconColor: secondaryColor,
-                          bgColor: surfaceColor,
-                          onTap: () {},
-                        ),
-                      ],
-                    ),
+                      ),
+                      _buildServiceCard(
+                        icon: Icons.check,
+                        label: 'Bus',
+                        iconColor: primaryColor,
+                        bgColor: primaryColor.withOpacity(0.2),
+                        onTap: () {},
+                      ),
+                      _buildServiceCard(
+                        icon: Icons.star,
+                        label: 'Flight',
+                        iconColor: Colors.green,
+                        bgColor: Colors.green.withOpacity(0.2),
+                        onTap: () {},
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
 
-            // Featured Rides - Fixing height issue
+            // Keep the Featured Rides carousel
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -390,24 +340,13 @@ class _HomeContentState extends State<_HomeContent> {
               ),
             ),
 
+            // Premium Service Card
+            _buildPremiumServiceCard(),
+
             // Promotional Cards
             Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Special Offers',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: textColor,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildDiscountCard(),
-                ],
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: _buildDiscountCard(),
             ),
           ],
         ),
@@ -424,26 +363,187 @@ class _HomeContentState extends State<_HomeContent> {
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(25),
       child: Column(
         children: [
           Container(
-            width: 70,
-            height: 70,
+            width: 80,
+            height: 80,
             decoration: BoxDecoration(
               color: bgColor,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: iconColor.withOpacity(0.1), width: 1),
+              borderRadius: BorderRadius.circular(40),
             ),
             child: Icon(icon, size: 32, color: iconColor),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           Text(
             label,
             style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
               color: textColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPremiumServiceCard() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: primaryColor,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: primaryColor.withOpacity(0.3),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Genius Service',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Enjoy exclusive benefits with our premium service.',
+                    style: TextStyle(fontSize: 14, color: Colors.white70),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.yellow,
+                      foregroundColor: textColor,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                    ),
+                    onPressed: () {},
+                    child: const Text(
+                      'Learn More',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 10),
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(25),
+              ),
+              child: const Icon(
+                Icons.bolt,
+                color: Colors.white,
+                size: 30,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDiscountCard() {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.amber, width: 2),
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Stack(
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                '50% Off First Ride!',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: textColor,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Use code WELCOME50 on your first booking.',
+                style: TextStyle(fontSize: 14, color: lightTextColor),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primaryColor,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const CabBookingScreen(),
+                    ),
+                  );
+                },
+                child: const Text(
+                  'Book Now',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          Positioned(
+            right: 0,
+            top: 0,
+            child: Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: Colors.amber,
+                borderRadius: BorderRadius.circular(25),
+              ),
+              child: const Center(
+                child: Text(
+                  '50%',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: textColor,
+                  ),
+                ),
+              ),
             ),
           ),
         ],
@@ -622,105 +722,6 @@ class _HomeContentState extends State<_HomeContent> {
             ),
           );
         },
-      ),
-    );
-  }
-
-  Widget _buildDiscountCard() {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [primaryColor, secondaryColor],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: primaryColor.withOpacity(0.3),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(20),
-      child: Stack(
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                '50% Off First Ride!',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Use code WELCOME50 on your first booking.',
-                style: TextStyle(fontSize: 14, color: Colors.white70),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: accentColor,
-                  foregroundColor: textColor,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 12,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(25),
-                  ),
-                ),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const CabBookingScreen(),
-                    ),
-                  );
-                },
-                child: const Text(
-                  'Book Now',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
-          ),
-          Positioned(
-            right: 0,
-            top: 0,
-            child: Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                color: accentColor,
-                borderRadius: BorderRadius.circular(30),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 5,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: const Center(
-                child: Text(
-                  '50%',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: textColor,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

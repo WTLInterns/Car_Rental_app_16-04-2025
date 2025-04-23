@@ -24,16 +24,16 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
   String _userId = '';
   bool _isLoading = true;
 
-  // Color scheme for consistent styling - matching professional design
-  final Color primaryColor = const Color(0xFF2E3192);      // Deep blue
-  final Color secondaryColor = const Color(0xFF4A90E2);    // Bright blue
+  // Color scheme for consistent styling - matching the app's professional style
+  final Color primaryColor = const Color(0xFF3057E3);      // Royal blue from the image
+  final Color secondaryColor = const Color(0xFF3057E3);    // Same blue for consistency
   final Color accentColor = const Color(0xFFFFCC00);       // Yellow/gold accent
-  final Color backgroundColor = const Color(0xFFF5F7FA);   // Light gray background
+  final Color backgroundColor = const Color(0xFFF3F5F9);   // Light gray background
   final Color cardColor = Colors.white;                    // White card background
-  final Color surfaceColor = const Color(0xFFF0F7FF);      // Light blue for inputs/surfaces
+  final Color surfaceColor = Colors.white;                 // White for inputs/surfaces
   final Color textColor = const Color(0xFF333333);         // Dark text
   final Color lightTextColor = const Color(0xFF666666);    // Medium gray text
-  final Color mutedTextColor = const Color(0xFFA0A0A0);    // Light gray text
+  final Color mutedTextColor = const Color(0xFFAAAAAA);    // Light gray text
   final Color lightAccentColor = const Color(0xFFF0F7FF);  // Light blue background
 
   Map<String, String> _errors = {
@@ -252,46 +252,108 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
   }
 
   Widget _buildLocationInfo() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
       children: [
-        Column(
+        // Pickup location
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              width: 12,
-              height: 12,
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
+                color: primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.location_on,
                 color: primaryColor,
-                shape: BoxShape.circle,
+                size: 18,
               ),
             ),
-            Container(width: 2, height: 30, color: Colors.grey.shade300),
-            Container(
-              width: 12,
-              height: 12,
-              decoration: BoxDecoration(
-                color: accentColor,
-                shape: BoxShape.circle,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'PICKUP',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: lightTextColor,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    widget.bookingData['pickup'] ?? 'Pickup location',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: textColor,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        
+        // Connection line
+        Padding(
+          padding: const EdgeInsets.only(left: 14),
+          child: Row(
             children: [
-              Text(
-                widget.bookingData['pickup'] ?? 'Pickup',
-                style: TextStyle(fontWeight: FontWeight.w500, color: textColor),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                widget.bookingData['destination'] ?? 'Destination',
-                style: TextStyle(fontWeight: FontWeight.w500, color: textColor),
+              Container(
+                width: 2,
+                height: 30,
+                color: Colors.grey.shade300,
               ),
             ],
           ),
+        ),
+        
+        // Drop location
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: accentColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.flag,
+                color: accentColor,
+                size: 18,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'DROP',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: lightTextColor,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    widget.bookingData['destination'] ?? 'Drop location',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: textColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -591,8 +653,8 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
       child: ElevatedButton(
         onPressed: _handleProceedToPayment,
         style: ElevatedButton.styleFrom(
-          backgroundColor: accentColor,
-          foregroundColor: textColor,
+          backgroundColor: primaryColor,
+          foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),

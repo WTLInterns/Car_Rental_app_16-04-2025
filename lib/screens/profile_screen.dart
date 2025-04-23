@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'login_screen.dart';
+import 'package:worldtriplink/screens/user_home_screen.dart';
 // Professional color palette
-const Color primaryColor = Color(0xFF2E3192);
+const Color primaryColor = Color(0xFF4A90E2); 
 const Color accentColor = Color(0xFF4A90E2);
 const Color secondaryColor = Color(0xFFFFCC00);
 const Color backgroundColor = Color(0xFFF8F9FA);
@@ -123,16 +124,47 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
-        backgroundColor: cardColor,
+        backgroundColor: primaryColor,
         elevation: 0,
         title: const Text(
           'My Profile',
           style: TextStyle(
-            color: textColor,
+            color: Colors.white,
             fontWeight: FontWeight.bold,
+            fontSize: 20,
           ),
         ),
-     
+        centerTitle: true,
+        leading: Container(
+          margin: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: primaryColor.withOpacity(0.8),
+            shape: BoxShape.circle,
+          ),
+          child: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+            onPressed: () {
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => const UserHomeScreen()),
+                (route) => false,
+              );
+            },
+          ),
+        ),
+        actions: [
+          Container(
+            margin: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: primaryColor.withOpacity(0.8),
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.notifications_outlined, color: Colors.white, size: 20),
+              onPressed: () {},
+            ),
+          ),
+        ],
       ),
       body: _isLoading 
           ? const Center(child: CircularProgressIndicator(color: accentColor))

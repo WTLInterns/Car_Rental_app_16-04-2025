@@ -22,13 +22,17 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
   String _tripDistance = '0';
   Map<String, dynamic>? _tripInfo;
 
-  // Color scheme for consistent styling
-  final Color primaryColor = Color.fromARGB(255, 87, 87, 93);
-  final Color accentColor = const Color(0xFFFFCC00);
-  final Color lightAccentColor = const Color(0xFFFFF9E0);
-  final Color textColor = const Color(0xFF333333);
-  final Color lightTextColor = const Color(0xFF666666);
-  final Color backgroundColor = const Color(0xFFF5F7FA);
+  // Color scheme for consistent styling - matching the app's professional style
+  final Color primaryColor = const Color(0xFF3057E3);      // Royal blue from the image
+  final Color secondaryColor = const Color(0xFF3057E3);    // Same blue for consistency
+  final Color accentColor = const Color(0xFFFFCC00);       // Yellow/gold accent
+  final Color backgroundColor = const Color(0xFFF3F5F9);   // Light gray background
+  final Color cardColor = Colors.white;                    // White card background
+  final Color surfaceColor = Colors.white;                 // White for inputs/surfaces
+  final Color textColor = const Color(0xFF333333);         // Dark text
+  final Color lightTextColor = const Color(0xFF666666);    // Medium gray text
+  final Color mutedTextColor = const Color(0xFFAAAAAA);    // Light gray text
+  final Color lightAccentColor = const Color(0xFFF0F7FF);  // Light blue background
 
   // Vehicle data organized by category
   Map<String, List<Vehicle>> _vehicleData = {
@@ -366,31 +370,42 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
 
   Widget _buildTripSummary() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text(
+            "Trip Details",
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: textColor,
+            ),
+          ),
+          const SizedBox(height: 20),
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: lightAccentColor,
+                  color: Colors.blue[50],
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
                   MaterialCommunityIcons.map_marker_path,
-                  color: accentColor,
+                  color: primaryColor,
                   size: 20,
                 ),
               ),
@@ -558,11 +573,11 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
         decoration: BoxDecoration(
           border: Border(
             top: BorderSide(
-              color: isSelected ? accentColor : Colors.transparent,
+              color: isSelected ? primaryColor : Colors.transparent,
               width: 3,
             ),
           ),
-          color: isSelected ? lightAccentColor : Colors.transparent,
+          color: isSelected ? Colors.blue[50] : Colors.transparent,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -571,7 +586,7 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
               _categoryIcons[category] ?? MaterialCommunityIcons.car,
               color:
                   isAvailable
-                      ? (isSelected ? accentColor : lightTextColor)
+                      ? (isSelected ? primaryColor : lightTextColor)
                       : Colors.grey.shade300,
               size: 24,
             ),
@@ -629,12 +644,21 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
   }
 
   Widget _buildVehicleCard(Vehicle vehicle) {
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 16),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -642,26 +666,28 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Vehicle image
-                Container(
-                  width: 100,
-                  height: 70,
-                  decoration: BoxDecoration(
-                    color: lightAccentColor,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  padding: const EdgeInsets.all(8),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.asset(
-                      vehicle.imageUrl,
-                      fit: BoxFit.contain,
-                      errorBuilder:
-                          (context, error, stackTrace) => Icon(
-                            _categoryIcons[_selectedCategory] ??
-                                MaterialCommunityIcons.car,
-                            size: 40,
-                            color: primaryColor,
-                          ),
+                SizedBox(
+                  width: 90,
+                  height: 65,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.blue[50],
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    padding: const EdgeInsets.all(6),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.asset(
+                        vehicle.imageUrl,
+                        fit: BoxFit.contain,
+                        errorBuilder:
+                            (context, error, stackTrace) => Icon(
+                              _categoryIcons[_selectedCategory] ??
+                                  MaterialCommunityIcons.car,
+                              size: 32,
+                              color: primaryColor,
+                            ),
+                      ),
                     ),
                   ),
                 ),
@@ -745,39 +771,43 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: accentColor,
-                        borderRadius: BorderRadius.circular(20),
+                        color: primaryColor,
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         '₹${vehicle.price}',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: textColor,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
                         ),
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
                     Text(
                       '₹${vehicle.pricePerKm}/km',
-                      style: TextStyle(color: lightTextColor, fontSize: 12),
+                      style: TextStyle(color: lightTextColor, fontSize: 11),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
                     const SizedBox(height: 8),
                     Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
                           MaterialCommunityIcons.clock_outline,
-                          size: 14,
+                          size: 12,
                           color: Colors.green.shade700,
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: 2),
                         Text(
                           vehicle.arrivalTime,
                           style: TextStyle(
                             color: Colors.green.shade700,
                             fontWeight: FontWeight.w500,
-                            fontSize: 12,
+                            fontSize: 11,
                           ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
@@ -809,12 +839,8 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: primaryColor.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: primaryColor.withOpacity(0.3),
-                              width: 1,
-                            ),
+                            color: Colors.blue[50],
+                            borderRadius: BorderRadius.circular(16),
                           ),
                           child: Text(
                             feature,
@@ -829,22 +855,28 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
                       .toList(),
             ),
             const SizedBox(height: 16),
-            SizedBox(
+            Container(
               width: double.infinity,
+              height: 56,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+              ),
               child: ElevatedButton(
-                onPressed: () => _handleVehicleSelect(vehicle),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: accentColor,
-                  foregroundColor: textColor,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  backgroundColor: primaryColor,
+                  foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   elevation: 0,
                 ),
+                onPressed: () => _handleVehicleSelect(vehicle),
                 child: const Text(
                   'Select This Vehicle',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
@@ -891,7 +923,7 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
                 width: 200,
                 height: 120,
                 decoration: BoxDecoration(
-                  color: lightAccentColor,
+                  color: Colors.blue[50],
                   borderRadius: BorderRadius.circular(8),
                 ),
                 padding: const EdgeInsets.all(16),
@@ -921,7 +953,7 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
                 padding: const EdgeInsets.only(bottom: 4),
                 child: Row(
                   children: [
-                    Icon(Icons.check_circle, color: accentColor, size: 16),
+                    Icon(Icons.check_circle, color: primaryColor, size: 16),
                     const SizedBox(width: 8),
                     Text(feature),
                   ],
@@ -960,8 +992,8 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
             _handleVehicleSelect(vehicle);
           },
           style: ElevatedButton.styleFrom(
-            backgroundColor: accentColor,
-            foregroundColor: textColor,
+            backgroundColor: primaryColor,
+            foregroundColor: Colors.white,
           ),
           child: const Text('Select'),
         ),

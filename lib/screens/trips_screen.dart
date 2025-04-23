@@ -4,14 +4,16 @@ import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:worldtriplink/screens/tracking_screen.dart';
+import 'package:worldtriplink/screens/user_home_screen.dart';
+import 'package:url_launcher/url_launcher_string.dart';
 
 // Professional color palette - matching login screen
-const Color primaryColor = Color(0xFF2E3192);      // Deep blue
-const Color secondaryColor = Color(0xFF4A90E2);    // Bright blue
+const Color primaryColor = Color(0xFF4A90E2);      // Blue (updated to match home screen)
+const Color secondaryColor = Color(0xFF4A90E2);    // Blue
 const Color accentColor = Color(0xFFFFCC00);       // Yellow/gold accent
 
 // Background colors
-const Color backgroundColor = Color(0xFFF5F7FA);   // Light gray background
+const Color backgroundColor = Colors.white;   // White background (updated)
 const Color cardColor = Colors.white;              // White card background
 const Color surfaceColor = Color(0xFFF0F7FF);      // Light blue surface color
 
@@ -424,7 +426,57 @@ class _TripsScreenState extends State<TripsScreen> {
     );
   }
 
+  Future<void> makePhoneCall(String phoneNumber) async {
+    if (phoneNumber.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Phone number not available'),
+          backgroundColor: dangerColor,
+        ),
+      );
+      return;
+    }
+    
+    // Sanitize phone number - remove spaces and special characters except '+'
+    final sanitizedNumber = phoneNumber.replaceAll(RegExp(r'[^\d+]'), '');
+    final String telUrl = 'tel:$sanitizedNumber';
+    
+    try {
+      // Use the more reliable launchUrlString
+      if (await canLaunchUrlString(telUrl)) {
+        await launchUrlString(telUrl);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Could not launch phone dialer'),
+            backgroundColor: dangerColor,
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error launching phone dialer: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error launching phone dialer. Please try manually dialing $sanitizedNumber'),
+          backgroundColor: dangerColor,
+        ),
+      );
+    }
+  }
+
   Widget _buildStatusContainer(String status, Color color) {
+    // Changes to match the design in the image - green text for Confirmed
+    if (status == 'Confirmed') {
+      return Text(
+        status,
+        style: const TextStyle(
+          color: successColor,
+          fontSize: 14,
+          fontWeight: FontWeight.bold,
+        ),
+      );
+    }
+    
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -451,21 +503,22 @@ class _TripsScreenState extends State<TripsScreen> {
     return GestureDetector(
       onTap: onPressed,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          color: surfaceColor,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: secondaryColor.withOpacity(0.3), width: 1),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: color),
         ),
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 16, color: secondaryColor),
-            const SizedBox(width: 5),
+            Icon(icon, size: 16, color: color),
+            const SizedBox(width: 4),
             Text(
               text,
               style: TextStyle(
                 fontSize: 14,
-                color: secondaryColor,
+                color: color,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -492,29 +545,45 @@ class _TripsScreenState extends State<TripsScreen> {
         ),
         backgroundColor: primaryColor,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
-      ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFFF5F7FA), Colors.white],
+        centerTitle: true,
+        leading: Container(
+          margin: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: primaryColor.withOpacity(0.8),
+            shape: BoxShape.circle,
+          ),
+          child: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+            onPressed: () {
+              // Navigate to UserHomeScreen
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const UserHomeScreen(),
+                ),
+              );
+            },
           ),
         ),
-        child: Column(
-          children: [
+        actions: [
             Container(
+            margin: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: cardColor,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    offset: const Offset(0, 2),
-                    blurRadius: 4,
+              color: primaryColor.withOpacity(0.8),
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.notifications_outlined, color: Colors.white, size: 20),
+              onPressed: () {},
+            ),
                   ),
                 ],
               ),
+      body: Column(
+        children: [
+          // Tab navigation - updated to match design
+          Container(
+            color: Colors.white,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
@@ -528,15 +597,14 @@ class _TripsScreenState extends State<TripsScreen> {
               ),
             ),
             Expanded(
-              child:
-                  _isLoading
+            child: _isLoading
                       ? Center(
-                        child: CircularProgressIndicator(color: accentColor),
+                  child: CircularProgressIndicator(color: primaryColor),
                       )
                       : filteredTrips.isEmpty
                       ? _buildNoTrips()
                       : RefreshIndicator(
-                        color: accentColor,
+                  color: primaryColor,
                         onRefresh: _getUserTripInfo,
                         child: ListView.builder(
                           padding: const EdgeInsets.all(16),
@@ -549,7 +617,6 @@ class _TripsScreenState extends State<TripsScreen> {
                       ),
             ),
           ],
-        ),
       ),
     );
   }
@@ -563,7 +630,7 @@ class _TripsScreenState extends State<TripsScreen> {
         decoration: BoxDecoration(
           border: Border(
             bottom: BorderSide(
-              color: isActive ? accentColor : Colors.transparent,
+              color: isActive ? primaryColor : Colors.transparent,
               width: 3,
             ),
           ),
@@ -571,7 +638,7 @@ class _TripsScreenState extends State<TripsScreen> {
         child: Text(
           text,
           style: TextStyle(
-            color: isActive ? primaryColor : lightTextColor,
+            color: isActive ? primaryColor : Colors.grey,
             fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
             fontSize: 15,
           ),
@@ -663,11 +730,12 @@ class _TripsScreenState extends State<TripsScreen> {
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: cardColor,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.withOpacity(0.1)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 5,
             offset: const Offset(0, 2),
           ),
         ],
@@ -675,28 +743,21 @@ class _TripsScreenState extends State<TripsScreen> {
       child: Column(
         children: [
           // Header with trip type and status
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: surfaceColor,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
-              ),
-            ),
+          Padding(
+            padding: const EdgeInsets.all(16),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Row(
                   children: [
-                    Icon(_getTripIcon(trip.car), size: 18, color: primaryColor),
+                    Icon(Icons.directions_car, size: 20, color: primaryColor),
                     const SizedBox(width: 8),
                     Text(
-                      trip.car.isNotEmpty ? trip.car : 'Cab Booking',
+                      trip.car.isNotEmpty ? trip.car : 'Hatchback',
                       style: const TextStyle(
-                        fontSize: 16,
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: primaryColor,
+                        color: textColor,
                       ),
                     ),
                   ],
@@ -715,96 +776,188 @@ class _TripsScreenState extends State<TripsScreen> {
 
           // Trip details
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Booking ID
-                Row(
-                  children: [
-                    const Text(
-                      'Booking ID: ',
-                      style: TextStyle(fontSize: 12, color: lightTextColor),
-                    ),
-                    Text(
-                      trip.bookingId,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: textColor,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // Route information with improved design
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: surfaceColor,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: const Color(0xFFE0E0E0),
-                      width: 1,
-                    ),
-                  ),
-                  child: Column(
+                // Driver info section
+                if (trip.status == 0) ...[  // Only for upcoming trips
+                  Row(
                     children: [
-                      _buildLocationRow(
-                        Icons.location_on_outlined,
-                        'From',
-                        trip.fromLocation,
-                        secondaryColor,
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(left: 9),
-                        child: Container(
-                          height: 30,
-                          width: 1,
-                          color: secondaryColor.withOpacity(0.3),
+                      CircleAvatar(
+                        radius: 20,
+                        backgroundColor: lightAccentColor,
+                        child: Text(
+                          trip.name.isNotEmpty ? trip.name.substring(0, 1).toUpperCase() : 'D',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: secondaryColor,
+                          ),
                         ),
                       ),
-                      _buildLocationRow(
-                        Icons.location_on,
-                        'To',
-                        trip.toLocation,
-                        primaryColor,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              trip.name,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: textColor,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                const Icon(
+                                  MaterialCommunityIcons.star,
+                                  size: 14,
+                                  color: Color(0xFFFFD700),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${trip.vendorDriver?['rating'] ?? '4.5'}',
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: lightTextColor,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Icon(
+                                  MaterialCommunityIcons.phone,
+                                  size: 14,
+                                  color: secondaryColor,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  trip.phone,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: lightTextColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      InkWell(
+                        onTap: () {
+                          if (trip.phone.isNotEmpty) {
+                            makePhoneCall(trip.phone);
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Text('Phone number not available'),
+                                backgroundColor: dangerColor,
+                              ),
+                            );
+                          }
+                        },
+                        child: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: lightAccentColor,
+                          ),
+                          child: Icon(
+                            MaterialCommunityIcons.phone,
+                            size: 20,
+                            color: primaryColor,
+                          ),
+                        ),
                       ),
                     ],
                   ),
+                  const SizedBox(height: 16),
+                  const Divider(),
+                  const SizedBox(height: 16),
+                ],
+
+                // Route information
+                _buildLocationItem(
+                  Icons.circle,
+                  Colors.blue,
+                        trip.fromLocation,
+                      ),
+                Container(
+                  margin: const EdgeInsets.only(left: 10),
+                          height: 30,
+                          width: 1,
+                  color: Colors.grey.withOpacity(0.3),
+                        ),
+                _buildLocationItem(
+                        Icons.location_on,
+                  Colors.red,
+                        trip.toLocation,
                 ),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
 
                 // Trip details in a row
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildDetailItem(
-                      MaterialCommunityIcons.calendar,
-                      'Date',
-                      trip.startDate,
+                    _buildTripDetailItem("Date", trip.startDate),
+                    _buildTripDetailItem("Time", trip.time),
+                    _buildTripDetailItem("Booking ID", trip.bookingId),
+                  ],
+                ),
+                
+                const SizedBox(height: 20),
+                
+                // Action buttons matching the image
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildActionButton(
+                        Icons.location_on,
+                        'Track',
+                        Colors.blue,
+                        () => _handleTrackPress(trip),
+                      ),
                     ),
-                    _buildDetailItem(
-                      MaterialCommunityIcons.clock_outline,
-                      'Time',
-                      trip.time,
-                    ),
-                    _buildDetailItem(
-                      MaterialCommunityIcons.currency_inr,
-                      'Amount',
-                      '₹${trip.amount.toStringAsFixed(0)}',
+                    const SizedBox(width: 8),
+                    if (trip.status == 0) ...[
+                      Expanded(
+                        child: _buildActionButton(
+                          MaterialCommunityIcons.phone,
+                          'Call',
+                          primaryColor,
+                          () {
+                            if (trip.phone.isNotEmpty) {
+                              makePhoneCall(trip.phone);
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: const Text('Phone number not available'),
+                                  backgroundColor: dangerColor,
+                                ),
+                              );
+                            }
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                    Expanded(
+                      child: _buildActionButton(
+                        trip.status == 0 ? Icons.close : Icons.refresh,
+                        trip.status == 0 ? 'Cancel' : 'Rebook',
+                        trip.status == 0 ? Colors.red.shade300 : Colors.green,
+                        () => trip.status == 0 
+                            ? _handleCancelPress(trip) 
+                            : _handleRebookPress(trip),
+                      ),
                     ),
                   ],
                 ),
 
                 const SizedBox(height: 16),
-                const Divider(height: 1, color: Color(0xFFEEEEEE)),
-                const SizedBox(height: 16),
-
-                // Action buttons
-                _buildActionButtons(trip),
               ],
             ),
           ),
@@ -813,77 +966,37 @@ class _TripsScreenState extends State<TripsScreen> {
     );
   }
 
-  Widget _buildLocationRow(
-    IconData icon,
-    String label,
-    String location,
-    Color color,
-  ) {
+  Widget _buildLocationItem(IconData icon, Color color, String location) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          padding: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: color.withOpacity(0.3),
-              width: 1,
-            ),
-          ),
-          child: Icon(icon, size: 14, color: color),
-        ),
+        Icon(icon, size: 18, color: color),
         const SizedBox(width: 12),
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: color,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
+          child: Text(
                 location,
                 style: const TextStyle(
-                  fontSize: 14,
+              fontSize: 15,
                   color: textColor,
-                  fontWeight: FontWeight.w500,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-              ),
-            ],
           ),
         ),
       ],
     );
   }
 
-  Widget _buildDetailItem(IconData icon, String label, String value) {
+  Widget _buildTripDetailItem(String label, String value) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: surfaceColor,
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: secondaryColor.withOpacity(0.3),
-              width: 1,
-            ),
-          ),
-          child: Icon(icon, size: 16, color: secondaryColor),
-        ),
-        const SizedBox(height: 8),
         Text(
           label,
-          style: const TextStyle(fontSize: 12, color: lightTextColor),
+          style: const TextStyle(
+            fontSize: 12, 
+            color: lightTextColor
+          ),
         ),
         const SizedBox(height: 4),
         Text(
@@ -896,106 +1009,6 @@ class _TripsScreenState extends State<TripsScreen> {
         ),
       ],
     );
-  }
-
-  Widget _buildActionButtons(Trip trip) {
-    if (trip.status == 0) {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: _buildActionButton(
-              MaterialCommunityIcons.map_marker,
-              'Track',
-              secondaryColor,
-              () => _handleTrackPress(trip),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _buildActionButton(
-              MaterialCommunityIcons.pencil_outline,
-              'Modify',
-              secondaryColor,
-              () => _handleModifyPress(trip),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _buildActionButton(
-              MaterialCommunityIcons.close,
-              'Cancel',
-              secondaryColor,
-              () => _handleCancelPress(trip),
-            ),
-          ),
-        ],
-      );
-    } else if (trip.status == 2) {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: _buildActionButton(
-              MaterialCommunityIcons.receipt,
-              'Invoice',
-              secondaryColor,
-              () => _handleInvoicePress(trip),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _buildActionButton(
-              MaterialCommunityIcons.star_outline,
-              'Rate',
-              secondaryColor,
-              () => _handleRatePress(trip),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _buildActionButton(
-              MaterialCommunityIcons.refresh,
-              'Rebook',
-              secondaryColor,
-              () => _handleRebookPress(trip),
-            ),
-          ),
-        ],
-      );
-    } else {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: _buildActionButton(
-              MaterialCommunityIcons.information_outline,
-              'Details',
-              secondaryColor,
-              () => _handleDetailsPress(trip),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _buildActionButton(
-              MaterialCommunityIcons.refresh,
-              'Rebook',
-              secondaryColor,
-              () => _handleRebookPress(trip),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _buildActionButton(
-              MaterialCommunityIcons.help_circle_outline,
-              'Support',
-              secondaryColor,
-              () => _handleSupportPress(trip),
-            ),
-          ),
-        ],
-      );
-    }
   }
 
   IconData _getTripIcon(String type) {

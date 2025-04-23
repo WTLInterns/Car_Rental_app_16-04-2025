@@ -17,7 +17,7 @@ dependencies:
   http: ^1.1.0
   shared_preferences: ^2.2.0
   flutter_vector_icons: ^2.0.0
-  url_launcher: ^6.1.12
+  url_launcher: ^6.2.4
   
   # Add these new dependencies
   google_maps_flutter: ^2.5.0
@@ -40,6 +40,12 @@ flutter:
     - assets/images/sedan.png
     - assets/images/suv.png
     - assets/images/suv_plus.png
+    - assets/images/hatchback.png
+    - assets/images/sedan_premium.png
+    - assets/images/hatchback.png
+
+
+
 
 flutter_launcher_icons:
   android: "launcher_icon"
