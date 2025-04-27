@@ -26,6 +26,8 @@ dependencies:
   permission_handler: ^11.0.1
   geolocator: ^10.1.0
   geocoding: ^2.1.1
+  web_socket_channel: ^2.4.0
+  stomp_dart_client: ^2.0.0
 
 dev_dependencies:
   flutter_test:
@@ -43,6 +45,7 @@ flutter:
     - assets/images/hatchback.png
     - assets/images/sedan_premium.png
     - assets/images/hatchback.png
+    - assets/images/car_icon.png
 
 
 

@@ -3,7 +3,7 @@ import 'package:worldtriplink/screens/login_screen.dart';
 import 'package:worldtriplink/screens/user_home_screen.dart';
 import 'package:worldtriplink/screens/driver_trips_screen.dart';
 import 'package:worldtriplink/screens/splash_screen.dart';
-import 'package:worldtriplink/screens/driver_tracking_screen.dart';
+import 'package:worldtriplink/screens/tracking_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -22,13 +22,14 @@ class MyApp extends StatelessWidget {
       ),
       home: const SplashScreen(),
       routes: {
+        '/splash': (context) => const SplashScreen(),
         '/login': (context) => const LoginScreen(),
         '/user-home': (context) => const UserHomeScreen(),
         '/driver-trips': (context) => const DriverTripsScreen(),
-        '/driver-tracking': (context) {
-          final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-          return DriverTrackingScreen(arguments: args);
-        },
+        '/tracking':
+            (context) => TrackingScreen(
+              bookingData: {'bookingId': 'sample-booking', 'userId': '101'},
+            ),
       },
     );
   }

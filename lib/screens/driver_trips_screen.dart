@@ -254,7 +254,7 @@ class _DriverTripsScreenState extends State<DriverTripsScreen> with SingleTicker
       context,
       MaterialPageRoute(
         builder: (context) => DriverTrackingScreen(
-          arguments: {
+          bookingData: {
             'bookingId': booking['bookingId'] ?? booking['bookid'] ?? "",
             'pickup': booking['userPickup'] ?? booking['fromLocation'] ?? "",
             'destination': booking['userDrop'] ?? booking['toLocation'] ?? "",
@@ -772,13 +772,25 @@ class _DriverTripsScreenState extends State<DriverTripsScreen> with SingleTicker
                       color: primaryColor
                     ),
                     const SizedBox(width: 8),
-                    const Text(
-                      'Driver Trip',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: textColor,
-                      ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Driver Trip',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: textColor,
+                          ),
+                        ),
+                        Text(
+                          trip['bookingId'] ?? trip['bookid'] ?? 'No ID',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: lightTextColor,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
