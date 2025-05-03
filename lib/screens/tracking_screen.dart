@@ -70,7 +70,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
   Timer? _locationUpdateTimer;
 
   // WebSocket config
-  final String _websocketUrl = "http://192.168.1.14:8080/ws-trip-tracking";
+  final String _websocketUrl = "'https://api.worldtriplink.com/ws-trip-tracking";
 
   // Connection status
   bool _isConnected = false;
@@ -83,7 +83,9 @@ class _TrackingScreenState extends State<TrackingScreen> {
   String _driverEta = "Calculating...";
 
   // Add BitmapDescriptor field to store the car icon
-  BitmapDescriptor _carIcon = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen);
+  BitmapDescriptor _carIcon = BitmapDescriptor.defaultMarkerWithHue(
+    BitmapDescriptor.hueGreen,
+  );
   double _driverBearing = 0.0; // Track driver heading/bearing
   bool _isCarIconLoaded = false; // Track if car icon is loaded
 
@@ -92,7 +94,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
     super.initState();
     debugPrint('🚗 TrackingScreen initialized');
     _initialize();
-    
+
     // Create custom car icon immediately
     _createCustomCarIcon();
   }
@@ -102,59 +104,64 @@ class _TrackingScreenState extends State<TrackingScreen> {
     try {
       // Set default icon first as fallback
       setState(() {
-        _carIcon = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed);
+        _carIcon = BitmapDescriptor.defaultMarkerWithHue(
+          BitmapDescriptor.hueRed,
+        );
       });
-      
+
       // Create a custom car icon using canvas
       final ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
       final Canvas canvas = Canvas(pictureRecorder);
       final Paint paint = Paint()..color = Colors.red; // Red car color
-      
+
       // Draw a car shape (simplified car icon)
       final double size = 40.0; // Increased size
       final Rect rect = Rect.fromLTWH(0, 0, size, size);
-      
+
       // Car body
       final RRect carBody = RRect.fromRectAndRadius(
         Rect.fromLTWH(5, 10, size - 10, size - 15),
         const Radius.circular(4.0),
       );
       canvas.drawRRect(carBody, paint);
-      
+
       // Car roof
-      final Path roofPath = Path()
-        ..moveTo(size / 2 - 7, 10)
-        ..lineTo(size / 2 + 7, 10)
-        ..lineTo(size / 2 + 5, 3)
-        ..lineTo(size / 2 - 5, 3)
-        ..close();
+      final Path roofPath =
+          Path()
+            ..moveTo(size / 2 - 7, 10)
+            ..lineTo(size / 2 + 7, 10)
+            ..lineTo(size / 2 + 5, 3)
+            ..lineTo(size / 2 - 5, 3)
+            ..close();
       canvas.drawPath(roofPath, paint);
-      
+
       // Car wheels
       final Paint wheelPaint = Paint()..color = Colors.black;
       canvas.drawCircle(Offset(10, size - 6), 3.5, wheelPaint);
       canvas.drawCircle(Offset(size - 10, size - 6), 3.5, wheelPaint);
-      
+
       // Headlights
       final Paint headlightPaint = Paint()..color = Colors.yellow;
       canvas.drawCircle(Offset(5, 12), 1.5, headlightPaint);
       canvas.drawCircle(Offset(size - 5, 12), 1.5, headlightPaint);
-      
+
       // Convert to image
       final ui.Picture picture = pictureRecorder.endRecording();
       final ui.Image img = await picture.toImage(size.toInt(), size.toInt());
-      final ByteData? byteData = await img.toByteData(format: ui.ImageByteFormat.png);
-      
+      final ByteData? byteData = await img.toByteData(
+        format: ui.ImageByteFormat.png,
+      );
+
       if (byteData != null) {
         final Uint8List uint8List = byteData.buffer.asUint8List();
-        
+
         if (mounted) {
           setState(() {
             _carIcon = BitmapDescriptor.fromBytes(uint8List);
             _isCarIconLoaded = true;
             debugPrint('✅ Custom car icon created successfully');
           });
-          
+
           // Force refresh markers when icon is loaded
           if (_driverLocation != null) {
             _updateMapMarkers();
@@ -365,7 +372,9 @@ class _TrackingScreenState extends State<TrackingScreen> {
       final messageType = data['type'] ?? data['action'];
 
       // Check if this is a driver location update (may not have explicit type)
-      if (data['userType'] == 'DRIVER' && data['latitude'] != null && data['longitude'] != null) {
+      if (data['userType'] == 'DRIVER' &&
+          data['latitude'] != null &&
+          data['longitude'] != null) {
         _handleDriverLocationUpdate(data);
         return;
       }
@@ -406,24 +415,26 @@ class _TrackingScreenState extends State<TrackingScreen> {
       // Extract latitude and longitude from the data
       double lat = 0.0;
       double lng = 0.0;
-      
+
       // Handle different possible formats of latitude/longitude in the message
       if (data['latitude'] != null) {
-        lat = data['latitude'] is double 
-            ? data['latitude'] 
-            : double.tryParse(data['latitude'].toString()) ?? 0.0;
+        lat =
+            data['latitude'] is double
+                ? data['latitude']
+                : double.tryParse(data['latitude'].toString()) ?? 0.0;
       }
-      
+
       if (data['longitude'] != null) {
-        lng = data['longitude'] is double 
-            ? data['longitude'] 
-            : double.tryParse(data['longitude'].toString()) ?? 0.0;
+        lng =
+            data['longitude'] is double
+                ? data['longitude']
+                : double.tryParse(data['longitude'].toString()) ?? 0.0;
       }
-      
+
       // Only update if we have valid coordinates
       if (lat != 0.0 && lng != 0.0) {
         debugPrint('📍 Driver location updated to: $lat, $lng');
-        
+
         // Calculate bearing if we have the previous location
         if (_driverLocation != null) {
           _driverBearing = _calculateBearing(
@@ -434,15 +445,15 @@ class _TrackingScreenState extends State<TrackingScreen> {
           );
           debugPrint('🧭 Driver bearing: $_driverBearing degrees');
         }
-        
+
         // Create a local variable for the new location
         final newDriverLocation = LatLng(lat, lng);
-        
+
         // Update the driver location in the state
         if (mounted) {
           setState(() {
             _driverLocation = newDriverLocation;
-            
+
             // Extract driver information if available
             if (data['driverName'] != null) {
               _driverInfo = "${data['driverName']} • ";
@@ -451,17 +462,18 @@ class _TrackingScreenState extends State<TrackingScreen> {
               }
               _driverInfo += "${_driverEta ?? 'Calculating ETA...'}";
             } else if (data['driverId'] != null) {
-              _driverInfo = "Driver ID: ${data['driverId']} • ${_driverEta ?? 'Calculating ETA...'}";
+              _driverInfo =
+                  "Driver ID: ${data['driverId']} • ${_driverEta ?? 'Calculating ETA...'}";
             }
           });
         }
-        
+
         // Force update markers immediately to ensure driver is displayed
         // This is called outside setState to avoid nested setState calls
         if (mounted) {
           _updateMapMarkers();
         }
-        
+
         // Update route whenever driver location changes
         if (_userLocation != null && mounted) {
           _updateRoute();
@@ -509,56 +521,57 @@ class _TrackingScreenState extends State<TrackingScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: const Text(
-          'Final Verification OTP',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Please show this OTP to your driver:'),
-            const SizedBox(height: 20),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.blue.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue, width: 2),
-              ),
-              child: Text(
-                otp,
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 4,
-                  color: Colors.blue.shade900,
+      builder:
+          (context) => AlertDialog(
+            title: const Text(
+              'Final Verification OTP',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('Please show this OTP to your driver:'),
+                const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.blue, width: 2),
+                  ),
+                  child: Text(
+                    otp,
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 4,
+                      color: Colors.blue.shade900,
+                    ),
+                  ),
                 ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Do not close this dialog until the driver verifies the OTP.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.red),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('CLOSE'),
               ),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'Do not close this dialog until the driver verifies the OTP.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.red),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('CLOSE'),
+            ],
           ),
-        ],
-      ),
     );
   }
 
   void _submitFeedback() {
     if (_userRating == 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a rating')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please select a rating')));
       return;
     }
 
@@ -599,7 +612,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
         _locationUpdateTimer?.cancel();
         return;
       }
-      
+
       if (_userLocation != null) {
         final locationUpdateMessage = {
           'type': 'USER_LOCATION',
@@ -620,7 +633,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
 
   void _updateMapMarkers() {
     if (!mounted) return;
-    
+
     Set<Marker> markers = {};
     debugPrint('🗺️ Updating map markers');
 
@@ -645,11 +658,11 @@ class _TrackingScreenState extends State<TrackingScreen> {
     if (_driverLocation != null) {
       // Use current icon (either custom or default if custom failed)
       final driverIcon = _carIcon;
-      
+
       debugPrint(
         '🚗 Adding driver marker at: ${_driverLocation!.latitude}, ${_driverLocation!.longitude} with bearing: $_driverBearing',
       );
-      
+
       // Create the driver marker with custom icon
       final driverMarker = Marker(
         markerId: const MarkerId('driver'),
@@ -662,10 +675,10 @@ class _TrackingScreenState extends State<TrackingScreen> {
         anchor: const Offset(0.5, 0.5), // Center the icon for rotation
         flat: true, // Make the marker flat on the map
       );
-      
+
       // Add the marker to the set
       markers.add(driverMarker);
-      
+
       debugPrint('✅ Driver marker added with custom icon');
     } else {
       debugPrint('⚠️ Driver location is null, cannot add driver marker');
@@ -688,7 +701,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
       setState(() {
         _markers = markers;
       });
-      
+
       debugPrint('🗺️ Map now has ${markers.length} markers');
     }
 
@@ -781,32 +794,34 @@ class _TrackingScreenState extends State<TrackingScreen> {
       _zoomToShowRoutePoints(points);
     } catch (e) {
       debugPrint('❌ Error updating route: $e');
-      
+
       // Fallback to simple direct line if route calculation fails
       _createFallbackRoute();
     }
   }
-  
+
   void _createFallbackRoute() {
     if (_driverLocation == null || _userLocation == null) return;
-    
+
     debugPrint('⚠️ Creating fallback direct route');
-    
+
     // Create a simple direct line between driver and user
     List<LatLng> points = [
       _driverLocation!,
       _tripStarted ? (_destinationLocation ?? _userLocation!) : _userLocation!,
     ];
-    
+
     // Calculate direct distance
-    double distance = _calculateDirectDistance(_driverLocation!, 
-      _tripStarted ? (_destinationLocation ?? _userLocation!) : _userLocation!);
-    
+    double distance = _calculateDirectDistance(
+      _driverLocation!,
+      _tripStarted ? (_destinationLocation ?? _userLocation!) : _userLocation!,
+    );
+
     setState(() {
       _routePoints = points;
       _estimatedDistance = _formatDistance(distance);
       _estimatedTime = _formatETA(_calculateETA(distance));
-      
+
       // Enhanced polylines for fallback route
       _polylines = {
         // Shadow/outline
@@ -834,11 +849,11 @@ class _TrackingScreenState extends State<TrackingScreen> {
           ], // Dashed pattern for fallback route
         ),
       };
-      
+
       // Update driver ETA info
       _driverEta = '$_estimatedDistance away - $_estimatedTime';
     });
-    
+
     // Update camera to show both points
     _zoomToShowRoutePoints(points);
   }
@@ -1040,9 +1055,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
       );
 
       // Use a smoother animation with less padding for better visibility
-      controller.animateCamera(
-        CameraUpdate.newLatLngBounds(bounds, 70),
-      );
+      controller.animateCamera(CameraUpdate.newLatLngBounds(bounds, 70));
       debugPrint('🗺️ Camera updated to show route');
     } catch (e) {
       debugPrint('❌ Error updating camera: $e');
@@ -1062,19 +1075,23 @@ class _TrackingScreenState extends State<TrackingScreen> {
     List<LatLng> points = [];
     if (_userLocation != null) points.add(_userLocation!);
     if (_driverLocation != null) points.add(_driverLocation!);
-    if (_destinationLocation != null && _tripStarted) points.add(_destinationLocation!);
+    if (_destinationLocation != null && _tripStarted)
+      points.add(_destinationLocation!);
 
     // Only update camera if we have points to show
     if (points.length >= 2) {
       debugPrint('🗺️ Setting camera to show multiple points');
-      
+
       // Calculate bounds to include all points with padding
       LatLngBounds bounds = _getBounds(points);
-      
+
       // Add padding to ensure points aren't at the edge of the screen
       // Use a smoother animation for better user experience
       controller.animateCamera(
-        CameraUpdate.newLatLngBounds(bounds, 80), // Reduced padding for better view
+        CameraUpdate.newLatLngBounds(
+          bounds,
+          80,
+        ), // Reduced padding for better view
       );
       _isMapInitialized = true;
     } else if (points.isNotEmpty) {
@@ -1087,7 +1104,8 @@ class _TrackingScreenState extends State<TrackingScreen> {
           CameraPosition(
             target: points.first,
             zoom: 16.0, // Higher zoom for better visibility of single point
-            bearing: _driverBearing, // Align map with driver direction for better orientation
+            bearing:
+                _driverBearing, // Align map with driver direction for better orientation
           ),
         ),
       );
@@ -1230,7 +1248,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
       setState(() {
         _userLocation = LatLng(lat!, lng!);
       });
-      
+
       // Update markers with the new location
       _updateMapMarkers();
     });
@@ -1390,14 +1408,15 @@ class _TrackingScreenState extends State<TrackingScreen> {
                 : GoogleMap(
                   initialCameraPosition: _initialCameraPosition!,
                   myLocationEnabled: true,
-                  myLocationButtonEnabled: false, // Hide default button for cleaner UI
+                  myLocationButtonEnabled:
+                      false, // Hide default button for cleaner UI
                   compassEnabled: false, // Hide compass for cleaner UI
                   markers: _markers,
                   polylines: _polylines,
                   onMapCreated: (GoogleMapController controller) {
                     _mapController.complete(controller);
                     debugPrint('🗺️ Google Map controller created');
-                    
+
                     // Force update markers when map is created
                     Future.delayed(const Duration(milliseconds: 500), () {
                       if (mounted) {
@@ -1406,8 +1425,12 @@ class _TrackingScreenState extends State<TrackingScreen> {
                     });
                   },
                   zoomControlsEnabled: false,
-                  mapToolbarEnabled: false, // Disable map toolbar for cleaner UI
-                  minMaxZoomPreference: const MinMaxZoomPreference(8, 20), // Limit zoom levels for better UX
+                  mapToolbarEnabled:
+                      false, // Disable map toolbar for cleaner UI
+                  minMaxZoomPreference: const MinMaxZoomPreference(
+                    8,
+                    20,
+                  ), // Limit zoom levels for better UX
                 ),
             // Booking ID and Status Badge
             Positioned(
@@ -1802,9 +1825,9 @@ class _TrackingScreenState extends State<TrackingScreen> {
             child: ElevatedButton(
               onPressed: () {
                 if (_userRating == 0) {
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(const SnackBar(content: Text('Please select a rating')));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please select a rating')),
+                  );
                   return;
                 }
 

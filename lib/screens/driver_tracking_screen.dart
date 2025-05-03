@@ -121,13 +121,15 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
   double? destinationLng;
 
   // WebSocket config
-  final String _websocketUrl = "http://192.168.1.14:8080/ws-trip-tracking";
+  final String _websocketUrl = "https://api.worldtriplink.com/ws-trip-tracking";
   StompClient? _stompClient;
   bool _isConnected = false;
   int _reconnectAttempts = 0;
 
   // Add car icon fields
-  BitmapDescriptor _carIcon = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed);
+  BitmapDescriptor _carIcon = BitmapDescriptor.defaultMarkerWithHue(
+    BitmapDescriptor.hueRed,
+  );
   double _driverBearing = 0.0; // Track driver heading/bearing
   bool _isCarIconLoaded = false; // Track if car icon is loaded
 
@@ -153,7 +155,7 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
     ).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
     );
-    
+
     // Create custom car icon immediately
     _createCustomCarIcon();
   }
@@ -163,59 +165,64 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
     try {
       // Set default icon first as fallback
       setState(() {
-        _carIcon = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed);
+        _carIcon = BitmapDescriptor.defaultMarkerWithHue(
+          BitmapDescriptor.hueRed,
+        );
       });
-      
+
       // Create a custom car icon using canvas
       final ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
       final Canvas canvas = Canvas(pictureRecorder);
       final Paint paint = Paint()..color = Colors.red; // Red car color
-      
+
       // Draw a car shape (simplified car icon)
       final double size = 60.0; // Increased size
       final Rect rect = Rect.fromLTWH(0, 0, size, size);
-      
+
       // Car body
       final RRect carBody = RRect.fromRectAndRadius(
         Rect.fromLTWH(5, 10, size - 10, size - 15),
         const Radius.circular(4.0),
       );
       canvas.drawRRect(carBody, paint);
-      
+
       // Car roof
-      final Path roofPath = Path()
-        ..moveTo(size / 2 - 7, 10)
-        ..lineTo(size / 2 + 7, 10)
-        ..lineTo(size / 2 + 5, 3)
-        ..lineTo(size / 2 - 5, 3)
-        ..close();
+      final Path roofPath =
+          Path()
+            ..moveTo(size / 2 - 7, 10)
+            ..lineTo(size / 2 + 7, 10)
+            ..lineTo(size / 2 + 5, 3)
+            ..lineTo(size / 2 - 5, 3)
+            ..close();
       canvas.drawPath(roofPath, paint);
-      
+
       // Car wheels
       final Paint wheelPaint = Paint()..color = Colors.black;
       canvas.drawCircle(Offset(10, size - 6), 3.5, wheelPaint);
       canvas.drawCircle(Offset(size - 10, size - 6), 3.5, wheelPaint);
-      
+
       // Headlights
       final Paint headlightPaint = Paint()..color = Colors.yellow;
       canvas.drawCircle(Offset(5, 12), 1.5, headlightPaint);
       canvas.drawCircle(Offset(size - 5, 12), 1.5, headlightPaint);
-      
+
       // Convert to image
       final ui.Picture picture = pictureRecorder.endRecording();
       final ui.Image img = await picture.toImage(size.toInt(), size.toInt());
-      final ByteData? byteData = await img.toByteData(format: ui.ImageByteFormat.png);
-      
+      final ByteData? byteData = await img.toByteData(
+        format: ui.ImageByteFormat.png,
+      );
+
       if (byteData != null) {
         final Uint8List uint8List = byteData.buffer.asUint8List();
-        
+
         if (mounted) {
           setState(() {
             _carIcon = BitmapDescriptor.fromBytes(uint8List);
             _isCarIconLoaded = true;
             debugPrint('✅ Custom car icon created successfully');
           });
-          
+
           // Force refresh markers when icon is loaded
           if (_driverLocation != null) {
             _updateMapMarkers();
@@ -280,8 +287,16 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
             _isConnected = false;
             _handleReconnect();
           },
-          stompConnectHeaders: {'bookingId': bookingId, 'userId': driverId, 'userType': 'DRIVER'},
-          webSocketConnectHeaders: {'bookingId': bookingId, 'userId': driverId, 'userType': 'DRIVER'},
+          stompConnectHeaders: {
+            'bookingId': bookingId,
+            'userId': driverId,
+            'userType': 'DRIVER',
+          },
+          webSocketConnectHeaders: {
+            'bookingId': bookingId,
+            'userId': driverId,
+            'userType': 'DRIVER',
+          },
         ),
       );
 
@@ -412,7 +427,9 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
       final messageType = data['type'] ?? data['action'];
 
       // Check if this is a user location update (may not have explicit type)
-      if (data['userType'] == 'USER' && data['latitude'] != null && data['longitude'] != null) {
+      if (data['userType'] == 'USER' &&
+          data['latitude'] != null &&
+          data['longitude'] != null) {
         _handleUserLocationUpdate(data);
         return;
       }
@@ -437,7 +454,11 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
           break;
         case "FINAL_OTP_INVALID":
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('The final OTP verification failed. Please try again.')),
+            const SnackBar(
+              content: Text(
+                'The final OTP verification failed. Please try again.',
+              ),
+            ),
           );
           setState(() {
             _showFinalOtpVerification = false;
@@ -462,15 +483,17 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
 
       // Handle different possible formats of latitude/longitude in the message
       if (data['latitude'] != null) {
-        lat = data['latitude'] is double
-            ? data['latitude']
-            : double.tryParse(data['latitude'].toString()) ?? 0.0;
+        lat =
+            data['latitude'] is double
+                ? data['latitude']
+                : double.tryParse(data['latitude'].toString()) ?? 0.0;
       }
 
       if (data['longitude'] != null) {
-        lng = data['longitude'] is double
-            ? data['longitude']
-            : double.tryParse(data['longitude'].toString()) ?? 0.0;
+        lng =
+            data['longitude'] is double
+                ? data['longitude']
+                : double.tryParse(data['longitude'].toString()) ?? 0.0;
       }
 
       // Only update if we have valid coordinates
@@ -481,7 +504,7 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
           setState(() {
             _userLocation = LatLng(lat, lng);
           });
-          
+
           // Update markers and route with the new location
           _updateMapMarkers();
         }
@@ -543,7 +566,9 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
     });
 
     // Update camera position
-    _updateCameraToShowPoints(_markers.map((marker) => marker.position).toList());
+    _updateCameraToShowPoints(
+      _markers.map((marker) => marker.position).toList(),
+    );
 
     // Update route if we have both driver and user locations
     _updateRoute();
@@ -555,22 +580,26 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
       debugPrint('ℹ️ Trip is completing, skipping route update');
       return;
     }
-    
+
     if (_driverLocation == null) {
       debugPrint('⚠️ Cannot update route: driver location is missing');
       return;
     }
-    
+
     // Determine target location - use destination if in trip, otherwise use user location
     LatLng? target;
     if (_tripStarted && _destinationLocation != null) {
       target = _destinationLocation;
-      debugPrint('🎯 Target set to destination: ${_destinationLocation!.latitude}, ${_destinationLocation!.longitude}');
+      debugPrint(
+        '🎯 Target set to destination: ${_destinationLocation!.latitude}, ${_destinationLocation!.longitude}',
+      );
     } else if (_userLocation != null) {
       target = _userLocation;
-      debugPrint('🎯 Target set to user location: ${_userLocation!.latitude}, ${_userLocation!.longitude}');
+      debugPrint(
+        '🎯 Target set to user location: ${_userLocation!.latitude}, ${_userLocation!.longitude}',
+      );
     }
-    
+
     // If no target, we can't draw a route
     if (target == null) {
       debugPrint('⚠️ Cannot update route: target location is missing');
@@ -578,10 +607,14 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
     }
 
     // Check if the driver and target are the same location (within a small threshold)
-    double distanceToTarget = _calculateDirectDistance(_driverLocation!, target);
-    if (distanceToTarget < 10) { // Less than 10 meters
+    double distanceToTarget = _calculateDirectDistance(
+      _driverLocation!,
+      target,
+    );
+    if (distanceToTarget < 10) {
+      // Less than 10 meters
       debugPrint('ℹ️ Driver is very close to target, no need to update route');
-      
+
       if (mounted) {
         setState(() {
           // Update status message to reflect arrival
@@ -597,12 +630,14 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
       }
       return;
     }
-    
-    debugPrint('🛣️ Updating route between driver and ${_tripStarted ? "destination" : "user"}');
-    
+
+    debugPrint(
+      '🛣️ Updating route between driver and ${_tripStarted ? "destination" : "user"}',
+    );
+
     // Create a polyline between driver and target
     Set<Polyline> polylines = {};
-    
+
     // Add the polyline with enhanced styling
     polylines.add(
       Polyline(
@@ -616,7 +651,7 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
         jointType: JointType.round,
       ),
     );
-    
+
     polylines.add(
       Polyline(
         polylineId: const PolylineId('route'),
@@ -629,63 +664,77 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
         jointType: JointType.round,
       ),
     );
-    
+
     // Calculate distance and ETA
-    double distanceInMeters = _calculateDirectDistance(_driverLocation!, target);
+    double distanceInMeters = _calculateDirectDistance(
+      _driverLocation!,
+      target,
+    );
     int estimatedTimeInSeconds = _calculateETA(distanceInMeters);
-    
+
     if (mounted) {
       setState(() {
         _polylines = polylines;
         _distance = _formatDistance(distanceInMeters);
         _duration = _formatETA(estimatedTimeInSeconds);
-        
+
         // Update status message based on trip state
         if (!_tripStarted) {
-          _statusMessage = 'To pickup: ${_formatDistance(distanceInMeters)} - ${_formatETA(estimatedTimeInSeconds)}';
+          _statusMessage =
+              'To pickup: ${_formatDistance(distanceInMeters)} - ${_formatETA(estimatedTimeInSeconds)}';
         } else {
-          _statusMessage = 'To destination: ${_formatDistance(distanceInMeters)} - ${_formatETA(estimatedTimeInSeconds)}';
+          _statusMessage =
+              'To destination: ${_formatDistance(distanceInMeters)} - ${_formatETA(estimatedTimeInSeconds)}';
         }
       });
     }
-    
+
     debugPrint('🛣️ Route updated: $_distance, ETA: $_duration');
-    
+
     // Only try to get a better route if we're more than 50 meters away
     // This prevents excessive API calls when close to the destination
     if (distanceInMeters > 50) {
       // Try to get a better route using Google Directions API
       _getRouteFromGoogleDirections(_driverLocation!, target);
     } else {
-      debugPrint('ℹ️ Skipping Google Directions API call, driver is close to target');
+      debugPrint(
+        'ℹ️ Skipping Google Directions API call, driver is close to target',
+      );
     }
   }
-  
-  Future<void> _getRouteFromGoogleDirections(LatLng origin, LatLng destination) async {
+
+  Future<void> _getRouteFromGoogleDirections(
+    LatLng origin,
+    LatLng destination,
+  ) async {
     if (!mounted) return;
-    
+
     // Skip if we're completing a trip
     if (_isCompletingTrip) {
       debugPrint('ℹ️ Trip is completing, skipping route update');
       return;
     }
-    
+
     // Set a flag to avoid multiple simultaneous route requests
     if (_isFetchingRoute) {
       debugPrint('⚠️ Already fetching route, skipping this request');
       return;
     }
-    
+
     // Check if we already have a route for this origin-destination pair
-    String originKey = "${origin.latitude.toStringAsFixed(5)},${origin.longitude.toStringAsFixed(5)}";
-    String destinationKey = "${destination.latitude.toStringAsFixed(5)},${destination.longitude.toStringAsFixed(5)}";
-    
+    String originKey =
+        "${origin.latitude.toStringAsFixed(5)},${origin.longitude.toStringAsFixed(5)}";
+    String destinationKey =
+        "${destination.latitude.toStringAsFixed(5)},${destination.longitude.toStringAsFixed(5)}";
+
     // If we have a cached route for this exact origin-destination pair, use it
-    if (_lastSuccessfulRoutePoints.isNotEmpty && 
-        originKey == _lastRouteOrigin && 
+    if (_lastSuccessfulRoutePoints.isNotEmpty &&
+        originKey == _lastRouteOrigin &&
         destinationKey == _lastRouteDestination) {
-      debugPrint('ℹ️ Using cached route (${_lastSuccessfulRoutePoints.length} points)');
-      
+      debugPrint(
+        'ℹ️ Using cached route (${_lastSuccessfulRoutePoints.length} points)',
+      );
+
       if (mounted) {
         setState(() {
           // Update polylines with the cached route
@@ -717,11 +766,11 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
         return;
       }
     }
-    
+
     setState(() {
       _isFetchingRoute = true;
     });
-    
+
     try {
       debugPrint('🌐 Requesting directions from Google API');
       final String url =
@@ -731,12 +780,14 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
           '&mode=driving'
           '&key=$googleMapsApiKey';
 
-      final response = await http.get(Uri.parse(url)).timeout(
-        const Duration(seconds: 5),
-        onTimeout: () {
-          throw TimeoutException('Google Directions API request timed out');
-        },
-      );
+      final response = await http
+          .get(Uri.parse(url))
+          .timeout(
+            const Duration(seconds: 5),
+            onTimeout: () {
+              throw TimeoutException('Google Directions API request timed out');
+            },
+          );
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
@@ -745,35 +796,38 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
           // Get route
           final route = data['routes'][0];
           final leg = route['legs'][0];
-          
+
           // Get distance and duration from API
           final distanceText = leg['distance']['text'];
           final durationText = leg['duration']['text'];
-          
+
           // Get encoded polyline
           final polylinePoints = route['overview_polyline']['points'];
           final List<LatLng> points = _decodePolyline(polylinePoints);
-          
+
           if (points.isNotEmpty && mounted) {
-            debugPrint('✅ Got route from Google Directions API: ${points.length} points');
-            
+            debugPrint(
+              '✅ Got route from Google Directions API: ${points.length} points',
+            );
+
             // Cache this successful route
             _lastSuccessfulRoutePoints = List.from(points);
             _lastRouteOrigin = originKey;
             _lastRouteDestination = destinationKey;
-            
+
             setState(() {
               // Update with more accurate distance and time
               _distance = distanceText;
               _duration = durationText;
-              
+
               // Update status message
               if (!_tripStarted) {
                 _statusMessage = 'To pickup: $distanceText - $durationText';
               } else {
-                _statusMessage = 'To destination: $distanceText - $durationText';
+                _statusMessage =
+                    'To destination: $distanceText - $durationText';
               }
-              
+
               // Update polylines with the actual route
               _polylines = {
                 // Shadow/outline for the route (white, wider)
@@ -799,16 +853,16 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
                   jointType: JointType.round,
                 ),
               };
-              
+
               _isFetchingRoute = false;
             });
-            
+
             // Update camera to show the route
             _updateCameraToShowPoints(points);
           }
         } else {
           debugPrint('⚠️ Google Directions API status: ${data['status']}');
-          
+
           // If API call fails but we have a previous route, use that
           if (_lastSuccessfulRoutePoints.isNotEmpty && mounted) {
             debugPrint('ℹ️ Using last successful route as fallback');
@@ -850,10 +904,12 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
         }
       } else {
         debugPrint('⚠️ Google Directions API error: ${response.statusCode}');
-        
+
         // If HTTP error but we have a previous route, use that
         if (_lastSuccessfulRoutePoints.isNotEmpty && mounted) {
-          debugPrint('ℹ️ Using last successful route as fallback after HTTP error');
+          debugPrint(
+            'ℹ️ Using last successful route as fallback after HTTP error',
+          );
           setState(() {
             _polylines = {
               // Shadow/outline for the route (white, wider)
@@ -891,7 +947,7 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
       }
     } catch (e) {
       debugPrint('❌ Error fetching Google Directions: $e');
-      
+
       // If we catch an exception but have a previous route, use that
       if (_lastSuccessfulRoutePoints.isNotEmpty && mounted) {
         debugPrint('ℹ️ Using last successful route as fallback after error');
@@ -931,7 +987,7 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
       }
     }
   }
-  
+
   List<LatLng> _decodePolyline(String encoded) {
     List<LatLng> points = [];
     int index = 0, len = encoded.length;
@@ -967,45 +1023,45 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
 
     return points;
   }
-  
+
   void _updateCameraToShowPoints(List<LatLng> points) async {
     if (!_mapController.isCompleted || points.isEmpty) return;
-    
+
     try {
       final controller = await _mapController.future;
-      
+
       // Calculate bounds to include all route points
       double minLat = points[0].latitude;
       double maxLat = points[0].latitude;
       double minLng = points[0].longitude;
       double maxLng = points[0].longitude;
-      
+
       for (final point in points) {
         minLat = min(minLat, point.latitude);
         maxLat = max(maxLat, point.latitude);
         minLng = min(minLng, point.longitude);
         maxLng = max(maxLng, point.longitude);
       }
-      
+
       // Add padding around the route
       final latPadding = (maxLat - minLat) * 0.25;
       final lngPadding = (maxLng - minLng) * 0.25;
-      
+
       final bounds = LatLngBounds(
         southwest: LatLng(minLat - latPadding, minLng - lngPadding),
         northeast: LatLng(maxLat + latPadding, maxLng + lngPadding),
       );
-      
+
       // Determine if this is a significant change that warrants camera movement
       bool isSignificantChange = !isMapInitialized;
-      
+
       if (!isSignificantChange && _driverLocation != null) {
         // Check if driver has moved significantly (more than 100 meters)
         final lastPoint = points.last;
         final distance = _calculateDirectDistance(_driverLocation!, lastPoint);
         isSignificantChange = distance > 100;
       }
-      
+
       if (isSignificantChange) {
         // For initial or significant changes, animate camera
         await controller.animateCamera(
@@ -1014,9 +1070,7 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
         isMapInitialized = true;
       } else {
         // For minor updates, use moveCamera to avoid jitter
-        controller.moveCamera(
-          CameraUpdate.newLatLngBounds(bounds, 50),
-        );
+        controller.moveCamera(CameraUpdate.newLatLngBounds(bounds, 50));
       }
     } catch (e) {
       debugPrint('❌ Error updating camera: $e');
@@ -1061,7 +1115,7 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
           locationData.latitude!,
           locationData.longitude!,
         );
-        
+
         _driverBearing = _calculateBearing(
           _driverLocation!.latitude,
           _driverLocation!.longitude,
@@ -1140,9 +1194,9 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
     });
 
     // Show a message
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('OTP sent to user'))
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('OTP sent to user')));
   }
 
   void _verifyOtp() {
@@ -1150,7 +1204,9 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
 
     if (otp.isEmpty || otp.length != 6) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter the 6-digit OTP from the user')),
+        const SnackBar(
+          content: Text('Please enter the 6-digit OTP from the user'),
+        ),
       );
       return;
     }
@@ -1170,9 +1226,10 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
   }
 
   void _startTrip() async {
-    final destination = predefinedDestination.isNotEmpty
-        ? predefinedDestination
-        : _destinationController.text.trim();
+    final destination =
+        predefinedDestination.isNotEmpty
+            ? predefinedDestination
+            : _destinationController.text.trim();
 
     if (destination.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1186,7 +1243,8 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
     final startOdometer = prefs.getString('startOdometer') ?? '0';
 
     // If we don't have destination coordinates, try to get them
-    if ((destinationLat == null || destinationLng == null) && destination.isNotEmpty) {
+    if ((destinationLat == null || destinationLng == null) &&
+        destination.isNotEmpty) {
       try {
         // This would be a call to get coordinates from the destination name
         // For now, we'll use a placeholder
@@ -1223,7 +1281,7 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
     setState(() {
       _showEndTripButton = false;
       _showEndOdometerInput = true;
-      
+
       // Clear any cached routes since we're ending the trip
       _lastSuccessfulRoutePoints = [];
       _lastRouteOrigin = "";
@@ -1356,11 +1414,13 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
     _destinationController.dispose();
 
     // Clear map controller resources
-    _mapController.future.then((controller) {
-      controller.dispose();
-    }).catchError((e) {
-      debugPrint('Error disposing map controller: $e');
-    });
+    _mapController.future
+        .then((controller) {
+          controller.dispose();
+        })
+        .catchError((e) {
+          debugPrint('Error disposing map controller: $e');
+        });
 
     if (_stompClient != null) {
       debugPrint('🔌 Closing STOMP WebSocket connection');
@@ -1393,6 +1453,29 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
           children: [const SizedBox(width: 8), const Text('Driver Tracking')],
         ),
         backgroundColor: const Color(0xFF002B80),
+        actions: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                decoration: BoxDecoration(
+                  color: _getTripStatusColor(),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  _getStatusBadgeText(),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color:
+                        _shouldUseWhiteText() ? Colors.white : Colors.black87,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
       body: Stack(
         children: [
@@ -1473,14 +1556,24 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(10),
-                boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 2))],
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 6,
+                    offset: Offset(0, 2),
+                  ),
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.directions_car, color: Colors.blue[700], size: 22),
+                      Icon(
+                        Icons.directions_car,
+                        color: Colors.blue[700],
+                        size: 22,
+                      ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
@@ -1502,7 +1595,11 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.access_time, color: Colors.green[700], size: 18),
+                          Icon(
+                            Icons.access_time,
+                            color: Colors.green[700],
+                            size: 18,
+                          ),
                           const SizedBox(width: 6),
                           Text(
                             _duration,
@@ -1513,7 +1610,11 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.route, color: Colors.orange[700], size: 18),
+                          Icon(
+                            Icons.route,
+                            color: Colors.orange[700],
+                            size: 18,
+                          ),
                           const SizedBox(width: 6),
                           Text(
                             _distance,
@@ -1827,6 +1928,32 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
     }
   }
 
+  String _getStatusBadgeText() {
+    switch (_tripStatus) {
+      case 'OTP sent to user':
+        return 'OTP Sent';
+      case 'OTP verified':
+        return 'OTP Verified';
+      case 'Trip in progress':
+        return 'Trip In Progress';
+      case 'Trip completed':
+        return 'Trip Completed';
+      case 'Verifying OTP...':
+        return 'Verifying OTP';
+      case 'Waiting for final verification':
+        return 'Final Verification';
+      default:
+        return _tripStatus;
+    }
+  }
+
+  bool _shouldUseWhiteText() {
+    // Use white text for dark backgrounds
+    return _tripStatus == 'OTP verified' ||
+        _tripStatus == 'Trip in progress' ||
+        _tripStatus == 'Trip completed';
+  }
+
   void _handleOtpVerified() {
     setState(() {
       _tripStatus = 'OTP verified';
@@ -1858,25 +1985,27 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
       if (data['destinationLatitude'] != null &&
           data['destinationLongitude'] != null) {
         try {
-          double destLat = data['destinationLatitude'] is double 
-              ? data['destinationLatitude'] 
-              : double.parse(data['destinationLatitude'].toString());
-          
-          double destLng = data['destinationLongitude'] is double 
-              ? data['destinationLongitude'] 
-              : double.parse(data['destinationLongitude'].toString());
-          
+          double destLat =
+              data['destinationLatitude'] is double
+                  ? data['destinationLatitude']
+                  : double.parse(data['destinationLatitude'].toString());
+
+          double destLng =
+              data['destinationLongitude'] is double
+                  ? data['destinationLongitude']
+                  : double.parse(data['destinationLongitude'].toString());
+
           _destinationLocation = LatLng(destLat, destLng);
           debugPrint('✅ Destination set to: $destLat, $destLng');
-          
+
           // Clear any cached routes since we're changing destinations
           _lastSuccessfulRoutePoints = [];
           _lastRouteOrigin = "";
           _lastRouteDestination = "";
-          
+
           // Force update markers
           _updateMapMarkers();
-          
+
           // Force update route with a small delay to ensure markers are updated first
           Future.delayed(const Duration(milliseconds: 500), () {
             if (mounted) {
@@ -1891,6 +2020,11 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
   }
 
   void _handleFinalOtpVerified(Map<String, dynamic> data) {
+    // Close any open OTP popups/dialogs first
+    Navigator.of(context, rootNavigator: true).popUntil((route) {
+      return route.isFirst;
+    });
+
     SharedPreferences.getInstance().then((prefs) {
       final startOdometer = prefs.getString('startOdometer') ?? '0';
       final endOdometer = prefs.getString('endOdometer') ?? '0';
@@ -1905,7 +2039,7 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
         _polylines = {};
         _destinationLocation = null;
         _markers = {}; // Clear all markers
-        
+
         // Only keep driver marker
         if (_driverLocation != null) {
           _markers.add(
@@ -1921,7 +2055,7 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
             ),
           );
         }
-        
+
         // Show a trip summary
         _tripSummary = {
           'startOdometer': startOdometer,
@@ -1933,13 +2067,13 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
           'duration': data['tripDuration'] ?? 'Not available',
         };
         _showTripSummary = true;
-        
+
         // Update status message
         _statusMessage = 'Trip completed';
         _distance = '0 m';
         _duration = '0 min';
       });
-      
+
       // Reset the map camera to focus on driver's current location
       _mapController.future.then((controller) {
         if (_driverLocation != null) {
