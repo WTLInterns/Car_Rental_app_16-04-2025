@@ -6,6 +6,7 @@ import 'package:worldtriplink/screens/trips_screen.dart';
 import 'package:worldtriplink/screens/offers_screen.dart';
 import 'package:worldtriplink/screens/profile_screen.dart';
 import 'package:worldtriplink/screens/cab_booking_screen.dart';
+import 'package:worldtriplink/screens/ets_booking_screen.dart';
 
 // Primary colors
 const Color primaryColor = Color(0xFF4A90E2);      // Blue
@@ -300,6 +301,20 @@ class _HomeContentState extends State<_HomeContent> {
                           ),
                         ),
                       ),
+                      
+                      _buildServiceCard(
+                        icon: Icons.badge, // Professional ID badge icon
+                        label: 'ETS',
+                        iconColor: Colors.white, // White icon for better contrast
+                        bgColor: const Color(0xFF3F51B5), // Indigo color for corporate feel
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const EtsBookingScreen(),
+                          ),
+                        ),
+                      ),
+                      
                       _buildServiceCard(
                         icon: Icons.check,
                         label: 'Bus',
