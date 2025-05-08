@@ -73,27 +73,18 @@ class _PaymentScreenState extends State<PaymentScreen> {
     }
   }
 
-  Future<void> _handlePayment() async {
-    setState(() => _isLoading = true);
-    developer.log('Starting payment process', name: 'PaymentScreen');
+  void _handlePayment() async {
     try {
-      // Always fetch userId from SharedPreferences before making the call
-      final prefs = await SharedPreferences.getInstance();
-      String? effectiveUserId = _storedUserId;
-      if (prefs.containsKey('userId')) {
-        effectiveUserId = prefs.getInt('userId')?.toString();
-      }
-      if ((effectiveUserId == null || effectiveUserId.isEmpty) &&
-          prefs.containsKey('userData')) {
-        final userData = prefs.getString('userData');
-        if (userData != null) {
-          final parsedData = json.decode(userData);
-          if (parsedData['id'] != null) {
-            effectiveUserId = parsedData['id'].toString();
-          }
-        }
-      }
-      effectiveUserId = effectiveUserId ?? widget.bookingData['userId']?.toString() ?? '0';
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        },
+      );
 
       final baseUrl = 'http://192.168.1.76:8081';
       final response = await http.post(
@@ -102,46 +93,56 @@ class _PaymentScreenState extends State<PaymentScreen> {
           'pickUpLocation': widget.bookingData['pickup'],
           'dropLocation': widget.bookingData['destination'],
           'time': widget.bookingData['time'],
-          'returnTime': widget.bookingData['returnTime'] ?? widget.bookingData['time'],
+          'returnTime': widget.bookingData['returnTime'],
           'cabType': widget.bookingData['vehicleType'],
-          'finalAmount': widget.bookingData['totalFare'],
-          'baseAmount': widget.bookingData['baseFare'],
-          'serviceCharge': widget.bookingData['serviceCharge'],
-          'gst': widget.bookingData['gst'],
-          'distance': widget.bookingData['distance'],
-          'sittingExcepatation': widget.bookingData['seats'],
+          'finalAmount': widget.bookingData['finalAmount'].toString(),
+          'baseAmount': widget.bookingData['baseAmount'].toString(),
+          'serviceCharge': widget.bookingData['serviceCharge'].toString(),
+          'gst': widget.bookingData['gst'].toString(),
+          'distance': widget.bookingData['distance'].toString(),
+          'sittingExcepatation': '6', // Default value
           'dates': widget.bookingData['date'],
-          'userId': effectiveUserId,
+          'userId': widget.bookingData['userId'].toString(),
           'shiftTime': widget.bookingData['shiftTime'],
-          'parnterSharing': '2',
+          'parnterSharing': '2', // Default value
         },
       );
+
+      // Close loading dialog
+      Navigator.pop(context);
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['status'] == 'success') {
-          developer.log('Booking confirmed successfully', name: 'PaymentScreen');
-          _showBookingConfirmation(data['bookingId'] ?? 'Unknown');
+          // Show success message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(data['message']),
+              backgroundColor: Colors.green,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+
+          // Navigate to success screen or home
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const HomeScreen()),
+            (route) => false,
+          );
         } else {
-          final errorMsg = data['message'] ?? 'Failed to create booking';
-          developer.log('Booking failed: $errorMsg', name: 'PaymentScreen');
-          _showErrorDialog(errorMsg);
+          throw Exception(data['message'] ?? 'Booking failed');
         }
       } else {
-        throw Exception('Failed to process payment. Status: ${response.statusCode}');
+        throw Exception('Failed to confirm booking');
       }
-    } on TimeoutException {
-      developer.log('Request timeout occurred', name: 'PaymentScreen');
-      _showErrorDialog('Request timed out. Please check your connection.');
-    } on http.ClientException catch (e) {
-      developer.log('Network error: ${e.message}', name: 'PaymentScreen');
-      _showErrorDialog('Network error occurred');
     } catch (e) {
-      developer.log('Unexpected error: $e', name: 'PaymentScreen');
-      _showErrorDialog('An unexpected error occurred');
-    } finally {
-      setState(() => _isLoading = false);
-      developer.log('Payment process completed', name: 'PaymentScreen');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 

@@ -179,6 +179,8 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
           'serviceCharge': data['serviceCharge'],
           'gst': data['gst'],
           'totalFare': data['totalAmount'],
+          'finalAmount': data['totalAmount'],
+          'baseAmount': data['baseFare'],
         };
 
         // Navigate to payment screen
