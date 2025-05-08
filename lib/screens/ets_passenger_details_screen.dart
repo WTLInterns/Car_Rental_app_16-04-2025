@@ -21,6 +21,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
   final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _partnerSharingController = TextEditingController();
 
   String _userId = '';
   bool _isLoading = true;
@@ -42,6 +43,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
     'lastName': '',
     'email': '',
     'phone': '',
+    'partnerSharing': '',
   };
 
   @override
@@ -80,6 +82,9 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
           if (parsedData['id'] != null) {
             _userId = parsedData['id'].toString();
           }
+          
+          // Set default partner sharing value
+          _partnerSharingController.text = '2';
         });
       }
     } catch (e) {
@@ -96,6 +101,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
       'lastName': '',
       'email': '',
       'phone': '',
+      'partnerSharing': '',
     };
 
     if (_firstNameController.text.trim().isEmpty) {
@@ -122,6 +128,17 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
     } else if (!RegExp(r'^\d{10}$').hasMatch(_phoneController.text.trim())) {
       newErrors['phone'] = 'Please enter a valid 10-digit phone number';
       isValid = false;
+    }
+
+    if (_partnerSharingController.text.trim().isEmpty) {
+      newErrors['partnerSharing'] = 'Partner sharing is required';
+      isValid = false;
+    } else {
+      final partnerSharing = int.tryParse(_partnerSharingController.text);
+      if (partnerSharing == null || partnerSharing < 1 || partnerSharing > 4) {
+        newErrors['partnerSharing'] = 'Partner sharing must be between 1 and 4';
+        isValid = false;
+      }
     }
 
     setState(() => _errors = newErrors);
@@ -181,6 +198,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
           'totalFare': data['totalAmount'],
           'finalAmount': data['totalAmount'],
           'baseAmount': data['baseFare'],
+          'parnterSharing': _partnerSharingController.text,
         };
 
         // Navigate to payment screen
@@ -634,6 +652,15 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                 keyboardType: TextInputType.phone,
                 icon: Icons.phone_outlined,
               ),
+              const SizedBox(height: 16),
+              _buildTextField(
+                controller: _partnerSharingController,
+                label: 'Partner Sharing',
+                error: _errors['partnerSharing'] ?? '',
+                keyboardType: TextInputType.number,
+                icon: Icons.group_outlined,
+                hint: 'Enter number of partners (1-4)',
+              ),
             ],
           ),
         ),
@@ -648,6 +675,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
     required TextInputType keyboardType,
     required IconData icon,
     bool required = true,
+    String? hint,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -682,7 +710,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
               horizontal: 16,
               vertical: 12,
             ),
-            hintText: 'Enter $label',
+            hintText: hint,
             hintStyle: TextStyle(color: Colors.grey.shade400),
             errorText: error.isNotEmpty ? error : null,
             filled: true,

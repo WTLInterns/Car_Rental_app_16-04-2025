@@ -23,6 +23,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
   bool _isLoading = false;
   String _selectedPaymentMethod = 'cash';
   String? _storedUserId;
+  
+  // Add TextEditingController declarations
+  final TextEditingController _firstNameController = TextEditingController();
+  final TextEditingController _lastNameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
 
   // Professional color palette
   final Color primaryColor = const Color(0xFF3057E3);      // Royal blue from the image
@@ -41,39 +47,54 @@ class _PaymentScreenState extends State<PaymentScreen> {
   @override
   void initState() {
     super.initState();
-    _getUserData();
+    _loadUserData();
   }
 
-  Future<void> _getUserData() async {
+  Future<void> _loadUserData() async {
+    setState(() => _isLoading = true);
+
     try {
       final prefs = await SharedPreferences.getInstance();
-      // Try both 'userId' (int) and 'userData' (json string)
-      String? userId;
-      if (prefs.containsKey('userId')) {
-        userId = prefs.getInt('userId')?.toString();
-      }
-      if ((userId == null || userId.isEmpty) && prefs.containsKey('userData')) {
-        final userData = prefs.getString('userData');
-        if (userData != null) {
-          final parsedData = json.decode(userData);
-          if (parsedData['id'] != null) {
-            userId = parsedData['id'].toString();
+      final userData = prefs.getString('userData');
+      
+      if (userData != null) {
+        final parsedData = json.decode(userData);
+        setState(() {
+          _storedUserId = parsedData['id']?.toString() ?? '';
+          
+          // Load other user data
+          if (parsedData['username'] != null) {
+            _firstNameController.text = parsedData['username'];
           }
-        }
+          if (parsedData['lastName'] != null) {
+            _lastNameController.text = parsedData['lastName'];
+          }
+          if (parsedData['email'] != null) {
+            _emailController.text = parsedData['email'];
+          }
+          if (parsedData['phone'] != null) {
+            _phoneController.text = parsedData['phone'];
+          }
+        });
       }
-      setState(() {
-        _storedUserId = userId;
-      });
-      developer.log(
-        'Loaded userId from SharedPreferences: $_storedUserId',
-        name: 'PaymentScreen',
-      );
     } catch (e) {
-      debugPrint('Error retrieving user data: $e');
+      debugPrint('Error loading user data: $e');
+    } finally {
+      setState(() => _isLoading = false);
     }
   }
 
   void _handlePayment() async {
+    if (_storedUserId == null || _storedUserId!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('User ID is required. Please login again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     try {
       // Show loading indicator
       showDialog(
@@ -86,26 +107,31 @@ class _PaymentScreenState extends State<PaymentScreen> {
         },
       );
 
+      // Log the data being sent
+      final requestData = {
+        'pickUpLocation': widget.bookingData['pickup'],
+        'dropLocation': widget.bookingData['destination'],
+        'time': widget.bookingData['time'],
+        'returnTime': widget.bookingData['returnTime'],
+        'cabType': widget.bookingData['vehicleType'],
+        'finalAmount': widget.bookingData['finalAmount'].toString(),
+        'baseAmount': widget.bookingData['baseAmount'].toString(),
+        'serviceCharge': widget.bookingData['serviceCharge'].toString(),
+        'gst': widget.bookingData['gst'].toString(),
+        'distance': widget.bookingData['distance'].toString(),
+        'sittingExcepatation': widget.bookingData['sittingExcepatation'].toString(),
+        'dates': widget.bookingData['date'],
+        'userId': _storedUserId,
+        'shiftTime': widget.bookingData['shiftTime'],
+        'parnterSharing': widget.bookingData['parnterSharing'].toString(),
+      };
+
+      debugPrint('Sending booking data: $requestData');
+
       final baseUrl = 'http://192.168.1.76:8081';
       final response = await http.post(
         Uri.parse('$baseUrl/schedule/etsBookingConfirm'),
-        body: {
-          'pickUpLocation': widget.bookingData['pickup'],
-          'dropLocation': widget.bookingData['destination'],
-          'time': widget.bookingData['time'],
-          'returnTime': widget.bookingData['returnTime'],
-          'cabType': widget.bookingData['vehicleType'],
-          'finalAmount': widget.bookingData['finalAmount'].toString(),
-          'baseAmount': widget.bookingData['baseAmount'].toString(),
-          'serviceCharge': widget.bookingData['serviceCharge'].toString(),
-          'gst': widget.bookingData['gst'].toString(),
-          'distance': widget.bookingData['distance'].toString(),
-          'sittingExcepatation': '6', // Default value
-          'dates': widget.bookingData['date'],
-          'userId': widget.bookingData['userId'].toString(),
-          'shiftTime': widget.bookingData['shiftTime'],
-          'parnterSharing': '2', // Default value
-        },
+        body: requestData,
       );
 
       // Close loading dialog
@@ -113,20 +139,20 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
+        debugPrint('Booking response: $data');
+        
         if (data['status'] == 'success') {
-          // Show success message
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(data['message']),
+              content: Text(data['message'] ?? 'Booking confirmed successfully'),
               backgroundColor: Colors.green,
               behavior: SnackBarBehavior.floating,
             ),
           );
 
-          // Navigate to success screen or home
           Navigator.pushAndRemoveUntil(
             context,
-            MaterialPageRoute(builder: (context) => const HomeScreen()),
+            MaterialPageRoute(builder: (context) => const UserHomeScreen()),
             (route) => false,
           );
         } else {
@@ -791,13 +817,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 child: Column(
                   children: [
                     _buildPaymentOption(
-                      'UPI',
-                      'Pay using Google Pay, PhonePe, etc.',
-                      MaterialCommunityIcons.qrcode_scan,
-                      'upi',
-                    ),
-                    const Divider(),
-                    _buildPaymentOption(
                       'Cash on Arrival',
                       'Pay directly to the driver',
                       MaterialCommunityIcons.cash,
@@ -957,5 +976,97 @@ class _PaymentScreenState extends State<PaymentScreen> {
         ),
       ),
     );
+  }
+
+  void _handleProceedToPayment() async {
+    if (!_validateForm()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please fill all required fields correctly'),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    try {
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        },
+      );
+
+      // Get invoice details
+      final baseUrl = 'http://192.168.1.76:8081';
+      final response = await http.post(
+        Uri.parse('$baseUrl/schedule/invoice'),
+        body: {
+          'baseFare': widget.bookingData['baseFare'].toString(),
+          'cabType': widget.bookingData['vehicleType'],
+        },
+      );
+
+      // Close loading dialog
+      Navigator.pop(context);
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        
+        // Convert all price values to integers
+        final baseFare = int.parse(data['baseFare'].toString());
+        final serviceCharge = int.parse(data['serviceCharge'].toString());
+        final gst = int.parse(data['gst'].toString());
+        final totalAmount = int.parse(data['totalAmount'].toString());
+        
+        // Prepare data for payment screen
+        final paymentData = {
+          ...widget.bookingData,
+          'passengerName': '${_firstNameController.text} ${_lastNameController.text}',
+          'passengerEmail': _emailController.text,
+          'passengerPhone': _phoneController.text,
+          'userId': _storedUserId,
+          'baseFare': baseFare,
+          'serviceCharge': serviceCharge,
+          'gst': gst,
+          'totalFare': totalAmount,
+          'finalAmount': totalAmount,
+          'baseAmount': baseFare,
+        };
+
+        // Navigate to payment screen
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PaymentScreen(bookingData: paymentData),
+          ),
+        );
+      } else {
+        throw Exception('Failed to get invoice details');
+      }
+    } catch (e) {
+      // Close loading dialog if it's still showing
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  bool _validateForm() {
+    // Implement your validation logic here
+    return true; // Placeholder, actual implementation needed
   }
 }

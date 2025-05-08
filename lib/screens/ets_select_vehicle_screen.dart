@@ -226,8 +226,12 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
     final distance = double.tryParse(_tripDistance) ?? 0;
     final baseFare = vehicle.price;
     final platformFee = (baseFare * 0.05).round(); // 5% platform fee
-    final gst = (baseFare * 0.05).round(); // 5% GST
+    final gst = (baseFare * 0.18).round(); // 18% GST
     final totalFare = baseFare + platformFee + gst;
+
+    // Calculate sitting expectation (available seats minus driver)
+    final totalSeats = int.tryParse(vehicle.seats) ?? 0;
+    final sittingExpectation = totalSeats - 1; // Subtract driver
 
     // Prepare data for passenger details screen
     final bookingDetails = {
@@ -235,21 +239,25 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
       'vehicleType': vehicle.type,
       'price': '₹${vehicle.price}',
       'baseFare': baseFare.toString(),
-      'platformFee': platformFee,
-      'gst': gst,
-      'totalFare': totalFare,
+      'platformFee': platformFee.toString(),
+      'gst': gst.toString(),
+      'totalFare': totalFare.toString(),
+      'finalAmount': totalFare.toString(),
+      'baseAmount': baseFare.toString(),
       'modelType': vehicle.modelType,
       'distance': _tripDistance,
       'seats': vehicle.seats,
       'imageUrl': vehicle.imageUrl,
+      'sittingExcepatation': sittingExpectation.toString(),
     };
+
+    debugPrint('Vehicle selection data: $bookingDetails');
 
     // Navigate to passenger details screen
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder:
-            (context) => PassengerDetailsScreen(bookingData: bookingDetails),
+        builder: (context) => PassengerDetailsScreen(bookingData: bookingDetails),
       ),
     );
   }
@@ -909,7 +917,7 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
               'Platform Fee (5%)',
               '₹${(vehicle.price * 0.05).round()}',
             ),
-            _buildFareRow('GST (5%)', '₹${(vehicle.price * 0.05).round()}'),
+            _buildFareRow('GST (18%)', '₹${(vehicle.price * 0.18).round()}'),
             const Divider(),
             _buildFareRow(
               'Total Fare',
