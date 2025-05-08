@@ -6,6 +6,9 @@ import 'package:worldtriplink/screens/offers_screen.dart';
 import 'package:worldtriplink/screens/profile_screen.dart';
 import 'package:worldtriplink/screens/cab_booking_screen.dart';
 import 'package:worldtriplink/screens/ets_booking_screen.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+const String googleMapsApiKey = "AIzaSyCelDo4I5cPQ72TfCTQW-arhPZ7ALNcp8w";
 
 // Primary colors
 const Color primaryColor = Color(0xFF4A90E2);      // Blue
@@ -251,27 +254,32 @@ class _HomeContentState extends State<_HomeContent> {
                     ],
                   ),
                   const SizedBox(height: 20),
-                  Container(
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: backgroundColor,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.grey.withOpacity(0.2)),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 15),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.search,
-                          size: 22,
-                          color: Colors.grey,
-                        ),
-                        const SizedBox(width: 10),
-                        const Text(
-                          'Where do you want to go?',
-                          style: TextStyle(fontSize: 16, color: mutedTextColor),
-                        ),
-                      ],
+                  GestureDetector(
+                    onTap: () {
+                      _showSearchDialog(context);
+                    },
+                    child: Container(
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: backgroundColor,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 15),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.search,
+                            size: 22,
+                            color: Colors.grey,
+                          ),
+                          const SizedBox(width: 10),
+                          const Text(
+                            'Where do you want to go?',
+                            style: TextStyle(fontSize: 16, color: mutedTextColor),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -739,4 +747,117 @@ class _HomeContentState extends State<_HomeContent> {
       ),
     );
   }
+}
+
+void _showSearchDialog(BuildContext context) {
+  final TextEditingController _searchController = TextEditingController();
+  List<dynamic> _searchSuggestions = [];
+  
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: const Text('Enter Destination'),
+            content: Container(
+              width: double.maxFinite,
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.5,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: _searchController,
+                    decoration: const InputDecoration(
+                      hintText: 'Where do you want to go?',
+                      prefixIcon: Icon(Icons.location_on, color: Colors.red),
+                    ),
+                    onChanged: (value) async {
+                      if (value.length > 2) {
+                        try {
+                          final response = await http.get(
+                            Uri.parse(
+                              'https://maps.googleapis.com/maps/api/place/autocomplete/json?'
+                              'input=$value&key=$googleMapsApiKey&components=country:in',
+                            ),
+                          );
+
+                          if (response.statusCode == 200) {
+                            final data = json.decode(response.body);
+                            setState(() {
+                              _searchSuggestions = data['predictions'] ?? [];
+                            });
+                          }
+                        } catch (e) {
+                          // Silently fail on search error
+                        }
+                      } else {
+                        setState(() {
+                          _searchSuggestions = [];
+                        });
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  Expanded(
+                    child: _searchSuggestions.isEmpty
+                      ? const Center(child: Text('Enter a location to search'))
+                      : ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: _searchSuggestions.length,
+                          itemBuilder: (context, index) {
+                            final suggestion = _searchSuggestions[index];
+                            return ListTile(
+                              leading: const Icon(Icons.location_on, color: Colors.grey),
+                              title: Text(suggestion['description']),
+                              dense: true,
+                              onTap: () {
+                                Navigator.pop(context);
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => CabBookingScreen(
+                                      dropLocation: suggestion['description'],
+                                    ),
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  if (_searchController.text.isNotEmpty) {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CabBookingScreen(
+                          dropLocation: _searchController.text,
+                        ),
+                      ),
+                    );
+                  }
+                },
+                child: const Text('Search'),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
 }
