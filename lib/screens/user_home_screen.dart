@@ -8,6 +8,7 @@ import 'package:worldtriplink/screens/cab_booking_screen.dart';
 import 'package:worldtriplink/screens/ets_booking_screen.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:worldtriplink/screens/notification_screen.dart';
 const String googleMapsApiKey = "AIzaSyCelDo4I5cPQ72TfCTQW-arhPZ7ALNcp8w";
 
 // Primary colors
@@ -95,7 +96,14 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
             actions: [
               IconButton(
                 icon: const Icon(Icons.notifications_outlined, color: Colors.white),
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const NotificationScreen(),
+                    ),
+                  );
+                },
               ),
             ],
           )
