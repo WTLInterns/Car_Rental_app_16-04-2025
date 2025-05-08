@@ -93,57 +93,34 @@ class _PaymentScreenState extends State<PaymentScreen> {
           }
         }
       }
-      effectiveUserId =
-          effectiveUserId ?? widget.bookingData['userId']?.toString() ?? '0';
-      developer.log(
-        'Effective User ID: $effectiveUserId',
-        name: 'PaymentScreen',
+      effectiveUserId = effectiveUserId ?? widget.bookingData['userId']?.toString() ?? '0';
+
+      final baseUrl = 'http://192.168.1.76:8081';
+      final response = await http.post(
+        Uri.parse('$baseUrl/schedule/etsBookingConfirm'),
+        body: {
+          'pickUpLocation': widget.bookingData['pickup'],
+          'dropLocation': widget.bookingData['destination'],
+          'time': widget.bookingData['time'],
+          'returnTime': widget.bookingData['returnTime'] ?? widget.bookingData['time'],
+          'cabType': widget.bookingData['vehicleType'],
+          'finalAmount': widget.bookingData['totalFare'],
+          'baseAmount': widget.bookingData['baseFare'],
+          'serviceCharge': widget.bookingData['serviceCharge'],
+          'gst': widget.bookingData['gst'],
+          'distance': widget.bookingData['distance'],
+          'sittingExcepatation': widget.bookingData['seats'],
+          'dates': widget.bookingData['date'],
+          'userId': effectiveUserId,
+          'shiftTime': widget.bookingData['shiftTime'],
+          'parnterSharing': '2',
+        },
       );
-      // Only include parameters required by the API
-      final Map<String, String> requestParams = {
-        'tripType': widget.bookingData['bookingType'] ?? 'oneWay',
-        'pickupLocation': widget.bookingData['pickup'] ?? '',
-        'dropLocation': widget.bookingData['destination'] ?? '',
-        'date': widget.bookingData['date'] ?? '',
-        'time': widget.bookingData['time'] ?? '',
-        'Returndate': widget.bookingData['returnDate'] ?? '',
-        'cabId': widget.bookingData['cabId']?.toString() ?? '',
-        'modelName': widget.bookingData['vehicleType'] ?? '',
-        'modelType': widget.bookingData['modelType'] ?? '',
-        'seats': widget.bookingData['seats']?.toString() ?? '',
-        'fuelType': widget.bookingData['fuelType'] ?? '',
-        'availability': widget.bookingData['availability'] ?? '',
-        'price': widget.bookingData['baseFare']?.toString() ?? '0',
-        'distance': widget.bookingData['distance']?.toString() ?? '0',
-        'name': widget.bookingData['passengerName'] ?? '',
-        'email': widget.bookingData['passengerEmail'] ?? '',
-        'service': widget.bookingData['platformFee']?.toString() ?? '0',
-        'gst': widget.bookingData['gst']?.toString() ?? '0',
-        'total': widget.bookingData['totalFare']?.toString() ?? '0',
-        'days': widget.bookingData['days']?.toString() ?? '1',
-        'driverrate': widget.bookingData['driverRate']?.toString() ?? '0',
-        'phone': widget.bookingData['passengerPhone'] ?? '',
-        'userId': effectiveUserId,
-      };
-      final uri = Uri.parse(
-        '$API_BASE_URL/bookingConfirm',
-      ).replace(queryParameters: requestParams);
-      developer.log('POST Request URL: $uri', name: 'PaymentScreen');
-      final response = await http
-          .post(uri, headers: {'Accept': 'application/json'})
-          .timeout(const Duration(seconds: 15));
-      developer.log(
-        'Response Status: ${response.statusCode}',
-        name: 'PaymentScreen',
-      );
-      developer.log('Response Body: ${response.body}', name: 'PaymentScreen');
+
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['status'] == 'success') {
-          developer.log(
-            'Booking confirmed successfully',
-            name: 'PaymentScreen',
-          );
+          developer.log('Booking confirmed successfully', name: 'PaymentScreen');
           _showBookingConfirmation(data['bookingId'] ?? 'Unknown');
         } else {
           final errorMsg = data['message'] ?? 'Failed to create booking';
@@ -151,9 +128,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
           _showErrorDialog(errorMsg);
         }
       } else {
-        throw Exception(
-          'Failed to process payment. Status: ${response.statusCode}',
-        );
+        throw Exception('Failed to process payment. Status: ${response.statusCode}');
       }
     } on TimeoutException {
       developer.log('Request timeout occurred', name: 'PaymentScreen');

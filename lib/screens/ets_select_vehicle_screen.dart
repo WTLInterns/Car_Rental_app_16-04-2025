@@ -5,7 +5,7 @@ import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:worldtriplink/screens/ets_passenger_details_screen.dart';
 import 'package:worldtriplink/screens/ets_booking_screen.dart';
 
-const String API_BASE_URL = 'https://api.worldtriplink.com/api';
+const String API_BASE_URL = '';
 
 class EtsSelectVehicleScreen extends StatefulWidget {
   final Map<String, dynamic> bookingData;
@@ -80,16 +80,19 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
     setState(() => _isLoading = true);
 
     try {
+      final baseUrl = 'http://192.168.1.76:8081';
       final response = await http.post(
-        Uri.parse('$API_BASE_URL/cab1'),
+        Uri.parse('$baseUrl/schedule/cabFinder'),
         body: {
-          'tripType': widget.bookingData['bookingType'],
-          'pickupLocation': widget.bookingData['pickup'],
+          'pickUpLocation': widget.bookingData['pickup'],
           'dropLocation': widget.bookingData['destination'],
-          'date': widget.bookingData['date'],
           'time': widget.bookingData['time'],
-          'hours': widget.bookingData['hours'] ?? '',
-          'Returndate': widget.bookingData['returnDate'] ?? '',
+          'returnTime': widget.bookingData['returnTime'] ?? widget.bookingData['time'],
+          'shiftTime': widget.bookingData['shiftTime'],
+          'distance': widget.bookingData['distance'],
+          'hatchback': widget.bookingData['hatchback']?.toString() ?? '0',
+          'sedan': widget.bookingData['sedan']?.toString() ?? '0',
+          'suv': widget.bookingData['suv']?.toString() ?? '0',
         },
       );
 
@@ -116,13 +119,6 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
   }
 
   void _processVehicleData(Map<String, dynamic> data) {
-    if (data['tripinfo'] == null || data['tripinfo'].isEmpty) {
-      return;
-    }
-
-    final tripDetails = data['tripinfo'][0];
-    final calculatedDistance = double.tryParse(_tripDistance) ?? 150;
-
     // Reset availability
     final newNoVehiclesAvailable = Map<String, bool>.from(_noVehiclesAvailable);
     final newVehicleData = <String, List<Vehicle>>{};
@@ -133,13 +129,13 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
     }
 
     // HatchBack vehicles
-    if (tripDetails['hatchback'] > 0) {
+    if (data['hatchbackRate'] != null) {
       newNoVehiclesAvailable['HatchBack'] = false;
       newVehicleData['HatchBack'] = [
         Vehicle(
           type: 'Maruti Swift',
-          price: (calculatedDistance * tripDetails['hatchback']).round(),
-          pricePerKm: tripDetails['hatchback'],
+          price: data['hatchbackFare']?.round() ?? 0,
+          pricePerKm: data['hatchbackRate']?.round() ?? 0,
           capacity: '2 bags',
           features: [
             'Petrol',
@@ -153,20 +149,19 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
           available: true,
           modelType: 'hatchback',
           seats: '4',
-          imageUrl:
-              _vehicleImages['hatchback'] ?? 'assets/images/hatchback.png',
+          imageUrl: _vehicleImages['hatchback'] ?? 'assets/images/hatchback.png',
         ),
       ];
     }
 
     // Sedan vehicles
-    if (tripDetails['sedan'] > 0) {
+    if (data['sedanRate'] != null) {
       newNoVehiclesAvailable['Sedan'] = false;
       newVehicleData['Sedan'] = [
         Vehicle(
           type: 'Maruti Swift Dzire',
-          price: (calculatedDistance * tripDetails['sedan']).round(),
-          pricePerKm: tripDetails['sedan'],
+          price: data['sedanFare']?.round() ?? 0,
+          pricePerKm: data['sedanRate']?.round() ?? 0,
           capacity: '3 bags',
           features: [
             'Diesel',
@@ -185,43 +180,14 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
       ];
     }
 
-    // SedanPremium vehicles
-    if (tripDetails['sedanpremium'] > 0) {
-      newNoVehiclesAvailable['SedanPremium'] = false;
-      newVehicleData['SedanPremium'] = [
-        Vehicle(
-          type: 'Honda City',
-          price: (calculatedDistance * tripDetails['sedanpremium']).round(),
-          pricePerKm: tripDetails['sedanpremium'],
-          capacity: '4 bags',
-          features: [
-            'Diesel',
-            'USB Charging',
-            'Air Conditioning',
-            'Music System',
-            'Leather Seats',
-          ],
-          rating: 4,
-          rides: 180,
-          arrivalTime: '7 mins',
-          available: true,
-          modelType: 'sedanpremium',
-          seats: '5',
-          imageUrl:
-              _vehicleImages['sedanpremium'] ??
-              'assets/images/sedan_premium.png',
-        ),
-      ];
-    }
-
     // SUV vehicles
-    if (tripDetails['suv'] > 0) {
+    if (data['suvRate'] != null) {
       newNoVehiclesAvailable['SUV'] = false;
       newVehicleData['SUV'] = [
         Vehicle(
           type: 'Toyota Innova',
-          price: (calculatedDistance * tripDetails['suv']).round(),
-          pricePerKm: tripDetails['suv'],
+          price: data['suvFare']?.round() ?? 0,
+          pricePerKm: data['suvRate']?.round() ?? 0,
           capacity: '5 bags',
           features: [
             'Diesel',
@@ -237,33 +203,6 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
           modelType: 'suv',
           seats: '7',
           imageUrl: _vehicleImages['suv'] ?? 'assets/images/suv.png',
-        ),
-      ];
-    }
-
-    // SUVPlus vehicles
-    if (tripDetails['suvplus'] > 0) {
-      newNoVehiclesAvailable['SUVPlus'] = false;
-      newVehicleData['SUVPlus'] = [
-        Vehicle(
-          type: 'Toyota Fortuner',
-          price: (calculatedDistance * tripDetails['suvplus']).round(),
-          pricePerKm: tripDetails['suvplus'],
-          capacity: '6 bags',
-          features: [
-            'Diesel',
-            'USB Charging',
-            'Air Conditioning',
-            'Music System',
-            'Premium Interior',
-          ],
-          rating: 4,
-          rides: 150,
-          arrivalTime: '15 mins',
-          available: true,
-          modelType: 'suvplus',
-          seats: '7',
-          imageUrl: _vehicleImages['suvplus'] ?? 'assets/images/suv_plus.png',
         ),
       ];
     }
@@ -287,7 +226,7 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
     final distance = double.tryParse(_tripDistance) ?? 0;
     final baseFare = vehicle.price;
     final platformFee = (baseFare * 0.05).round(); // 5% platform fee
-    final gst = (baseFare * 0.18).round(); // 18% GST
+    final gst = (baseFare * 0.05).round(); // 5% GST
     final totalFare = baseFare + platformFee + gst;
 
     // Prepare data for passenger details screen
@@ -970,7 +909,7 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
               'Platform Fee (5%)',
               '₹${(vehicle.price * 0.05).round()}',
             ),
-            _buildFareRow('GST (18%)', '₹${(vehicle.price * 0.18).round()}'),
+            _buildFareRow('GST (5%)', '₹${(vehicle.price * 0.05).round()}'),
             const Divider(),
             _buildFareRow(
               'Total Fare',

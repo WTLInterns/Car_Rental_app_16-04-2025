@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:worldtriplink/screens/ets_payment_screen.dart';
 import 'dart:convert';
 import 'package:worldtriplink/screens/ets_select_vehicle_screen.dart'; // Changed from select_vehicle_screen.dart
+import 'package:http/http.dart' as http;
 
 class PassengerDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> bookingData;
@@ -127,7 +128,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
     return isValid;
   }
 
-  void _handleProceedToPayment() {
+  void _handleProceedToPayment() async {
     if (!_validateForm()) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -139,23 +140,66 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
       return;
     }
 
-    // Prepare data for payment screen
-    final paymentData = {
-      ...widget.bookingData,
-      'passengerName':
-          '${_firstNameController.text} ${_lastNameController.text}',
-      'passengerEmail': _emailController.text,
-      'passengerPhone': _phoneController.text,
-      'userId': _userId,
-    };
+    try {
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        },
+      );
 
-    // Navigate to payment screen
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PaymentScreen(bookingData: paymentData),
-      ),
-    );
+      // Get invoice details
+      final baseUrl = 'http://192.168.1.76:8081';
+      final response = await http.post(
+        Uri.parse('$baseUrl/schedule/invoice'),
+        body: {
+          'baseFare': widget.bookingData['baseFare'],
+          'cabType': widget.bookingData['vehicleType'],
+        },
+      );
+
+      // Close loading dialog
+      Navigator.pop(context);
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        
+        // Prepare data for payment screen
+        final paymentData = {
+          ...widget.bookingData,
+          'passengerName': '${_firstNameController.text} ${_lastNameController.text}',
+          'passengerEmail': _emailController.text,
+          'passengerPhone': _phoneController.text,
+          'userId': _userId,
+          'baseFare': data['baseFare'],
+          'serviceCharge': data['serviceCharge'],
+          'gst': data['gst'],
+          'totalFare': data['totalAmount'],
+        };
+
+        // Navigate to payment screen
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PaymentScreen(bookingData: paymentData),
+          ),
+        );
+      } else {
+        throw Exception('Failed to get invoice details');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   @override

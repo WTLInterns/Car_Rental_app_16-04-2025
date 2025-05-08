@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:worldtriplink/screens/trips_screen.dart';
 import 'package:worldtriplink/screens/offers_screen.dart';
 import 'package:worldtriplink/screens/profile_screen.dart';
@@ -305,8 +304,8 @@ class _HomeContentState extends State<_HomeContent> {
                       _buildServiceCard(
                         icon: Icons.badge, // Professional ID badge icon
                         label: 'ETS',
-                        iconColor: Colors.white, // White icon for better contrast
-                        bgColor: const Color(0xFF3F51B5), // Indigo color for corporate feel
+                        iconColor: primaryColor, // Changed to primaryColor (blue) instead of white
+                        bgColor: primaryColor.withOpacity(0.2), // Changed to transparent background with primary color tint
                         onTap: () => Navigator.push(
                           context,
                           MaterialPageRoute(

@@ -287,7 +287,7 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
     final distance = double.tryParse(_tripDistance) ?? 0;
     final baseFare = vehicle.price;
     final platformFee = (baseFare * 0.05).round(); // 5% platform fee
-    final gst = (baseFare * 0.18).round(); // 18% GST
+    final gst = (baseFare * 0.05).round(); // 5% GST (changed from 18%)
     final totalFare = baseFare + platformFee + gst;
 
     // Prepare data for passenger details screen
@@ -314,7 +314,6 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
       ),
     );
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -971,7 +970,7 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
               'Platform Fee (5%)',
               '₹${(vehicle.price * 0.05).round()}',
             ),
-            _buildFareRow('GST (18%)', '₹${(vehicle.price * 0.18).round()}'),
+            _buildFareRow('GST (5%)', '₹${(vehicle.price * 0.05).round()}'),
             const Divider(),
             _buildFareRow(
               'Total Fare',

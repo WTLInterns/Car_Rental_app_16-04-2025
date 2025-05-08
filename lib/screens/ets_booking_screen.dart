@@ -254,24 +254,8 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> {
                                   return;
                                 }
                                 
-                                // Prepare booking data
-                                final bookingData = {
-                                  'pickup': _pickupController.text,
-                                  'destination': _dropController.text,
-                                  'date': DateFormat('yyyy-MM-dd').format(_selectedDates[0]),
-                                  'time': _selectedTime!.format(context),
-                                  'bookingType': _isOneWay ? 'oneWay' : 'roundTrip',
-                                  'returnDate': _selectedDates.length > 1 ? 
-                                      DateFormat('yyyy-MM-dd').format(_selectedDates[1]) : '',
-                                };
-                                
-                                // Navigate to EtsSelectVehicleScreen
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => EtsSelectVehicleScreen(bookingData: bookingData),
-                                  ),
-                                );
+                                // Call API to get vehicle availability
+                                _fetchVehicleAvailability();
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF4CAF50),
@@ -611,72 +595,12 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> {
       ),
     );
   }
-
-  Widget _buildTimePicker(BuildContext context) {
+Widget _buildTimePicker(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Trip type toggle buttons
-          Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey[300]!),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: InkWell( // Changed from GestureDetector to InkWell for better feedback
-                    onTap: () {
-                      setState(() {
-                        _isOneWay = true;
-                      });
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        color: _isOneWay ? Colors.blue : Colors.white,
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(11),
-                          bottomLeft: Radius.circular(11),
-                        ),
-                      ),
-                      child: Icon(
-                        Icons.arrow_forward,
-                        color: _isOneWay ? Colors.white : Colors.grey,
-                      ),
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: InkWell( // Changed from GestureDetector to InkWell
-                    onTap: () {
-                      setState(() {
-                        _isOneWay = false;
-                      });
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        color: _isOneWay ? Colors.white : Colors.blue,
-                        borderRadius: const BorderRadius.only(
-                          topRight: Radius.circular(11),
-                          bottomRight: Radius.circular(11),
-                        ),
-                      ),
-                      child: Icon(
-                        Icons.sync,
-                        color: _isOneWay ? Colors.grey : Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
           Text(
             'Pickup Time',
             style: TextStyle(
@@ -699,9 +623,9 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> {
                   const Icon(Icons.access_time, color: Color(0xFF0066CC)),
                   const SizedBox(width: 12),
                   Text(
-                    _selectedTime != null
-                        ? _selectedTime!.format(context)
-                        : 'Select Time',
+                    _selectedTime == null 
+                        ? 'Select Time' 
+                        : _formatTimeDisplay(_selectedTime!),
                     style: TextStyle(color: Colors.grey[800]),
                   ),
                 ],
@@ -713,8 +637,12 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> {
     );
   }
 
-
-
+String _formatTimeDisplay(TimeOfDay time) {
+    final hour = time.hourOfPeriod == 0 ? 12 : time.hourOfPeriod;
+    final minute = time.minute.toString().padLeft(2, '0');
+    final period = time.period == DayPeriod.am ? 'AM' : 'PM';
+    return '$hour:$minute $period';
+  }
 
 
   Future<void> _selectDate(BuildContext context) async {
@@ -757,6 +685,126 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> {
     );
   }
 
+ Future<void> _fetchVehicleAvailability() async {
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return const Center(
+          child: CircularProgressIndicator(),
+        );
+      },
+    );
+    
+    try {
+      // Use 192.168.1.76 for development
+      final baseUrl = 'http://192.168.1.76:8081';
+      final Uri uri = Uri.parse('$baseUrl/schedule/etsCab1');
+      
+      // Format dates for API call
+      List<String> formattedDates = _selectedDates.map((date) => 
+          DateFormat('yyyy-MM-dd').format(date)).toList();
+      
+      // Format time in 24-hour format (HH:mm)
+      String formattedTime = '';
+      if (_selectedTime != null) {
+        final hour = _selectedTime!.hour.toString().padLeft(2, '0');
+        final minute = _selectedTime!.minute.toString().padLeft(2, '0');
+        formattedTime = '$hour:$minute';
+      }
+      
+      // Build query parameters
+      Map<String, dynamic> queryParams = {
+        'pickUpLocation': _pickupController.text,
+        'dropLocation': _dropController.text,
+        'time': formattedTime,
+        'shiftTime': formattedTime,
+      };
+      
+      // Add dates manually since Uri.replace doesn't support repeated parameters
+      Uri uriWithParams = uri.replace(queryParameters: queryParams);
+      String uriString = uriWithParams.toString();
+      
+      // Add dates as repeated parameters
+      for (String date in formattedDates) {
+        uriString += '&dates=$date';
+      }
+      
+      print('Calling API: $uriString'); // Debug print
+      
+      // Make HTTP request
+      final response = await http.post(
+        Uri.parse(uriString),
+        headers: {'Content-Type': 'application/json'},
+      ).timeout(const Duration(seconds: 30));
+      
+      // Close loading dialog
+      Navigator.pop(context);
+      
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        
+        // Show distance for a few seconds
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Distance: ${data['distace']} km'),
+            duration: const Duration(seconds: 2),
+            backgroundColor: Colors.green,
+          ),
+        );
+        
+        // Prepare booking data with API response
+        final bookingData = {
+          'pickup': data['pickUpLocation'],
+          'destination': data['dropLocation'],
+          'date': formattedDates[0],
+          'time': data['time'],
+          'bookingType': _isOneWay ? 'oneWay' : 'roundTrip',
+          'returnDate': formattedDates.length > 1 ? formattedDates[1] : '',
+          'distance': data['distace']?.toString() ?? '0',
+          'sourceCity': data['sourceCity'],
+          'destinationCity': data['destinationCity'],
+          'sourceState': data['sourceState'],
+          'destinationState': data['destinationState'],
+          'hatchback': data['hatchback']?.toString() ?? '0',
+          'sedan': data['sedan']?.toString() ?? '0',
+          'suv': data['suv']?.toString() ?? '0',
+          'shiftTime': data['shiftTime'],
+          'returnTime': data['returnTime'] ?? data['time'],
+        };
+        
+        // Navigate to vehicle selection screen after a short delay
+        Future.delayed(const Duration(seconds: 2), () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => EtsSelectVehicleScreen(bookingData: bookingData),
+            ),
+          );
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${response.statusCode} - ${response.body}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      Navigator.pop(context);
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Connection Error: $e'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 10),
+        ),
+      );
+      
+      print('API Error: $e');
+    }
+  }
   Widget _buildCustomCalendar(StateSetter setState) {
     final now = DateTime.now();
     final currentMonth = DateTime(now.year, now.month, 1);
@@ -912,7 +960,7 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> {
     );
   }
 
-  Future<void> _selectTime(BuildContext context) async {
+ Future<void> _selectTime(BuildContext context) async {
     final TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: _selectedTime ?? TimeOfDay.now(),
@@ -923,16 +971,21 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> {
               primary: Color(0xFF0066CC),
               onPrimary: Colors.white,
               surface: Colors.white,
-              onSurface: Colors.black87,
+              onSurface: Colors.black,
             ),
+            dialogBackgroundColor: Colors.white,
           ),
           child: child!,
         );
       },
     );
-    if (picked != null) setState(() => _selectedTime = picked);
+    
+    if (picked != null && picked != _selectedTime) {
+      setState(() {
+        _selectedTime = picked;
+      });
+    }
   }
-
   Widget _buildCalendarCell(int? day, {bool isSelected = false, bool isSunday = false}) {
     if (day == null) {
       return Container(
