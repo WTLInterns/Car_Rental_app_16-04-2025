@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:location/location.dart';
 import 'package:worldtriplink/screens/ets_select_vehicle_screen.dart';
+import 'package:worldtriplink/screens/ets_trips_screen.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
 
 const String googleMapsApiKey = "AIzaSyCelDo4I5cPQ72TfCTQW-arhPZ7ALNcp8w";
@@ -294,13 +295,19 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.history),
-            label: 'History',
+            label: 'Trips',  // Changed from 'History' to 'Trips'
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
-          ),
+         
         ],
+        onTap: (index) {
+          if (index == 1) {
+            // Navigate to ETSTripsScreen when Trips tab is tapped
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const ETSTripsScreen()),
+            );
+          }
+        },
       ),
     );
   }
