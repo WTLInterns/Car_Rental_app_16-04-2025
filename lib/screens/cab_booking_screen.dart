@@ -10,7 +10,9 @@ import 'package:worldtriplink/screens/user_home_screen.dart';
 const String googleMapsApiKey = "AIzaSyCelDo4I5cPQ72TfCTQW-arhPZ7ALNcp8w";
 
 class CabBookingScreen extends StatefulWidget {
-  const CabBookingScreen({super.key});
+  final String? dropLocation;
+  
+  const CabBookingScreen({super.key, this.dropLocation});
 
   @override
   State<CabBookingScreen> createState() => _CabBookingScreenState();
@@ -55,6 +57,11 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
     // Set default date and time
     _selectedDate = DateTime.now();
     _selectedTime = TimeOfDay.now();
+    
+    // Set drop location if provided from home screen
+    if (widget.dropLocation != null && widget.dropLocation!.isNotEmpty) {
+      _dropController.text = widget.dropLocation!;
+    }
     
     // Add listeners to text controllers to update UI when text changes
     _pickupController.addListener(() {
