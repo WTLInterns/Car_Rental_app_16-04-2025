@@ -86,9 +86,19 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   }
 
   Future<void> verifyOTP() async {
-    if (_otpController.text.isEmpty) {
+    // Validate OTP format
+    final String otp = _otpController.text;
+    if (otp.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter the OTP sent to your email')),
+      );
+      return;
+    }
+    
+    // Check if OTP is exactly 6 characters and contains only alphanumeric characters
+    if (otp.length != 6 || !RegExp(r'^[a-zA-Z0-9]+$').hasMatch(otp)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('OTP must be exactly 6 alphanumeric characters')),
       );
       return;
     }
@@ -505,15 +515,31 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         SizedBox(height: screenHeight * 0.02),
                         TextFormField(
                           controller: _otpController,
-                          keyboardType: TextInputType.number,
+                          keyboardType: TextInputType.text,
                           textAlign: TextAlign.center,
+                          maxLength: 6, // Limit input to 6 characters
                           style: const TextStyle(
                             fontSize: 24,
                             letterSpacing: 10,
                             fontWeight: FontWeight.bold,
                           ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter the OTP';
+                            }
+                            if (value.length != 6) {
+                              return 'OTP must be exactly 6 characters';
+                            }
+                            // Regex to check if the OTP contains only alphanumeric characters
+                            final RegExp alphanumeric = RegExp(r'^[a-zA-Z0-9]+$');
+                            if (!alphanumeric.hasMatch(value)) {
+                              return 'OTP must contain only letters and numbers';
+                            }
+                            return null;
+                          },
                           decoration: InputDecoration(
                             hintText: '------',
+                            counterText: '', // Hide the character counter
                             hintStyle: TextStyle(
                               color: Colors.grey[400],
                               fontSize: 24,
@@ -528,6 +554,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             contentPadding: const EdgeInsets.symmetric(
                               horizontal: 12,
                               vertical: 16,
+                            ),
+                            errorStyle: const TextStyle(
+                              color: Colors.red,
+                              fontSize: 12,
                             ),
                           ),
                         ),
