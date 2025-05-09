@@ -19,9 +19,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   bool _otpSent = false;
   bool _verificationSuccess = false;
   bool _resetSuccess = false;
-
-  // Email validation pattern
-  final RegExp _emailPattern = RegExp(
+  bool _emailPattern = RegExp(
     r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
   );
 
@@ -39,9 +37,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         'Sending OTP request with email: ${_emailController.text}',
       );
 
-      // Updated to use the auth controller endpoint
+      // Fixed: Send email in the request body as JSON
       final response = await http.post(
-        Uri.parse('https://api.worldtriplink.com/auth/send-otp'),
+        Uri.parse('https://api.worldtriplink.com/carRental/request-reset'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'email': _emailController.text,
@@ -101,9 +99,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         'Verifying OTP: ${_otpController.text} for email: ${_emailController.text}',
       );
 
-      // Updated to use the auth controller endpoint
+      // Updated to send data in request body as JSON
       final response = await http.post(
-        Uri.parse('https://api.worldtriplink.com/auth/verify-otp'),
+        Uri.parse('https://api.worldtriplink.com/carRental/verify-otp'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'email': _emailController.text,
@@ -117,13 +115,22 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       );
 
       if (response.statusCode == 200) {
-        setState(() {
-          _verificationSuccess = true;
-        });
+        // Parse the boolean response from the controller
+        final bool isValid = response.body.toLowerCase() == 'true';
+        
+        if (isValid) {
+          setState(() {
+            _verificationSuccess = true;
+          });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('OTP verified successfully. You can now reset your password.')),
-        );
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('OTP verified successfully. You can now reset your password.')),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Invalid OTP. Please try again.')),
+          );
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Invalid OTP. Please try again.')),
@@ -161,14 +168,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       // Log request for debugging
       debugPrint('Resetting password for email: ${_emailController.text}');
 
-      // Updated to use the auth controller endpoint and include OTP
+      // Updated to send data in request body as JSON
       final response = await http.post(
-        Uri.parse('https://api.worldtriplink.com/auth/reset-password'),
+        Uri.parse('https://api.worldtriplink.com/carRental/reset-password'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'email': _emailController.text,
-          'otp': _otpController.text,
-          'password': _passwordController.text,
+          'newPassword': _passwordController.text,
         }),
       );
 
