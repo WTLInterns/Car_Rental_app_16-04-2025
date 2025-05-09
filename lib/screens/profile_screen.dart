@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'login_screen.dart';
 import 'package:worldtriplink/screens/user_home_screen.dart';
+import 'package:worldtriplink/models/car_rental_user.dart'; // Add this import
 // Professional color palette
 const Color primaryColor = Color(0xFF4A90E2); 
 const Color accentColor = Color(0xFF4A90E2);
@@ -28,6 +31,8 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   bool _isLoading = true;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+  int? _userId;
+  CarRentalUser? _userProfile;
 
   @override
   void initState() {
@@ -50,6 +55,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   }
 
   Future<void> _loadUserData() async {
+    setState(() => _isLoading = true);
     final prefs = await SharedPreferences.getInstance();
     
     // Check if user is logged in
@@ -63,14 +69,178 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       return;
     }
 
-    await Future.delayed(const Duration(milliseconds: 500));
-    setState(() {
-      _userName = prefs.getString('username') ?? 'User';
-      _userEmail = prefs.getString('email') ?? 'user@example.com';
-      _userPhone = prefs.getString('phone') ?? '+91 0000000000';
-      _isLoading = false;
-    });
+    // Get user ID from shared preferences
+    _userId = prefs.getInt('userId');
+    
+    if (_userId != null) {
+      try {
+        // Fetch user profile from API
+        final response = await http.get(
+          Uri.parse('https://api.worldtriplink.com/auth/getProfile/${_userId}'),
+        );
+
+        if (response.statusCode == 200) {
+          final Map<String, dynamic> data = json.decode(response.body);
+          _userProfile = CarRentalUser.fromJson(data);
+          
+          setState(() {
+            _userName = _userProfile?.username ?? 'User';
+            _userEmail = _userProfile?.email ?? 'user@example.com';
+            _userPhone = _userProfile?.phone ?? '+91 0000000000';
+            
+            // Update shared preferences with latest data
+            prefs.setString('username', _userName);
+            prefs.setString('email', _userEmail);
+            prefs.setString('phone', _userPhone);
+            
+            _isLoading = false;
+          });
+        } else {
+          // If API call fails, use data from shared preferences
+          setState(() {
+            _userName = prefs.getString('username') ?? 'User';
+            _userEmail = prefs.getString('email') ?? 'user@example.com';
+            _userPhone = prefs.getString('phone') ?? '+91 0000000000';
+            _isLoading = false;
+          });
+        }
+      } catch (e) {
+        // If API call fails, use data from shared preferences
+        setState(() {
+          _userName = prefs.getString('username') ?? 'User';
+          _userEmail = prefs.getString('email') ?? 'user@example.com';
+          _userPhone = prefs.getString('phone') ?? '+91 0000000000';
+          _isLoading = false;
+        });
+        debugPrint('Error fetching profile: $e');
+      }
+    } else {
+      // If no user ID, use data from shared preferences
+      setState(() {
+        _userName = prefs.getString('username') ?? 'User';
+        _userEmail = prefs.getString('email') ?? 'user@example.com';
+        _userPhone = prefs.getString('phone') ?? '+91 0000000000';
+        _isLoading = false;
+      });
+    }
+    
     _animationController.forward();
+  }
+
+  // Add method to update profile
+  Future<void> _updateProfile(CarRentalUser updatedUser) async {
+    if (_userId == null) return;
+    
+    setState(() => _isLoading = true);
+    
+    try {
+      final response = await http.put(
+        Uri.parse('https://api.worldtriplink.com/auth/update-profile/${_userId}'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(updatedUser.toJson()),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        _userProfile = CarRentalUser.fromJson(data);
+        
+        // Update shared preferences
+        final prefs = await SharedPreferences.getInstance();
+        prefs.setString('username', _userProfile?.username ?? 'User');
+        prefs.setString('email', _userProfile?.email ?? 'user@example.com');
+        prefs.setString('phone', _userProfile?.phone ?? '+91 0000000000');
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile updated successfully')),
+        );
+        
+        // Reload user data to refresh UI
+        _loadUserData();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update profile: ${response.body}')),
+        );
+        setState(() => _isLoading = false);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error updating profile: $e')),
+      );
+      setState(() => _isLoading = false);
+      debugPrint('Error updating profile: $e');
+    }
+  }
+
+  // Add method to show edit profile dialog
+  void _showEditProfileDialog() {
+    final TextEditingController nameController = TextEditingController(text: _userName);
+    final TextEditingController emailController = TextEditingController(text: _userEmail);
+    final TextEditingController phoneController = TextEditingController(text: _userPhone);
+    
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text("Edit Profile", style: TextStyle(fontWeight: FontWeight.bold)),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Name',
+                  prefixIcon: Icon(MaterialCommunityIcons.account_outline),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: emailController,
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  prefixIcon: Icon(MaterialCommunityIcons.email_outline),
+                ),
+                keyboardType: TextInputType.emailAddress,
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: phoneController,
+                decoration: const InputDecoration(
+                  labelText: 'Phone',
+                  prefixIcon: Icon(MaterialCommunityIcons.phone_outline),
+                ),
+                keyboardType: TextInputType.phone,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Cancel", style: TextStyle(color: lightTextColor)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: accentColor,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () {
+              // Create updated user object
+              final updatedUser = (_userProfile ?? CarRentalUser()).copyWith(
+                username: nameController.text,
+                email: emailController.text,
+                phone: phoneController.text,
+              );
+              
+              Navigator.pop(ctx);
+              _updateProfile(updatedUser);
+            },
+            child: const Text("Save"),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showLogoutConfirmation(BuildContext context) {
@@ -331,6 +501,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                           color: accentColor,
                           title: 'Personal Information',
                           description: 'Update your personal details',
+                          onTap: _showEditProfileDialog,
                         ),
                         // _buildMenuItem(
                         //   icon: MaterialCommunityIcons.shield_lock_outline,
@@ -497,6 +668,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     required Color color,
     required String title,
     required String description,
+    VoidCallback? onTap,
   }) {
     return Column(
       children: [
@@ -526,7 +698,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
             )
           ),
           trailing: const Icon(Icons.chevron_right, color: Colors.grey, size: 20),
-          onTap: () {},
+          onTap: onTap, // Fix: Use the provided onTap parameter instead of empty function
         ),
         Divider(height: 1, indent: 70, color: Colors.grey[200]),
       ],

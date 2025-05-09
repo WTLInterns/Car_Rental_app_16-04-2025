@@ -34,7 +34,7 @@ class _SplashScreenState extends State<SplashScreen>
     _controller.forward();
 
     // Navigate to the appropriate screen after 3 seconds
-    Future.delayed(const Duration(seconds: 3), () {
+    Future.delayed(const Duration(seconds: 2), () {
       _checkLoginStatus();
     });
   }
@@ -145,16 +145,16 @@ class _SplashScreenState extends State<SplashScreen>
                 ),
                 SizedBox(height: screenHeight * 0.08),
                 // Indicator dots
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _buildDot(true),
-                    const SizedBox(width: 8),
-                    _buildDot(false),
-                    const SizedBox(width: 8),
-                    _buildDot(false),
-                  ],
-                ),
+                // Row(
+                //   mainAxisAlignment: MainAxisAlignment.center,
+                //   children: [
+                //     _buildDot(true),
+                //     const SizedBox(width: 8),
+                //     _buildDot(false),
+                //     const SizedBox(width: 8),
+                //     _buildDot(false),
+                //   ],
+                // ),
                 // Loading indicator
                 SizedBox(height: screenHeight * 0.05),
                 const SizedBox(
@@ -175,17 +175,17 @@ class _SplashScreenState extends State<SplashScreen>
     );
   }
 
-  Widget _buildDot(bool isActive) {
-    return Container(
-      width: 10,
-      height: 10,
-      decoration: BoxDecoration(
-        color:
-            isActive
-                ? const Color(0xFF2E3192)
-                : const Color(0xFF2E3192).withOpacity(0.5),
-        shape: BoxShape.circle,
-      ),
-    );
-  }
+  // Widget _buildDot(bool isActive) {
+  //   return Container(
+  //     width: 10,
+  //     height: 10,
+  //     decoration: BoxDecoration(
+  //       color:
+  //           isActive
+  //               ? const Color(0xFF2E3192)
+  //               : const Color(0xFF2E3192).withOpacity(0.5),
+  //       shape: BoxShape.circle,
+  //     ),
+  //   );
+  // }
 }

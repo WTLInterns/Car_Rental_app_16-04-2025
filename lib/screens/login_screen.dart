@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:worldtriplink/screens/registration_screen.dart';
 import 'package:worldtriplink/screens/user_home_screen.dart';
 import 'package:worldtriplink/screens/driver_trips_screen.dart';
+import 'package:worldtriplink/screens/Forgot_password_Screen.dart';
 import 'package:flutter/services.dart'; // For input formatters
 
 class LoginScreen extends StatefulWidget {
@@ -389,12 +390,10 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             TextButton(
                               onPressed: () {
-                                // TODO: Implement forgot password functionality
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Forgot password feature coming soon',
-                                    ),
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const ForgotPasswordScreen(),
                                   ),
                                 );
                               },
