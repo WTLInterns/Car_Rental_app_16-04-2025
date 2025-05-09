@@ -19,7 +19,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   bool _otpSent = false;
   bool _verificationSuccess = false;
   bool _resetSuccess = false;
-  bool _emailPattern = RegExp(
+
+  // Email validation pattern
+  final RegExp _emailPattern = RegExp(
     r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
   );
 
@@ -37,13 +39,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         'Sending OTP request with email: ${_emailController.text}',
       );
 
-      // Fixed: Send email in the request body as JSON
+      // Changed: Use form-urlencoded format instead of JSON
       final response = await http.post(
         Uri.parse('https://api.worldtriplink.com/carRental/request-reset'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: {
           'email': _emailController.text,
-        }),
+        },
       );
 
       // Log response for debugging
@@ -99,14 +101,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         'Verifying OTP: ${_otpController.text} for email: ${_emailController.text}',
       );
 
-      // Updated to send data in request body as JSON
+      // Changed: Use form-urlencoded format instead of JSON
       final response = await http.post(
         Uri.parse('https://api.worldtriplink.com/carRental/verify-otp'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: {
           'email': _emailController.text,
           'otp': _otpController.text,
-        }),
+        },
       );
 
       // Log response for debugging
@@ -168,14 +170,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       // Log request for debugging
       debugPrint('Resetting password for email: ${_emailController.text}');
 
-      // Updated to send data in request body as JSON
+      // Changed: Use form-urlencoded format instead of JSON
       final response = await http.post(
         Uri.parse('https://api.worldtriplink.com/carRental/reset-password'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: {
           'email': _emailController.text,
           'newPassword': _passwordController.text,
-        }),
+        },
       );
 
       // Log response for debugging
