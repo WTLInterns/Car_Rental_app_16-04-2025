@@ -3,6 +3,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'dart:convert';
 import 'package:url_launcher/url_launcher.dart';
+import 'driver_trips_screen.dart';
+import 'driver_ets_trips_screen.dart';
 
 // Updated color palette to match driver_trips_screen.dart
 const Color primaryColor = Color(0xFF3057E3);      // Royal blue
@@ -27,7 +29,7 @@ class DriverProfileScreen extends StatefulWidget {
 class _DriverProfileScreenState extends State<DriverProfileScreen> {
   Map<String, dynamic>? driver;
   bool isLoading = true;
-  int _selectedIndex = 1; // For bottom navigation
+  int _selectedIndex = 2; // For bottom navigation - set to 2 for Profile
 
   @override
   void initState() {
@@ -58,13 +60,30 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
   }
 
   void _onItemTapped(int index) {
-    if (index == 0) {
-      // Navigate back to trips screen
-      Navigator.pop(context);
-    } else {
-      setState(() {
-        _selectedIndex = index;
-      });
+    if (index == _selectedIndex) return;
+
+    setState(() {
+      _selectedIndex = index;
+    });
+
+    switch (index) {
+      case 0:
+        // Navigate to Trips
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const DriverTripsScreen()),
+        );
+        break;
+      case 1:
+        // Navigate to ETS Trips
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const DriverETSTripsScreen()),
+        );
+        break;
+      case 2:
+        // Already on Profile page
+        break;
     }
   }
 
@@ -409,6 +428,10 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
             BottomNavigationBarItem(
               icon: Icon(MaterialCommunityIcons.car_multiple),
               label: 'Trips',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(MaterialCommunityIcons.bus),
+              label: 'ETS Trips',
             ),
             BottomNavigationBarItem(
               icon: Icon(MaterialCommunityIcons.account_circle),

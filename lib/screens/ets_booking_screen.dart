@@ -705,8 +705,8 @@ String _formatTimeDisplay(TimeOfDay time) {
     );
     
     try {
-      // Use 192.168.1.76 for development
-      final baseUrl = 'http://192.168.1.76:8081';
+      // Use 192.168.1.58 for development
+      final baseUrl = 'http://192.168.1.58:8081';
       final Uri uri = Uri.parse('$baseUrl/schedule/etsCab1');
       
       // Format dates for API call

@@ -67,7 +67,7 @@ class _SplashScreenState extends State<SplashScreen>
         Navigator.pushReplacementNamed(context, '/login');
       }
     } else {
-      // Clear login data if expired
+      // Clear login data if expiredr
       if (isLoggedIn && !isLoginValid) {
         await prefs.setBool('isLoggedIn', false);
       }

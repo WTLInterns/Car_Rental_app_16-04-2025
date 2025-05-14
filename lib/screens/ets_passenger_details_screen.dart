@@ -170,7 +170,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
       );
 
       // Get invoice details
-      final baseUrl = 'http://192.168.1.76:8081';
+      final baseUrl = 'http://192.168.1.58:8081';
       final response = await http.post(
         Uri.parse('$baseUrl/schedule/invoice'),
         body: {

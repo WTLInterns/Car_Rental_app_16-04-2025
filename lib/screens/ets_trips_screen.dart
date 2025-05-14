@@ -4,7 +4,8 @@ import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:worldtriplink/screens/ets_booking_screen.dart';
-import 'package:worldtriplink/screens/ets_tracking_screen.dart';
+import 'package:worldtriplink/screens/ets_user_tracking_screen.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 // Professional color palette - matching login screen
 const Color primaryColor = Color(0xFF4A90E2);      // Blue (updated to match home screen)
@@ -42,6 +43,9 @@ class ETSTrip {
   final String phone;
   final double? distance;
   final String tripType;
+  final bool isCorporateBooking;
+  final List<Map<String, dynamic>>? shiftDates;
+  final String? corporateName;
 
   ETSTrip({
     required this.bookingId,
@@ -56,6 +60,9 @@ class ETSTrip {
     required this.phone,
     this.distance,
     this.tripType = 'oneWay',
+    this.isCorporateBooking = false,
+    this.shiftDates,
+    this.corporateName,
   });
 
   factory ETSTrip.fromJson(Map<String, dynamic> json) {
@@ -82,6 +89,11 @@ class ETSTrip {
               ? (json['distance'] as num).toDouble()
               : double.tryParse(json['distance']?.toString() ?? '') ?? 0.0,
       tripType: json['tripType'] ?? 'oneWay',
+      isCorporateBooking: json['isCorporateBooking'] ?? false,
+      shiftDates: json['shiftDates'] != null 
+          ? List<Map<String, dynamic>>.from(json['shiftDates']) 
+          : null,
+      corporateName: json['corporateName'],
     );
   }
 }
@@ -151,6 +163,53 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
         distance: 12.0,
         tripType: 'oneWay',
       ),
+      // Corporate booking with multiple shift dates
+      ETSTrip(
+        bookingId: 'ETSCORP001',
+        fromLocation: 'TCS Office, Hinjewadi',
+        toLocation: 'Various Locations',
+        startDate: '2024-04-20',
+        time: 'Multiple Shifts',
+        car: 'Toyota Innova',
+        amount: 5000.0,
+        status: 0, // Upcoming
+        name: 'Corporate Driver',
+        phone: '+91 9876543220',
+        distance: 0.0,
+        tripType: 'corporate',
+        isCorporateBooking: true,
+        corporateName: 'TCS Technologies',
+        shiftDates: [
+          {
+            'date': '2024-04-20',
+            'time': '08:00',
+            'employees': 4,
+            'shift': 'Morning',
+            'destinations': ['Baner', 'Aundh', 'Shivaji Nagar', 'Viman Nagar']
+          },
+          {
+            'date': '2024-04-20',
+            'time': '17:30',
+            'employees': 4,
+            'shift': 'Evening',
+            'destinations': ['Baner', 'Aundh', 'Shivaji Nagar', 'Viman Nagar']
+          },
+          {
+            'date': '2024-04-21',
+            'time': '08:00',
+            'employees': 4,
+            'shift': 'Morning',
+            'destinations': ['Baner', 'Aundh', 'Shivaji Nagar', 'Viman Nagar']
+          },
+          {
+            'date': '2024-04-21',
+            'time': '17:30',
+            'employees': 4,
+            'shift': 'Evening',
+            'destinations': ['Baner', 'Aundh', 'Shivaji Nagar', 'Viman Nagar']
+          },
+        ],
+      ),
     ];
     setState(() {
       _isLoading = false;
@@ -198,7 +257,16 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
   void _handleDetailsPress(ETSTrip trip) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const ETSTrackingScreen()),
+      MaterialPageRoute(builder: (context) => ETSUserTrackingScreen(
+        etsId: trip.bookingId,
+        fromLocation: trip.fromLocation,
+        toLocation: trip.toLocation,
+        userId: _userId,
+        driverId: 'D${trip.phone.substring(trip.phone.length - 6)}', // Create a simple driver ID from phone
+        // Example coordinates - in a real app, these would come from the database
+        pickupCoordinates: LatLng(18.5090, 73.8310),  // Pune coordinates
+        dropCoordinates: LatLng(18.9402, 72.8347),    // Mumbai coordinates
+      )),
     );
   }
 
@@ -454,6 +522,12 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
             ? successColor 
             : dangerColor;
     
+    // For corporate bookings with multiple dates
+    if (trip.isCorporateBooking && trip.shiftDates != null) {
+      return _buildCorporateTripCard(trip, statusText, statusColor);
+    }
+    
+    // Regular trip card (existing code)
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 2,
@@ -594,6 +668,238 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
                           () => _handleRebookPress(trip),
                         ),
                       ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCorporateTripCard(ETSTrip trip, String statusText, Color statusColor) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Column(
+        children: [
+          // Header with booking ID and status
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: primaryColor.withOpacity(0.1),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(12),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Flexible(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: accentColor.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Text(
+                              'CORPORATE',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: accentColor,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              'Booking ID: ${trip.bookingId}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: textColor,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (trip.corporateName != null) 
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            trip.corporateName!,
+                            style: TextStyle(
+                              color: primaryColor,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                _buildStatusContainer(statusText, statusColor),
+              ],
+            ),
+          ),
+          
+          // Trip details
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Locations
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Column(
+                      children: [
+                        const Icon(Icons.business, size: 14, color: primaryColor),
+                        Container(
+                          width: 1,
+                          height: 30,
+                          color: Colors.grey[300],
+                        ),
+                        Icon(Icons.people, size: 14, color: Colors.blue[400]),
+                      ],
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            trip.fromLocation,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Multiple Drop Locations',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                
+                const SizedBox(height: 16),
+                
+                // Shift dates panel
+                const Text(
+                  'Scheduled Shifts',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: textColor,
+                  ),
+                ),
+                
+                const SizedBox(height: 8),
+                
+                // List of shift dates
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey[300]!),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: ListView.separated(
+                    physics: const NeverScrollableScrollPhysics(),
+                    shrinkWrap: true,
+                    itemCount: trip.shiftDates!.length,
+                    separatorBuilder: (context, index) => Divider(color: Colors.grey[300]),
+                    itemBuilder: (context, index) {
+                      final shift = trip.shiftDates![index];
+                      return Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: primaryColor.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  shift['shift'].toString().substring(0, 1),
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: primaryColor,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '${shift['date']} • ${shift['time']}',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: textColor,
+                                    ),
+                                  ),
+                                  Text(
+                                    '${shift['shift']} Shift • ${shift['employees']} Employees',
+                                    style: TextStyle(
+                                      color: textColor.withOpacity(0.7),
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                
+                const SizedBox(height: 16),
+                
+                // Action buttons
+                Row(
+                  children: [
+                    if (trip.status == 0) // Upcoming trip
+                      Expanded(
+                        child: _buildActionButton(
+                          Icons.cancel_outlined,
+                          'Cancel',
+                          dangerColor,
+                          () => _handleCancelPress(trip),
+                        ),
+                      ),
+                    if (trip.status == 0)
+                      const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildActionButton(
+                        Icons.info_outline,
+                        'Details',
+                        primaryColor,
+                        () => _handleDetailsPress(trip),
+                      ),
+                    ),
                   ],
                 ),
               ],

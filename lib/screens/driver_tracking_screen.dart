@@ -121,7 +121,7 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
   double? destinationLng;
 
   // WebSocket config
-  final String _websocketUrl = "https://api.worldtriplink.com/ws-trip-tracking";
+  final String _websocketUrl = "https://api.worldtriplink.com/ws-trip-tracking/";
   StompClient? _stompClient;
   bool _isConnected = false;
   int _reconnectAttempts = 0;
