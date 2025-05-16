@@ -128,7 +128,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
       debugPrint('Sending booking data: $requestData');
 
-      final baseUrl = 'http://192.168.1.58:8081';
+      final baseUrl = 'http://192.168.1.37:8081';
       final response = await http.post(
         Uri.parse('$baseUrl/schedule/etsBookingConfirm'),
         body: requestData,
@@ -1003,7 +1003,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
       );
 
       // Get invoice details
-      final baseUrl = 'http://192.168.1.58:8081';
+      final baseUrl = 'http://192.168.1.37:8081';
       final response = await http.post(
         Uri.parse('$baseUrl/schedule/invoice'),
         body: {

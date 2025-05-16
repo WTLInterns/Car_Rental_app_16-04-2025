@@ -3,11 +3,13 @@ import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:location/location.dart';
+import 'package:flutter/services.dart';
+import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:worldtriplink/screens/ets_select_vehicle_screen.dart';
 import 'package:worldtriplink/screens/ets_trips_screen.dart';
-import 'package:animated_text_kit/animated_text_kit.dart';
 
 const String googleMapsApiKey = "AIzaSyCelDo4I5cPQ72TfCTQW-arhPZ7ALNcp8w";
+
 class EtsBookingScreen extends StatefulWidget {
   const EtsBookingScreen({super.key});
 
@@ -15,308 +17,504 @@ class EtsBookingScreen extends StatefulWidget {
   State<EtsBookingScreen> createState() => _EtsBookingScreenState();
 }
 
-class _EtsBookingScreenState extends State<EtsBookingScreen> {
+class _EtsBookingScreenState extends State<EtsBookingScreen> with SingleTickerProviderStateMixin {
   final TextEditingController _pickupController = TextEditingController();
   final TextEditingController _dropController = TextEditingController();
   List<DateTime> _selectedDates = [];
   TimeOfDay? _selectedTime;
   bool _isOneWay = true;
+
+  // Animation controller for subtle UI animations
+  late AnimationController _animationController;
+  late Animation<double> _fadeInAnimation;
   
-  // Add these new variables for Google Maps integration
+  // Variables for Google Maps integration
   List<dynamic> _pickupSuggestions = [];
   List<dynamic> _dropSuggestions = [];
   bool _isLoadingLocation = false;
-  LocationData? _currentLocation;
 
   // List to store government holidays
   final List<DateTime> _holidays = [
-    DateTime(2024, 4, 2),
-    DateTime(2024, 4, 14),
+    DateTime(2025, 4, 2),
+    DateTime(2025, 4, 14),
+    DateTime(2025, 5, 1),  // Added Labor Day
+    DateTime(2025, 8, 15), // Added Independence Day
+    DateTime(2025, 10, 2), // Added Gandhi Jayanti
   ];
+
+  // Track active input field for better UX
+  String? _activeField;
   
   @override
   void initState() {
     super.initState();
-    _getCurrentLocation();
+    // Initialize animation controller first
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
     
-    // Add listeners to text controllers to update UI when text changes
+    // Then initialize the animation
+    _fadeInAnimation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    );
+    
+    // Start the animation
+    _animationController.forward();
+    
+    // Add listeners to text controllers
     _pickupController.addListener(() {
       setState(() {});
     });
     _dropController.addListener(() {
       setState(() {});
     });
+    
+    // Initialize location after animations are set up
+    _getCurrentLocation();
   }
 
   @override
   void dispose() {
     _pickupController.dispose();
     _dropController.dispose();
+    _animationController.dispose();
     super.dispose();
   }
   
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: const Color.fromARGB(0, 232, 232, 238),
-        elevation: 0,
-        centerTitle: false,
-        toolbarHeight: 120, // Increase height to accommodate all three lines
-        title: Container(
-          padding: const EdgeInsets.only(top: 16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              AnimatedTextKit(
-                animatedTexts: [
-                  TypewriterAnimatedText(
-                    'Employee',
-                    textStyle: const TextStyle(
-                        color: Color.fromARGB(255, 249, 249, 250),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 22,
-                      shadows: [
-                        BoxShadow(
-                          color: Colors.black54,
-                         
-                          offset: Offset(1, 1),
-                        ),
-                      ],
-                      // shadows: [Shadow(color: Colors.black54, blurRadius: 3.0, offset: Offset(1, 1))],
-                    ),
-                    speed: const Duration(milliseconds: 100),
+    // Safely access animation, with fallback
+    Animation<double> safeAnimation = _fadeInAnimation;
+    try {
+      // Verify animation is initialized properly
+      if (_animationController.status == AnimationStatus.dismissed) {
+        _animationController.forward();
+      }
+    } catch (e) {
+      // If animation initialization fails, use a default "always visible" animation
+      debugPrint('Animation initialization error: $e');
+      safeAnimation = const AlwaysStoppedAnimation<double>(1.0);
+    }
+    
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
+      child: Scaffold(
+        extendBodyBehindAppBar: true,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          centerTitle: true,
+          title: const Text(
+            'Employee Transport',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
+              shadows: [
+                BoxShadow(
+                  color: Colors.black54,
+                  offset: Offset(1, 1),
+                  blurRadius: 1,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.info_outline, color: Colors.white),
+              onPressed: () {
+                _showInfoDialog(context);
+              },
+            ),
+          ],
+        ),
+        body: Stack(
+          children: [
+            // Background gradient with overlay pattern
+            ShaderMask(
+              shaderCallback: (rect) {
+                return const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.black, Colors.transparent],
+                ).createShader(Rect.fromLTRB(0, 0, rect.width, rect.height));
+              },
+              blendMode: BlendMode.dstIn,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      const Color(0xFF1A237E), // Deeper indigo
+                      const Color(0xFF0277BD), // Ocean blue
+                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
                   ),
-                ],
-                totalRepeatCount: 1,
-                displayFullTextOnTap: true,
-              ),
-              Padding(
-                padding: const EdgeInsets.only(left: 40.0),
-                child: AnimatedTextKit(
-                  animatedTexts: [
-                    TypewriterAnimatedText(
-                      'Transportation',
-                      textStyle: const TextStyle(
-                        color: Color.fromARGB(255, 249, 249, 250),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 22,
- shadows: [
-                        BoxShadow(
-                          color: Colors.black54,
-                         
-                          offset: Offset(1, 1),
-                        ),
-                      ],                      ),
-                      speed: const Duration(milliseconds: 100),
+                  image: DecorationImage(
+                    image: const AssetImage('assets/images/Service-employee-transfer.jpg'),
+                    fit: BoxFit.cover,
+                    colorFilter: ColorFilter.mode(
+                      Colors.black.withAlpha(13),
+                      BlendMode.dstATop,
                     ),
-                  ],
-                  totalRepeatCount: 1,
-                  displayFullTextOnTap: true,
-                  isRepeatingAnimation: false,
+                    onError: (exception, stackTrace) {
+                      debugPrint('Error loading background pattern: $exception');
+                      return;
+                    },
+                  ),
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.only(left: 80.0),
-                child: AnimatedTextKit(
-                  animatedTexts: [
-                    TypewriterAnimatedText(
-                      'Service',
-                      textStyle: const TextStyle(
-                        color: Color.fromARGB(255, 249, 249, 250),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 24,
- shadows: [
-                        BoxShadow(
-                          color: Colors.black54,
-                         
-                          offset: Offset(1, 1),
+            ),
+            
+            // Main content
+            Column(
+              children: [
+                const SizedBox(height: kToolbarHeight + 80),
+                Expanded(
+                  child: FadeTransition(
+                    opacity: safeAnimation,
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(32),
+                          topRight: Radius.circular(32),
                         ),
-                      ],                      ),
-                      speed: const Duration(milliseconds: 100),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 10,
+                            offset: Offset(0, -3),
+                          ),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(32),
+                          topRight: Radius.circular(32),
+                        ),
+                        child: SingleChildScrollView(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Header with animation
+                              Container(
+                                padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.directions_car_rounded,
+                                      color: Theme.of(context).primaryColor,
+                                      size: 30,
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Book Your Ride',
+                                            style: TextStyle(
+                                              fontSize: 22,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.grey[800],
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            'Complete the form to reserve your transportation',
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              
+                              // Trip type selector
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[100],
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: GestureDetector(
+                                          onTap: () {
+                                            setState(() {
+                                              _isOneWay = true;
+                                            });
+                                          },
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(vertical: 12),
+                                            decoration: BoxDecoration(
+                                              color: _isOneWay ? Theme.of(context).primaryColor : Colors.transparent,
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                            child: Center(
+                                              child: Text(
+                                                'One Way',
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.w600,
+                                                  color: _isOneWay ? Colors.white : Colors.grey[700],
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      Expanded(
+                                        child: GestureDetector(
+                                          onTap: () {
+                                            setState(() {
+                                              _isOneWay = false;
+                                            });
+                                          },
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(vertical: 12),
+                                            decoration: BoxDecoration(
+                                              color: !_isOneWay ? Theme.of(context).primaryColor : Colors.transparent,
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                            child: Center(
+                                              child: Text(
+                                                'Round Trip',
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.w600,
+                                                  color: !_isOneWay ? Colors.white : Colors.grey[700],
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              
+                              // Input fields with improved styling
+                              _buildInputField(
+                                icon: Icons.location_pin,
+                                iconColor: const Color(0xFF4CAF50),
+                                label: 'Pickup Location',
+                                controller: _pickupController,
+                                hint: 'Enter pickup location',
+                                isActive: _activeField == 'pickup',
+                                onTap: () {
+                                  setState(() {
+                                    _activeField = 'pickup';
+                                  });
+                                },
+                              ),
+                              
+                              _buildInputField(
+                                icon: Icons.flag,
+                                iconColor: const Color(0xFF2196F3),
+                                label: 'Drop Location',
+                                controller: _dropController,
+                                hint: 'Enter drop location',
+                                isActive: _activeField == 'drop',
+                                onTap: () {
+                                  setState(() {
+                                    _activeField = 'drop';
+                                  });
+                                },
+                              ),
+                              
+                              // Date and time pickers with enhanced design
+                              _buildDatePicker(context),
+                              if (_selectedDates.isNotEmpty) _buildSelectedDates(),
+                              _buildTimePicker(context),
+                              
+                              // Search button with animation
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+                                child: TweenAnimationBuilder<double>(
+                                  tween: Tween<double>(begin: 0.8, end: 1.0),
+                                  duration: const Duration(milliseconds: 500),
+                                  curve: Curves.easeOutBack,
+                                  builder: (context, scale, child) {
+                                    return Transform.scale(
+                                      scale: scale,
+                                      child: child,
+                                    );
+                                  },
+                                  child: SizedBox(
+                                    width: double.infinity,
+                                    height: 56,
+                                    child: ElevatedButton(
+                                      onPressed: () {
+                                        // Validate inputs
+                                        if (_pickupController.text.isEmpty || _dropController.text.isEmpty) {
+                                          _showErrorSnackBar('Please enter pickup and drop locations');
+                                          return;
+                                        }
+                                        
+                                        if (_selectedDates.isEmpty) {
+                                          _showErrorSnackBar('Please select at least one date');
+                                          return;
+                                        }
+                                        
+                                        if (_selectedTime == null) {
+                                          _showErrorSnackBar('Please select a pickup time');
+                                          return;
+                                        }
+                                        
+                                        // Call API to get vehicle availability
+                                        _fetchVehicleAvailability();
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0xFF4CAF50),
+                                        foregroundColor: Colors.white,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(16),
+                                        ),
+                                        elevation: 5,
+                                        shadowColor: const Color(0xFF4CAF50).withAlpha(64),
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.search,
+                                            color: Colors.white.withAlpha(200),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          const Text(
+                                            'Search Available Vehicles',
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                              letterSpacing: 0.5,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
-                  ],
-                  totalRepeatCount: 1,
-                  displayFullTextOnTap: true,
-                  isRepeatingAnimation: false,
+                  ),
                 ),
+              ],
+            ),
+          ],
+        ),
+        bottomNavigationBar: ClipRRect(
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+          child: BottomNavigationBar(
+            elevation: 8,
+            backgroundColor: Colors.white,
+            selectedItemColor: Theme.of(context).primaryColor,
+            unselectedItemColor: Colors.grey[600],
+            currentIndex: 0,
+            items: const [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.home_rounded),
+                label: 'Home',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.history_rounded),
+                label: 'Trips',
               ),
             ],
+            onTap: (index) {
+              if (index == 1) {
+                // Navigate to ETSTripsScreen when Trips tab is tapped
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ETSTripsScreen()),
+                );
+              }
+            },
           ),
         ),
       ),
-      body: Stack(
-        children: [
-          // Background gradient
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFF0066CC), Color(0xFF4CAF50)],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-            ),
+    );
+  }
+
+  void _showInfoDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
           ),
-          // Corporate car image - using the image you provided
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Opacity(
-              opacity: 0.5,
-              child: Image.asset(
-                'assets/images/Service-employee-transfer.jpg', // Make sure this image exists in your assets
-                height: 250,
-                fit: BoxFit.cover,
-              ),
-            ),
-          ),
-          Column(
-            children: [
-              const SizedBox(height: kToolbarHeight + 180),
-              Expanded(
-                child: Container(
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(32),
-                      topRight: Radius.circular(32),
-                    ),
-                  ),
-                  padding: const EdgeInsets.symmetric(vertical: 24),
-                  child: SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24),
-                          child: Text(
-                            'Book Your Ride',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey[800],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        _buildInputField(
-                          icon: Icons.location_pin,
-                          label: 'Pickup Location',
-                          controller: _pickupController,
-                          hint: 'Enter pickup location',
-                        ),
-                        _buildInputField(
-                          icon: Icons.flag,
-                          label: 'Drop Location',
-                          controller: _dropController,
-                          hint: 'Enter drop location',
-                        ),
-                        _buildDatePicker(context),
-                        if (_selectedDates.isNotEmpty) _buildSelectedDates(),
-                        _buildTimePicker(context),
-                        const SizedBox(height: 32),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24),
-                          child: SizedBox(
-                            width: double.infinity,
-                            height: 50,
-                            child: ElevatedButton(
-                              onPressed: () {
-                                // Validate inputs
-                                if (_pickupController.text.isEmpty || _dropController.text.isEmpty) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Please enter pickup and drop locations'),
-                                      backgroundColor: Colors.red,
-                                    ),
-                                  );
-                                  return;
-                                }
-                                
-                                if (_selectedDates.isEmpty) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Please select at least one date'),
-                                      backgroundColor: Colors.red,
-                                    ),
-                                  );
-                                  return;
-                                }
-                                
-                                if (_selectedTime == null) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Please select a pickup time'),
-                                      backgroundColor: Colors.red,
-                                    ),
-                                  );
-                                  return;
-                                }
-                                
-                                // Call API to get vehicle availability
-                                _fetchVehicleAvailability();
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF4CAF50),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                elevation: 5,
-                                shadowColor: Colors.greenAccent.withOpacity(0.4),
-                              ),
-                              child: const Text(
-                                'Search Available Vehicles',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                      ],
-                    ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'About ETS Service',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 15),
+                Text(
+                  'The Employee Transportation Service (ETS) provides safe and reliable transportation for company employees.',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[700],
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  '• Available 24/7\n• Professional drivers\n• Multiple vehicle options\n• Real-time tracking\n• Secure and comfortable',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[700],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text('Close'),
+                ),
+              ],
+            ),
           ),
-        ],
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 0,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.history),
-            label: 'Trips',  // Changed from 'History' to 'Trips'
-          ),
-         
-        ],
-        onTap: (index) {
-          if (index == 1) {
-            // Navigate to ETSTripsScreen when Trips tab is tapped
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const ETSTripsScreen()),
-            );
-          }
-        },
-      ),
+        );
+      },
     );
   }
 
   Widget _buildInputField({
     required IconData icon,
+    required Color iconColor,
     required String label,
     required TextEditingController controller,
     required String hint,
+    required bool isActive,
+    required VoidCallback onTap,
   }) {
     final isPickup = label.contains('Pickup');
     final type = isPickup ? 'pickup' : 'drop';
@@ -326,32 +524,73 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label,
-              style: TextStyle(
+          Row(
+            children: [
+              Icon(
+                icon,
+                size: 18,
+                color: iconColor,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Colors.grey[700])),
-          const SizedBox(height: 6),
+                  color: isActive ? Theme.of(context).primaryColor : Colors.grey[700],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
           Container(
             decoration: BoxDecoration(
               color: Colors.grey[100],
               borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isActive ? Theme.of(context).primaryColor.withAlpha(128) : Colors.transparent,
+                width: 1.5,
+              ),
+              boxShadow: isActive
+                  ? [
+                      BoxShadow(
+                        color: Theme.of(context).primaryColor.withAlpha(26),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ]
+                  : null,
             ),
             child: Stack(
               alignment: Alignment.centerRight,
               children: [
                 TextField(
                   controller: controller,
+                  onTap: onTap,
                   decoration: InputDecoration(
-                    prefixIcon: Icon(icon, color: const Color(0xFF0066CC)),
+                    prefixIcon: Icon(
+                      icon,
+                      color: isActive ? iconColor : Colors.grey[400],
+                    ),
                     hintText: hint,
+                    hintStyle: TextStyle(
+                      color: Colors.grey[400],
+                      fontSize: 14,
+                    ),
                     filled: true,
-                    fillColor: Colors.grey[100],
+                    fillColor: Colors.transparent,
                     contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
+                      horizontal: 16,
+                      vertical: 16,
+                    ),
                     border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none),
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
                     suffixIcon: controller.text.isNotEmpty
                         ? SizedBox(width: isPickup ? 80 : 40)
                         : isPickup && _isLoadingLocation
@@ -367,7 +606,11 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> {
                   children: [
                     if (controller.text.isNotEmpty)
                       IconButton(
-                        icon: Icon(Icons.clear, size: 18, color: Colors.grey[400]),
+                        icon: Icon(
+                          Icons.clear,
+                          size: 18,
+                          color: Colors.grey[400],
+                        ),
                         onPressed: () {
                           controller.clear();
                           _searchPlaces('', type);
@@ -377,12 +620,13 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> {
                       ),
                     if (isPickup)
                       _isLoadingLocation
-                          ? SizedBox(
+                          ? Container(
                               width: 24,
                               height: 24,
+                              margin: const EdgeInsets.only(right: 8),
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(const Color(0xFF0066CC)),
+                                valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).primaryColor),
                               ),
                             )
                           : IconButton(
@@ -418,223 +662,292 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Pickup Date',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey[700],
-            ),
-          ),
-          const SizedBox(height: 6),
-          GestureDetector(
-            onTap: () => _selectDate(context),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.calendar_today, color: Color(0xFF0066CC)),
-                  const SizedBox(width: 12),
-                  Text(
-                    _selectedDates.isEmpty 
-                        ? 'Select Dates' 
-                        : 'Selected ${_selectedDates.length} date(s)',
-                    style: TextStyle(color: Colors.grey[800]),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-  
-
-  Widget _buildSelectedDates() {
-    // Get the month and year to display (from the first selected date or current date)
-    final DateTime displayMonth = _selectedDates.isNotEmpty 
-        ? DateTime(_selectedDates[0].year, _selectedDates[0].month, 1)
-        : DateTime.now();
-    
-    // Calculate first day of month and days in month
-    final firstDayOfMonth = DateTime(displayMonth.year, displayMonth.month, 1);
-    final daysInMonth = DateTime(displayMonth.year, displayMonth.month + 1, 0).day;
-    final firstWeekDay = firstDayOfMonth.weekday % 7; // 0 = Sunday, 6 = Saturday
-    
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
+              const Icon(
+                Icons.calendar_today_rounded,
+                size: 18,
+                color: Color(0xFFFF9800),
+              ),
+              const SizedBox(width: 8),
               Text(
-                'Selected Dates:',
+                'Pickup Date',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: Colors.grey[700],
                 ),
               ),
-              IconButton(
-                icon: const Icon(Icons.print, color: Colors.grey),
-                onPressed: () {},
-                iconSize: 20,
-              ),
+              const Spacer(),
+              if (_selectedDates.isNotEmpty)
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _selectedDates = [];
+                    });
+                  },
+                  child: Text(
+                    'Clear',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).primaryColor,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
             ],
           ),
           const SizedBox(height: 8),
-          Container(
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey[300]!),
-              borderRadius: BorderRadius.circular(8),
-              color: Colors.grey[50],
-            ),
-            child: Column(
-              children: [
-                // Month and year header
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(7),
-                      topRight: Radius.circular(7),
+          GestureDetector(
+            onTap: () => _selectDate(context),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: _selectedDates.isNotEmpty
+                      ? const Color(0xFFFF9800).withAlpha(32)
+                      : Colors.transparent,
+                  width: 1.5,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.calendar_today_rounded,
+                    color: _selectedDates.isNotEmpty
+                        ? const Color(0xFFFF9800)
+                        : Colors.grey[400],
+                    size: 20,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      _selectedDates.isEmpty
+                          ? 'Select Dates'
+                          : 'Selected ${_selectedDates.length} date(s)',
+                      style: TextStyle(
+                        color: _selectedDates.isEmpty ? Colors.grey[400] : Colors.grey[800],
+                        fontSize: 14,
+                      ),
                     ),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const SizedBox(width: 8),
-                      Text(
-                        DateFormat('MMMM yyyy').format(displayMonth),
+                  if (_selectedDates.isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFF9800).withAlpha(16),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        DateFormat('MMM d').format(_selectedDates[0]),
                         style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                          color: Color(0xFFFF9800),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
                         ),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.print, color: Colors.grey),
-                        onPressed: () {},
-                        iconSize: 18,
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                      ),
-                      const SizedBox(width: 8),
-                    ],
-                  ),
-                ),
-                // Days of week header
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 6),
-                  child: Row(
-                    children: [
-                      for (final day in ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'])
-                        Expanded(
-                          child: Text(
-                            day,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                              color: day == 'Sun' ? Colors.red : Colors.black87,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                // Calendar grid - dynamically generated based on selected dates
-                GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: 7,
-                  childAspectRatio: 1.2,
-                  children: [
-                    // Generate empty cells for days before the 1st of the month
-                    for (int i = 0; i < firstWeekDay; i++)
-                      _buildCalendarCell(null, isSunday: i == 0),
-                    
-                    // Generate cells for each day of the month
-                    for (int day = 1; day <= daysInMonth; day++)
-                      _buildCalendarCell(
-                        day, 
-                        isSelected: _selectedDates.any((selectedDate) =>
-                          selectedDate.year == displayMonth.year &&
-                          selectedDate.month == displayMonth.month &&
-                          selectedDate.day == day
-                        ), 
-                        isSunday: DateTime(displayMonth.year, displayMonth.month, day).weekday == DateTime.sunday
-                      ),
-                    
-                    // Fill remaining cells in the grid if needed
-                    for (int i = 0; i < (42 - daysInMonth - firstWeekDay); i++)
-                      _buildCalendarCell(null),
-                  ],
-                ),
-                // Buttons
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      TextButton(
-                        onPressed: () {},
-                        child: const Text('CANCEL', style: TextStyle(color: Colors.indigo)),
-                      ),
-                      TextButton(
-                        onPressed: () {},
-                        child: const Text('OK', style: TextStyle(color: Colors.indigo)),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+                    ),
+                ],
+              ),
             ),
           ),
         ],
       ),
     );
   }
-Widget _buildTimePicker(BuildContext context) {
+Widget _buildSelectedDates() {
+  final DateTime displayMonth = _selectedDates.isNotEmpty
+      ? DateTime(_selectedDates[0].year, _selectedDates[0].month, 1)
+      : DateTime.now();
+
+  final firstDayOfMonth = DateTime(displayMonth.year, displayMonth.month, 1);
+  final daysInMonth =
+      DateTime(displayMonth.year, displayMonth.month + 1, 0).day;
+  final firstWeekDay = firstDayOfMonth.weekday % 7;
+
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Title row
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Selected Dates:',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF4CAF50),
+              ),
+            ),
+            Text(
+              DateFormat('MMMM yyyy').format(displayMonth),
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 2),
+
+        // Calendar container
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey[200]!),
+            borderRadius: BorderRadius.circular(12),
+            color: Colors.white,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Days-of-week header with zero padding
+              Padding(
+                padding: EdgeInsets.zero,
+                child: Row(
+                  children: [
+                    for (final day in ['S', 'M', 'T', 'W', 'T', 'F', 'S'])
+                      Expanded(
+                        child: Text(
+                          day,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 11,
+                            color: day == 'S'
+                                ? Colors.red[300]
+                                : Colors.grey[600],
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+
+              // Date grid with zero spacing and square cells
+              SizedBox(
+                height: 300,
+                child: GridView.count(
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: 7,
+                  childAspectRatio: 1.0,
+                  shrinkWrap: true,
+                  mainAxisSpacing: 0,
+                  crossAxisSpacing: 0,
+                  padding: EdgeInsets.zero,
+                  children: [
+                    // Leading empty cells
+                    for (int i = 0; i < firstWeekDay; i++)
+                      _buildCalendarCell(null, isSunday: i == 0),
+
+                    // Actual days
+                    for (int day = 1; day <= daysInMonth; day++)
+                      _buildCalendarCell(
+                        day,
+                        isSelected: _selectedDates.any((selectedDate) =>
+                            selectedDate.year == displayMonth.year &&
+                            selectedDate.month == displayMonth.month &&
+                            selectedDate.day == day),
+                        isSunday: DateTime(displayMonth.year,
+                                    displayMonth.month, day)
+                                .weekday ==
+                            DateTime.sunday,
+                        isHoliday: _holidays.any((holiday) =>
+                            holiday.year == displayMonth.year &&
+                            holiday.month == displayMonth.month &&
+                            holiday.day == day),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
+  Widget _buildTimePicker(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Pickup Time',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey[700],
-            ),
+          Row(
+            children: [
+              const Icon(
+                Icons.access_time_filled_rounded,
+                size: 18,
+                color: Color(0xFF2196F3),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Pickup Time',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[700],
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 6),
           GestureDetector(
             onTap: () => _selectTime(context),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               decoration: BoxDecoration(
                 color: Colors.grey[100],
                 borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: _selectedTime != null
+                      ? const Color(0xFF2196F3).withAlpha(128)
+                      : Colors.transparent,
+                  width: 1.5,
+                ),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.access_time, color: Color(0xFF0066CC)),
+                  Icon(
+                    Icons.access_time_rounded,
+                    color: _selectedTime != null
+                        ? const Color(0xFF2196F3)
+                        : Colors.grey[400],
+                    size: 20,
+                  ),
                   const SizedBox(width: 12),
                   Text(
-                    _selectedTime == null 
-                        ? 'Select Time' 
+                    _selectedTime == null
+                        ? 'Select Time'
                         : _formatTimeDisplay(_selectedTime!),
-                    style: TextStyle(color: Colors.grey[800]),
+                    style: TextStyle(
+                      color: _selectedTime == null ? Colors.grey[400] : Colors.grey[800],
+                      fontSize: 14,
+                    ),
                   ),
+                  const Spacer(),
+                  if (_selectedTime != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2196F3).withAlpha(16),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        _getPeriodText(_selectedTime!),
+                        style: const TextStyle(
+                          color: Color(0xFF2196F3),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -644,13 +957,22 @@ Widget _buildTimePicker(BuildContext context) {
     );
   }
 
-String _formatTimeDisplay(TimeOfDay time) {
+  String _getPeriodText(TimeOfDay time) {
+    if (time.hour < 12) {
+      return 'Morning';
+    } else if (time.hour < 17) {
+      return 'Afternoon';
+    } else {
+      return 'Evening';
+    }
+  }
+
+  String _formatTimeDisplay(TimeOfDay time) {
     final hour = time.hourOfPeriod == 0 ? 12 : time.hourOfPeriod;
     final minute = time.minute.toString().padLeft(2, '0');
     final period = time.period == DayPeriod.am ? 'AM' : 'PM';
     return '$hour:$minute $period';
   }
-
 
   Future<void> _selectDate(BuildContext context) async {
     await showDialog(
@@ -658,33 +980,69 @@ String _formatTimeDisplay(TimeOfDay time) {
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Select Multiple Dates'),
-              content: SizedBox(
-                width: double.maxFinite,
-                height: 400,
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20.0),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Select Dates',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey[800],
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => Navigator.of(context).pop(),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
                     _buildCustomCalendar(setState),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          },
+                          child: Text(
+                            'CANCEL',
+                            style: TextStyle(
+                              color: Theme.of(context).primaryColor,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                            this.setState(() {});
+                          },
+                          style: ElevatedButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text('CONFIRM'),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text('CANCEL'),
-                ),
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    this.setState(() {});
-                  },
-                  child: const Text('OK'),
-                ),
-              ],
             );
           },
         );
@@ -692,21 +1050,66 @@ String _formatTimeDisplay(TimeOfDay time) {
     );
   }
 
- Future<void> _fetchVehicleAvailability() async {
-    // Show loading indicator
+  Future<void> _fetchVehicleAvailability() async {
+    // Safety check to ensure animations are initialized
+    if (!_animationController.isAnimating && _animationController.status != AnimationStatus.completed) {
+      // If not ready yet, ensure animation is started
+      _animationController.forward();
+      // Wait a moment before continuing
+      await Future.delayed(const Duration(milliseconds: 300));
+    }
+  
+    // Show loading indicator with improved design
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
-        return const Center(
-          child: CircularProgressIndicator(),
+        return Dialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  height: 60,
+                  width: 60,
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).primaryColor),
+                    strokeWidth: 3,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Searching for available vehicles...',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Please wait while we process your request',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+          ),
         );
       },
     );
     
     try {
-      // Use 192.168.1.58 for development
-      final baseUrl = 'http://192.168.1.58:8081';
+      // Use 192.168.1.37 for development
+      final baseUrl = 'http://192.168.1.37:8081';
       final Uri uri = Uri.parse('$baseUrl/schedule/etsCab1');
       
       // Format dates for API call
@@ -738,7 +1141,8 @@ String _formatTimeDisplay(TimeOfDay time) {
         uriString += '&dates=$date';
       }
       
-      print('Calling API: $uriString'); // Debug print
+      // Use logging instead of print
+      debugPrint('Calling API: $uriString');
       
       // Make HTTP request
       final response = await http.post(
@@ -746,20 +1150,20 @@ String _formatTimeDisplay(TimeOfDay time) {
         headers: {'Content-Type': 'application/json'},
       ).timeout(const Duration(seconds: 30));
       
+      // Check if widget is still mounted before updating UI
+      if (!mounted) return;
+      
       // Close loading dialog
       Navigator.pop(context);
       
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
         
-        // Show distance for a few seconds
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Distance: ${data['distace']} km'),
-            duration: const Duration(seconds: 2),
-            backgroundColor: Colors.green,
-          ),
-        );
+        // Check if widget is still mounted before showing dialog
+        if (!mounted) return;
+        
+        // Show success message with distance
+        _showSuccessDialog(context, data);
         
         // Prepare booking data with API response
         final bookingData = {
@@ -783,6 +1187,9 @@ String _formatTimeDisplay(TimeOfDay time) {
         
         // Navigate to vehicle selection screen after a short delay
         Future.delayed(const Duration(seconds: 2), () {
+          // Check if widget is still mounted before navigating
+          if (!mounted) return;
+          
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -791,105 +1198,300 @@ String _formatTimeDisplay(TimeOfDay time) {
           );
         });
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${response.statusCode} - ${response.body}'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        // Check if widget is still mounted before showing dialog
+        if (!mounted) return;
+        
+        _showErrorDialog(context, 'Server Error', 'The server returned an error: ${response.statusCode}. Please try again later.');
       }
     } catch (e) {
+      // Check if widget is still mounted before updating UI
+      if (!mounted) return;
+      
       Navigator.pop(context);
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Connection Error: $e'),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 10),
-        ),
-      );
-      
-      print('API Error: $e');
+      _showErrorDialog(context, 'Connection Error', 'Could not connect to the server. Please check your internet connection and try again.');
+      debugPrint('API Error: $e');
     }
   }
+
+  void _showSuccessDialog(BuildContext context, Map<String, dynamic> data) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withAlpha(16),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.check_circle,
+                    color: Colors.green,
+                    size: 48,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Route Found!',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'We found available vehicles for your trip.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.directions,
+                        color: Color(0xFF4CAF50),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Distance: ${data['distace']} km',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'You will be redirected to select your vehicle.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showErrorDialog(BuildContext context, String title, String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text(title),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(
+              Icons.error_outline,
+              color: Colors.white,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(message),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.red[700],
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        margin: const EdgeInsets.all(8),
+        duration: const Duration(seconds: 4),
+        action: SnackBarAction(
+          label: 'DISMISS',
+          textColor: Colors.white,
+          onPressed: () {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          },
+        ),
+      ),
+    );
+  }
+
   Widget _buildCustomCalendar(StateSetter setState) {
     final now = DateTime.now();
     final currentMonth = DateTime(now.year, now.month, 1);
     
-    return Expanded(
-      child: Column(
-        children: [
-          // Month header with print icon
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const SizedBox(width: 40),
-              Text(
-                DateFormat('MMMM yyyy').format(currentMonth),
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Month header with navigation
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.chevron_left),
+              onPressed: () {},
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
+            Text(
+              DateFormat('MMMM yyyy').format(currentMonth),
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
               ),
-              IconButton(
-                icon: const Icon(Icons.print, color: Colors.grey),
-                onPressed: () {},
-              ),
-            ],
+            ),
+            IconButton(
+              icon: const Icon(Icons.chevron_right),
+              onPressed: () {},
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        
+        // Calendar legend
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildLegendItem(const Color(0xFF81D4FA), 'Selected'),
+            const SizedBox(width: 16),
+            _buildLegendItem(Colors.red[100]!, 'Holiday/Sunday'),
+          ],
+        ),
+        const SizedBox(height: 12),
+        
+        // Table-style calendar
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey[200]!),
+            borderRadius: BorderRadius.circular(8),
           ),
-          const SizedBox(height: 16),
-          
-          // Table-style calendar
-          Table(
-            border: TableBorder.all(color: Colors.grey[300]!),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               // Days of week header
-              TableRow(
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                ),
-                children: [
-                  for (final day in ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'])
-                    TableCell(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Row(
+                  children: [
+                    for (final day in ['S', 'M', 'T', 'W', 'T', 'F', 'S'])
+                      Expanded(
                         child: Text(
                           day,
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: day == 'Sun' ? Colors.red : Colors.black87,
+                            fontSize: 12,
+                            color: day == 'S' ? Colors.red[300] : Colors.grey[700],
                           ),
                         ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
               
-              // Calendar rows - we'll generate 6 rows to cover all possible month layouts
-              for (int week = 0; week < 6; week++)
-                _buildCalendarWeekRow(now, week, setState),
+              // Calendar rows - reduced to 5 rows to save space
+              SizedBox(
+                height: 200,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    for (int week = 0; week < 5; week++) // Only show 5 weeks max
+                      _buildCalendarWeekRow(now, week, setState),
+                  ],
+                ),
+              ),
             ],
           ),
-        ],
-      ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLegendItem(Color color, String text) {
+    return Row(
+      children: [
+        Container(
+          width: 16,
+          height: 16,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          text,
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey[600],
+          ),
+        ),
+      ],
     );
   }
   
-  TableRow _buildCalendarWeekRow(DateTime now, int weekIndex, StateSetter setState) {
+  Widget _buildCalendarWeekRow(DateTime now, int weekIndex, StateSetter setState) {
     final firstDayOfMonth = DateTime(now.year, now.month, 1);
     final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
     
     // Calculate the first day to display in the first week
     final firstWeekDay = firstDayOfMonth.weekday % 7; // 0 = Sunday, 6 = Saturday
     
-    return TableRow(
+    // Create a row for each week
+    return Row(
       children: List.generate(7, (dayIndex) {
         final dayNumber = (weekIndex * 7 + dayIndex + 1) - firstWeekDay;
         
         if (dayNumber < 1 || dayNumber > daysInMonth) {
           // Empty cell or day from next/previous month
-          return const TableCell(child: SizedBox(height: 40));
+          return Expanded(
+            child: Container(
+              height: 32,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey[100]!),
+              ),
+            ),
+          );
         }
         
         final date = DateTime(now.year, now.month, dayNumber);
@@ -904,13 +1506,7 @@ String _formatTimeDisplay(TimeOfDay time) {
             selectedDate.day == date.day);
         final isPast = date.isBefore(DateTime(now.year, now.month, now.day));
         
-        // Show small text below the day number (like "15" in the image)
-        String? smallText;
-        if (isHoliday) {
-          smallText = 'Holiday';
-        }
-        
-        return TableCell(
+        return Expanded(
           child: GestureDetector(
             onTap: isPast
                 ? null
@@ -927,38 +1523,28 @@ String _formatTimeDisplay(TimeOfDay time) {
                     });
                   },
             child: Container(
-              height: 50,
+              height: 32,
               decoration: BoxDecoration(
                 color: isSelected
-                    ? const Color(0xFF81D4FA) // Light blue like in the image
+                    ? const Color(0xFF81D4FA) // Light blue for selected dates
                     : (isHoliday || isSunday) && !isPast
-                        ? Colors.red[100] // Light red for holidays and Sundays
-                        : Colors.transparent,
+                        ? Colors.red[50] // Light red for holidays and Sundays
+                        : Colors.white,
+                border: Border.all(color: Colors.grey[100]!),
               ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    dayNumber.toString(),
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: isPast
-                          ? Colors.grey[400]
-                          : (isHoliday || isSunday)
-                              ? Colors.red
-                              : Colors.black87,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                    ),
+              child: Center(
+                child: Text(
+                  dayNumber.toString(),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isPast
+                        ? Colors.grey[400]
+                        : (isHoliday || isSunday)
+                            ? Colors.red[400]
+                            : Colors.grey[800],
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                   ),
-                  if (smallText != null)
-                    Text(
-                      smallText,
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: Colors.red[700],
-                      ),
-                    ),
-                ],
+                ),
               ),
             ),
           ),
@@ -967,7 +1553,7 @@ String _formatTimeDisplay(TimeOfDay time) {
     );
   }
 
- Future<void> _selectTime(BuildContext context) async {
+  Future<void> _selectTime(BuildContext context) async {
     final TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: _selectedTime ?? TimeOfDay.now(),
@@ -975,12 +1561,14 @@ String _formatTimeDisplay(TimeOfDay time) {
         return Theme(
           data: ThemeData.light().copyWith(
             colorScheme: const ColorScheme.light(
-              primary: Color(0xFF0066CC),
+              primary: Color(0xFF2196F3),
               onPrimary: Colors.white,
               surface: Colors.white,
               onSurface: Colors.black,
             ),
-            dialogBackgroundColor: Colors.white,
+            dialogTheme: const DialogTheme(
+              backgroundColor: Colors.white,
+            ),
           ),
           child: child!,
         );
@@ -993,7 +1581,8 @@ String _formatTimeDisplay(TimeOfDay time) {
       });
     }
   }
-  Widget _buildCalendarCell(int? day, {bool isSelected = false, bool isSunday = false}) {
+
+  Widget _buildCalendarCell(int? day, {bool isSelected = false, bool isSunday = false, bool isHoliday = false}) {
     if (day == null) {
       return Container(
         decoration: BoxDecoration(
@@ -1003,26 +1592,29 @@ String _formatTimeDisplay(TimeOfDay time) {
       );
     }
     
-    // For the selected dates view, we just want to show the cells without interaction
+    Color cellColor = Colors.white;
+    if (isSelected) {
+      cellColor = const Color(0xFF81D4FA);
+    } else if (isHoliday || isSunday) {
+      cellColor = Colors.red[50]!;
+    }
+    
     return Container(
       decoration: BoxDecoration(
         border: Border.all(color: Colors.grey[200]!),
-        color: isSelected 
-            ? const Color(0xFF81D4FA) // Light blue for selected dates
-            : isSunday 
-                ? const Color(0xFFFFCDD2) // Light red for Sundays
-                : Colors.white,
+        color: cellColor,
+        borderRadius: BorderRadius.circular(2),
       ),
       child: Center(
         child: Text(
           day.toString(),
           style: TextStyle(
-            fontSize: 14,
+            fontSize: 12,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            color: isSelected 
-                ? Colors.black87 
-                : isSunday 
-                    ? Colors.red 
+            color: isSelected
+                ? Colors.black87
+                : (isHoliday || isSunday)
+                    ? Colors.red[400]
                     : Colors.black87,
           ),
         ),
@@ -1058,15 +1650,12 @@ String _formatTimeDisplay(TimeOfDay time) {
     try {
       final locationData = await location.getLocation();
       setState(() {
-        _currentLocation = locationData;
         _isLoadingLocation = false;
       });
       _reverseGeocode(locationData);
     } catch (e) {
       setState(() => _isLoadingLocation = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not get location: $e'))
-      );
+      _showErrorSnackBar('Could not get location. Please try again.');
     }
   }
 
@@ -1084,13 +1673,12 @@ String _formatTimeDisplay(TimeOfDay time) {
         if (data['results'].isNotEmpty) {
           setState(() {
             _pickupController.text = data['results'][0]['formatted_address'];
+            _activeField = 'pickup';
           });
         }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not get address: $e'))
-      );
+      _showErrorSnackBar('Could not get address. Please enter manually.');
     }
   }
 
@@ -1136,15 +1724,15 @@ String _formatTimeDisplay(TimeOfDay time) {
   ) {
     return Container(
       constraints: const BoxConstraints(maxHeight: 200),
-      margin: const EdgeInsets.only(top: 4),
+      margin: const EdgeInsets.only(top: 8),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(10),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            color: Colors.black.withAlpha(16),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -1175,8 +1763,10 @@ String _formatTimeDisplay(TimeOfDay time) {
                 children: [
                   Icon(
                     Icons.location_on_outlined,
-                    color: const Color(0xFF0066CC),
-                    size: 16,
+                    color: type == 'pickup' 
+                      ? const Color(0xFF4CAF50) 
+                      : const Color(0xFF2196F3),
+                    size: 18,
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -1189,6 +1779,11 @@ String _formatTimeDisplay(TimeOfDay time) {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
+                  ),
+                  Icon(
+                    Icons.arrow_forward_ios,
+                    color: Colors.grey[400],
+                    size: 14,
                   ),
                 ],
               ),
