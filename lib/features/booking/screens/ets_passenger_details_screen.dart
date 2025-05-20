@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../features/payment/screens/payment_screen.dart';
+import '../../../features/payment/screens/ets_payment_screen.dart';
 import 'dart:convert';
 import '../../../features/booking/screens/ets_select_vehicle_screen.dart';
 import 'package:http/http.dart' as http;
@@ -157,68 +157,44 @@ class _EtsPassengerDetailsScreenState extends State<EtsPassengerDetailsScreen> {
       return;
     }
 
+    // Show loading indicator
+    setState(() => _isLoading = true);
+
     try {
-      // Show loading indicator
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
-        },
-      );
+      // Create updated booking data with passenger details
+      final updatedBookingData = {
+        ...widget.bookingData,
+        'firstName': _firstNameController.text,
+        'lastName': _lastNameController.text,
+        'email': _emailController.text,
+        'phone': _phoneController.text,
+        'parnterSharing': int.parse(_partnerSharingController.text),
+        'userId': _userId,
+      };
 
-      // Get invoice details
-      final baseUrl = 'http://192.168.1.37:8081';
-      final response = await http.post(
-        Uri.parse('$baseUrl/schedule/invoice'),
-        body: {
-          'baseFare': widget.bookingData['baseFare'],
-          'cabType': widget.bookingData['vehicleType'],
-        },
-      );
-
-      // Close loading dialog
-      Navigator.pop(context);
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        
-        // Prepare data for payment screen
-        final paymentData = {
-          ...widget.bookingData,
-          'passengerName': '${_firstNameController.text} ${_lastNameController.text}',
-          'passengerEmail': _emailController.text,
-          'passengerPhone': _phoneController.text,
-          'userId': _userId,
-          'baseFare': data['baseFare'],
-          'serviceCharge': data['serviceCharge'],
-          'gst': data['gst'],
-          'totalFare': data['totalAmount'],
-          'finalAmount': data['totalAmount'],
-          'baseAmount': data['baseFare'],
-          'parnterSharing': _partnerSharingController.text,
-        };
-
-        // Navigate to payment screen
+      // Navigate to ETSPaymentScreen with the updated booking data
+      if (mounted) {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => PaymentScreen(bookingData: paymentData),
+            builder: (context) => ETSPaymentScreen(bookingData: updatedBookingData),
           ),
         );
-      } else {
-        throw Exception('Failed to get invoice details');
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: Colors.red.shade700,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red.shade700,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 

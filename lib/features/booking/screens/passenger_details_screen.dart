@@ -490,7 +490,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
         const SizedBox(height: 8),
         _buildFareRow('Platform Fee', '₹$platformFee'),
         const SizedBox(height: 8),
-        _buildFareRow('GST (18%)', '₹$gst'),
+        _buildFareRow('GST (5%)', '₹$gst'),
         const SizedBox(height: 8),
         const Divider(),
         _buildFareRow('Total Fare', '₹$totalFare', isTotal: true),

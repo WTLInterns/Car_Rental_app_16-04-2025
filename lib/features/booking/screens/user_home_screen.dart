@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import '../../../core/config/app_config.dart';
 import '../../auth/blocs/auth_bloc.dart';
 import '../../trips/screens/trips_screen.dart';
@@ -122,6 +124,11 @@ class _HomeContentState extends State<_HomeContent> {
   final PageController _pageController = PageController(viewportFraction: 0.9);
   int _currentPage = 0;
   late Timer _timer;
+  
+  // Add these variables for search functionality
+  final TextEditingController _searchController = TextEditingController();
+  List<dynamic> _searchSuggestions = [];
+  bool _isSearching = false;
 
   @override
   void initState() {
@@ -151,7 +158,199 @@ class _HomeContentState extends State<_HomeContent> {
   void dispose() {
     _timer.cancel();
     _pageController.dispose();
+    _searchController.dispose();
     super.dispose();
+  }
+  
+  // Simplified search method with mock data for testing
+  Future<void> _searchPlaces(String query) async {
+    if (query.length < 2) {
+      setState(() {
+        _searchSuggestions = [];
+      });
+      return;
+    }
+    
+    setState(() {
+      _isSearching = true;
+    });
+
+    try {
+      // First try the Google Places API
+      final response = await http.get(
+        Uri.parse(
+          'https://maps.googleapis.com/maps/api/place/autocomplete/json?'
+          'input=$query&key=AIzaSyCelDo4I5cPQ72TfCTQW-arhPZ7ALNcp8w&components=country:in',
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        print('Google Places API Response: ${response.body}');
+        
+        if (data['status'] == 'OK' && (data['predictions'] as List).isNotEmpty) {
+          setState(() {
+            _searchSuggestions = data['predictions'];
+            _isSearching = false;
+          });
+        } else {
+          // Fallback to mock data if API fails or returns no results
+          _useMockData(query);
+        }
+      } else {
+        // Fallback to mock data if API request fails
+        _useMockData(query);
+      }
+    } catch (e) {
+      print('Exception during API call: $e');
+      // Fallback to mock data if API throws exception
+      _useMockData(query);
+    }
+  }
+  
+  // Helper method to use mock data when API fails
+  void _useMockData(String query) {
+    // Common Indian cities for testing
+    final List<Map<String, dynamic>> mockCities = [
+      {
+        'description': 'Mumbai, Maharashtra, India',
+        'structured_formatting': {'secondary_text': 'Maharashtra, India'}
+      },
+      {
+        'description': 'Delhi, India',
+        'structured_formatting': {'secondary_text': 'India'}
+      },
+      {
+        'description': 'Bangalore, Karnataka, India',
+        'structured_formatting': {'secondary_text': 'Karnataka, India'}
+      },
+      {
+        'description': 'Hyderabad, Telangana, India',
+        'structured_formatting': {'secondary_text': 'Telangana, India'}
+      },
+      {
+        'description': 'Chennai, Tamil Nadu, India',
+        'structured_formatting': {'secondary_text': 'Tamil Nadu, India'}
+      },
+      {
+        'description': 'Kolkata, West Bengal, India',
+        'structured_formatting': {'secondary_text': 'West Bengal, India'}
+      },
+      {
+        'description': 'Pune, Maharashtra, India',
+        'structured_formatting': {'secondary_text': 'Maharashtra, India'}
+      },
+      {
+        'description': 'Ahmedabad, Gujarat, India',
+        'structured_formatting': {'secondary_text': 'Gujarat, India'}
+      },
+      {
+        'description': 'Jaipur, Rajasthan, India',
+        'structured_formatting': {'secondary_text': 'Rajasthan, India'}
+      },
+    ];
+    
+    // Filter mock data based on query
+    final filteredCities = mockCities.where((city) => 
+      city['description'].toString().toLowerCase().contains(query.toLowerCase())
+    ).toList();
+    
+    setState(() {
+      _searchSuggestions = filteredCities;
+      _isSearching = false;
+    });
+  }
+  
+  // Updated method to show the search dialog
+  void _showSearchDialog(BuildContext context) {
+    _searchController.clear(); // Clear previous search
+    _searchSuggestions = []; // Clear previous suggestions
+    
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: const Text('Where do you want to go?'),
+            content: Container(
+              width: double.maxFinite,
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.5, // Limit height
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Enter destination',
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    onChanged: (value) async {
+                      if (value.isNotEmpty) {
+                        await _searchPlaces(value);
+                        // Important: Use setDialogState to update the dialog UI
+                        setDialogState(() {});
+                      } else {
+                        setDialogState(() {
+                          _searchSuggestions = [];
+                        });
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  if (_isSearching)
+                    const Center(child: CircularProgressIndicator())
+                  else if (_searchSuggestions.isEmpty && _searchController.text.isNotEmpty)
+                    const Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Text('No locations found. Try a different search term.'),
+                    )
+                  else
+                    Flexible(
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: _searchSuggestions.length,
+                        itemBuilder: (context, index) {
+                          final suggestion = _searchSuggestions[index];
+                          return ListTile(
+                            leading: const Icon(Icons.location_on),
+                            title: Text(suggestion['description'] ?? 'Unknown location'),
+                            subtitle: Text(suggestion['structured_formatting']?['secondary_text'] ?? ''),
+                            onTap: () {
+                              print('Selected location: ${suggestion['description']}');
+                              Navigator.pop(context);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => CabBookingScreen(
+                                    dropLocation: suggestion['description'],
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: const Text('Cancel'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
   }
 
   @override
@@ -189,7 +388,7 @@ class _HomeContentState extends State<_HomeContent> {
                                   color: Color(AppConfig.textColorHex),
                                 ),
                               ),
-                              const SizedBox(height: 4),
+                              const SizedBox(height: 4), // Fixed SizedBox
                               const Text(
                                 'Where are you going today?',
                                 style: TextStyle(
@@ -231,7 +430,7 @@ class _HomeContentState extends State<_HomeContent> {
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                            border: Border.all(color: Colors.grey.withAlpha((0.2 * 255).round())),
                           ),
                           padding: const EdgeInsets.symmetric(horizontal: 15),
                           child: const Row(
@@ -271,7 +470,7 @@ class _HomeContentState extends State<_HomeContent> {
                             icon: Icons.directions_car,
                             label: 'Cab',
                             iconColor: Colors.amber,
-                            bgColor: Colors.amber.withOpacity(0.2),
+                            bgColor: Colors.amber.withAlpha((0.2 * 255).round()),
                             onTap: () => Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -284,7 +483,7 @@ class _HomeContentState extends State<_HomeContent> {
                             icon: Icons.badge,
                             label: 'ETS',
                             iconColor: const Color(AppConfig.primaryColorHex),
-                            bgColor: const Color(AppConfig.primaryColorHex).withOpacity(0.2),
+                            bgColor: const Color(AppConfig.primaryColorHex).withAlpha((0.2 * 255).round()),
                             onTap: () => Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -297,14 +496,14 @@ class _HomeContentState extends State<_HomeContent> {
                             icon: Icons.check,
                             label: 'Bus',
                             iconColor: const Color(AppConfig.primaryColorHex),
-                            bgColor: const Color(AppConfig.primaryColorHex).withOpacity(0.2),
+                            bgColor: const Color(AppConfig.primaryColorHex).withAlpha((0.2 * 255).round()),
                             onTap: () {},
                           ),
                           _buildServiceCard(
                             icon: Icons.star,
                             label: 'Flight',
                             iconColor: Colors.green,
-                            bgColor: Colors.green.withOpacity(0.2),
+                            bgColor: Colors.green.withAlpha((0.2 * 255).round()),
                             onTap: () {},
                           ),
                         ],
@@ -374,7 +573,7 @@ class _HomeContentState extends State<_HomeContent> {
               size: 30,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 8), // Fixed SizedBox
           Text(
             label,
             style: const TextStyle(
@@ -388,119 +587,261 @@ class _HomeContentState extends State<_HomeContent> {
     );
   }
 
-  void _showSearchDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Search'),
-        content: const Text('Search functionality will be implemented soon.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+  Widget _buildPremiumServiceCard() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5F7FF),
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha((0.05 * 255).round()),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(AppConfig.primaryColorHex).withAlpha((0.2 * 255).round()),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.star,
+                  color: Color(AppConfig.primaryColorHex),
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 15), // Fixed SizedBox (line 529)
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Premium Service',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(AppConfig.textColorHex),
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    const Text(
+                      'Get priority booking and exclusive offers',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Color(AppConfig.lightTextColorHex),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  // Handle premium service action
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(AppConfig.primaryColorHex),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: const Text('Upgrade'),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildFeaturedRides() {
-    // List of featured ride images
-    final List<Map<String, dynamic>> featuredRides = [
-      {
-        'image': 'assets/images/sedan.png',
-        'title': 'Premium Sedans',
-        'subtitle': 'Comfortable rides at affordable prices',
-      },
-      {
-        'image': 'assets/images/suv.png',
-        'title': 'Luxury SUVs',
-        'subtitle': 'Travel in style with our luxury fleet',
-      },
-      {
-        'image': 'assets/images/hatchback.png',
-        'title': 'Budget Options',
-        'subtitle': 'Economy rides that don\'t compromise on quality',
-      },
-    ];
-
-    return SizedBox(
-      height: 180,
-      child: PageView.builder(
-        controller: _pageController,
-        itemCount: featuredRides.length,
-        itemBuilder: (context, index) {
-          return Container(
-            margin: const EdgeInsets.only(right: 10),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(15),
-              color: Colors.grey[300],
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+  Widget _buildDiscountCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(AppConfig.primaryColorHex), Color(0xFF7C4DFF)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Special Offer',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(15),
-              child: Stack(
+          ),
+          const SizedBox(height: 10), // Fixed SizedBox (line 576)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Positioned.fill(
-                    child: Image.asset(
-                      featuredRides[index]['image'],
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        // Fallback if image doesn't load
-                        return Container(
-                          color: Colors.grey[300],
-                          child: const Center(
-                            child: Icon(
-                              Icons.image_not_supported,
-                              size: 50,
-                              color: Colors.grey,
-                            ),
-                          ),
-                        );
-                      },
+                  Text(
+                    'Special Offer',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(15),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.bottomCenter,
-                          end: Alignment.topCenter,
-                          colors: [
-                            Colors.black.withOpacity(0.8),
-                            Colors.transparent,
-                          ],
+                  SizedBox(height: 15), // Fixed SizedBox (line 637)
+                  Text(
+                    'Get 25% off on your next ride',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  'SAVE25',
+                  style: TextStyle(
+                    color: const Color(AppConfig.primaryColorHex),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 15),
+          ElevatedButton(
+            onPressed: () {
+              // Handle offer action
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: const Color(AppConfig.primaryColorHex),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: const Text('Book Now'),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  // List of featured ride images
+  final List<Map<String, dynamic>> featuredRides = [
+    {
+      'image': 'assets/images/sedan.png',
+      'title': 'Premium Sedans',
+      'subtitle': 'Comfortable rides at affordable prices',
+    },
+    {
+      'image': 'assets/images/suv.png',
+      'title': 'Luxury SUVs',
+      'subtitle': 'Travel in style with our luxury fleet',
+    },
+    {
+      'image': 'assets/images/hatchback.png',
+      'title': 'Budget Options',
+      'subtitle': 'Economy rides that don\'t compromise on quality',
+    },
+  ];
+
+  Widget _buildFeaturedRides() {
+    return SizedBox(
+    height: 180,
+    child: PageView.builder(
+      controller: _pageController,
+      itemCount: featuredRides.length,
+      itemBuilder: (context, index) {
+        return Container(
+          margin: const EdgeInsets.only(right: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(15),
+            color: Colors.grey[300],
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withAlpha((0.1 * 255).round()),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(15),
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: Image.asset(
+                    featuredRides[index]['image'],
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      // Fallback if image doesn't load
+                      return Container(
+                        color: Colors.grey[300],
+                        child: const Center(
+                          child: Icon(
+                            Icons.image_not_supported,
+                            size: 50,
+                            color: Colors.grey,
+                          ),
                         ),
+                      );
+                    },
+                  ),
+                ),
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(15),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.bottomCenter,
+                        end: Alignment.topCenter,
+                        colors: [
+                          Colors.black.withAlpha((0.8 * 255).round()),
+                          Colors.transparent,
+                        ],
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            featuredRides[index]['title'],
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          featuredRides[index]['title'],
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
                           ),
-                          const SizedBox(height: 5),
-                          Text(
-                            featuredRides[index]['subtitle'],
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.8),
-                              fontSize: 14,
-                            ),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          featuredRides[index]['subtitle'],
+                          style: TextStyle(
+                            color: Colors.white.withAlpha((0.8 * 255).round()),
+                            fontSize: 14,
                           ),
+                        ),
                         ],
                       ),
                     ),
@@ -513,188 +854,4 @@ class _HomeContentState extends State<_HomeContent> {
       ),
     );
   }
-
-  Widget _buildPremiumServiceCard() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF2E3192),
-            Color(0xFF4A90E2),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 3,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const Text(
-                    'PREMIUM',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'Try Premium Service',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Get priority booking, dedicated support, and exclusive offers',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 15),
-                ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: const Color(AppConfig.primaryColorHex),
-                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(25),
-                    ),
-                  ),
-                  child: const Text(
-                    'Learn More',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Expanded(
-            flex: 2,
-            child: Icon(
-              Icons.verified,
-              size: 100,
-              color: Colors.white38,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDiscountCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(
-          color: const Color(AppConfig.accentColorHex).withOpacity(0.3),
-          width: 2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Special Offer',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(AppConfig.textColorHex),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(AppConfig.accentColorHex),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Text(
-                  '25% OFF',
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          const Text(
-            'Use code WELCOME25 on your first booking',
-            style: TextStyle(
-              fontSize: 16,
-              color: Color(AppConfig.lightTextColorHex),
-            ),
-          ),
-          const SizedBox(height: 15),
-          ElevatedButton(
-            onPressed: () {},
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(AppConfig.accentColorHex),
-              foregroundColor: Colors.black,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(25),
-              ),
-              minimumSize: const Size(double.infinity, 50),
-            ),
-            child: const Text(
-              'Apply Coupon',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-} 
+}

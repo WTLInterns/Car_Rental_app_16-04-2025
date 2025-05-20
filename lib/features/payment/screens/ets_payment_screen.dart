@@ -11,16 +11,16 @@ import '../../../features/booking/screens/user_home_screen.dart';
 // Use lowerCamelCase for constants
 const String apiBaseUrl = 'https://api.worldtriplink.com/api';
 
-class PaymentScreen extends StatefulWidget {
+class ETSPaymentScreen extends StatefulWidget {
   final Map<String, dynamic> bookingData;
 
-  const PaymentScreen({super.key, required this.bookingData});
+  const ETSPaymentScreen({super.key, required this.bookingData});
 
   @override
-  State<PaymentScreen> createState() => _PaymentScreenState();
+  State<ETSPaymentScreen> createState() => _PaymentScreenState();
 }
 
-class _PaymentScreenState extends State<PaymentScreen> {
+class _PaymentScreenState extends State<ETSPaymentScreen> {
   bool _isLoading = false;
   String _selectedPaymentMethod = 'cash';
   String? _storedUserId;
@@ -1059,7 +1059,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => PaymentScreen(bookingData: paymentData),
+            builder: (context) => ETSPaymentScreen(bookingData: paymentData),
           ),
         );
       } else {
