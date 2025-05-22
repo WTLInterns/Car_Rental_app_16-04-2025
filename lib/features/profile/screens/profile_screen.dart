@@ -181,33 +181,83 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text("Edit Profile", style: TextStyle(fontWeight: FontWeight.bold)),
+        title:const Center(child:Text("Edit Profile", style: TextStyle(fontWeight: FontWeight.bold))),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: nameController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Name',
-                  prefixIcon: Icon(MaterialCommunityIcons.account_outline),
+                  prefixIcon: const Icon(
+                    MaterialCommunityIcons.account_outline,
+                    color: Colors.blueAccent,
+                  ),
+                  filled: true,
+                  fillColor: Colors.blueAccent.withOpacity(0.1),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 12.0),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                    borderSide: const BorderSide(
+                      color: Colors.blueAccent,
+                      width: 2.0,
+                    ),
+                  ),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
               TextField(
                 controller: emailController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Email',
-                  prefixIcon: Icon(MaterialCommunityIcons.email_outline),
+                  prefixIcon: const Icon(
+                    MaterialCommunityIcons.email_outline,
+                    color: Colors.blueAccent,
+                  ),
+                  filled: true,
+                  fillColor: Colors.blueAccent.withOpacity(0.1),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 12.0),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                    borderSide: const BorderSide(
+                      color: Colors.blueAccent,
+                      width: 2.0,
+                    ),
+                  ),
                 ),
-                keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: phoneController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Phone',
-                  prefixIcon: Icon(MaterialCommunityIcons.phone_outline),
+                  prefixIcon: const Icon(
+                    MaterialCommunityIcons.phone_outline,
+                    color: Colors.blueAccent,
+                  ),
+                  filled: true,
+                  fillColor: Colors.blueAccent.withOpacity(0.1),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 12.0),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                    borderSide: const BorderSide(
+                      color: Colors.blueAccent,
+                      width: 2.0,
+                    ),
+                  ),
                 ),
                 keyboardType: TextInputType.phone,
               ),

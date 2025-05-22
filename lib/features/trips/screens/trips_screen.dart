@@ -8,27 +8,29 @@ import '../../../features/booking/screens/user_home_screen.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
 // Professional color palette - matching login screen
-const Color primaryColor = Color(0xFF4A90E2);      // Blue (updated to match home screen)
-const Color secondaryColor = Color(0xFF4A90E2);    // Blue
-const Color accentColor = Color(0xFFFFCC00);       // Yellow/gold accent
+const Color primaryColor =
+    Color(0xFF4A90E2); // Blue (updated to match home screen)
+const Color secondaryColor = Color(0xFF4A90E2); // Blue
+const Color accentColor = Color(0xFFFFCC00); // Yellow/gold accent
 
 // Background colors
-const Color backgroundColor = Colors.white;   // White background (updated)
-const Color cardColor = Colors.white;              // White card background
-const Color surfaceColor = Color(0xFFF0F7FF);      // Light blue surface color
+const Color backgroundColor = Colors.white; // White background (updated)
+const Color cardColor = Colors.white; // White card background
+const Color surfaceColor = Color(0xFFF0F7FF); // Light blue surface color
 
 // Text colors
-const Color textColor = Color(0xFF333333);         // Dark text
-const Color lightTextColor = Color(0xFF666666);    // Medium gray text
-const Color mutedTextColor = Color(0xFFA0A0A0);    // Light gray text
+const Color textColor = Color(0xFF333333); // Dark text
+const Color lightTextColor = Color(0xFF666666); // Medium gray text
+const Color mutedTextColor = Color(0xFFA0A0A0); // Light gray text
 
 // Status colors
-const Color successColor = Color(0xFF4CAF50);      // Green for success states
-const Color warningColor = Color(0xFFFF9800);      // Orange for warning states
-const Color dangerColor = Color(0xFFF44336);       // Red for error/danger states
+const Color successColor = Color(0xFF4CAF50); // Green for success states
+const Color warningColor = Color(0xFFFF9800); // Orange for warning states
+const Color dangerColor = Color(0xFFF44336); // Red for error/danger states
 
 // Accent shade
-const Color lightAccentColor = Color(0xFFF0F7FF);  // Light blue for subtle highlights
+const Color lightAccentColor =
+    Color(0xFFF0F7FF); // Light blue for subtle highlights
 
 class Trip {
   final String bookingId;
@@ -74,20 +76,17 @@ class Trip {
       startDate: json['startDate'] ?? json['date'] ?? 'N/A',
       time: json['time'] ?? 'N/A',
       car: (json['car'] ?? json['vendorCab']?['carName'] ?? 'cab').toString(),
-      amount:
-          json['amount'] is num
-              ? (json['amount'] as num).toDouble()
-              : double.tryParse(json['amount']?.toString() ?? '') ?? 0.0,
-      status:
-          json['status'] is String
-              ? int.tryParse(json['status']) ?? 0
-              : json['status'] as int? ?? 0,
+      amount: json['amount'] is num
+          ? (json['amount'] as num).toDouble()
+          : double.tryParse(json['amount']?.toString() ?? '') ?? 0.0,
+      status: json['status'] is String
+          ? int.tryParse(json['status']) ?? 0
+          : json['status'] as int? ?? 0,
       name: json['name'] ?? json['vendorDriver']?['driverName'] ?? 'Unknown',
       phone: json['phone'] ?? json['vendorDriver']?['contactNo'] ?? 'N/A',
-      distance:
-          json['distance'] is num
-              ? (json['distance'] as num).toDouble()
-              : double.tryParse(json['distance']?.toString() ?? '') ?? 0.0,
+      distance: json['distance'] is num
+          ? (json['distance'] as num).toDouble()
+          : double.tryParse(json['distance']?.toString() ?? '') ?? 0.0,
       vendorDriver: json['vendorDriver'] as Map<String, dynamic>?,
       vendorCab: json['vendorCab'] as Map<String, dynamic>?,
       carRentalUser: json['carRentalUser'] as Map<String, dynamic>?,
@@ -133,7 +132,8 @@ class _TripsScreenState extends State<TripsScreen> {
         time: '14:30',
         car: 'Toyota Innova',
         amount: 1500.0,
-        status: 0, // Upcoming
+        status: 0,
+        // Upcoming
         name: 'Rahul Sharma',
         phone: '+91 9876543210',
         distance: 25.5,
@@ -198,13 +198,12 @@ class _TripsScreenState extends State<TripsScreen> {
 
         print('Decoded JSON: ${tripsData.runtimeType}');
 
-        final List<Trip> loadedTrips =
-            tripsData.map((tripJson) {
-              print(
-                'Processing trip: ${tripJson['bookingId'] ?? tripJson['bookid']}',
-              );
-              return Trip.fromJson(tripJson);
-            }).toList();
+        final List<Trip> loadedTrips = tripsData.map((tripJson) {
+          print(
+            'Processing trip: ${tripJson['bookingId'] ?? tripJson['bookid']}',
+          );
+          return Trip.fromJson(tripJson);
+        }).toList();
 
         print('Successfully loaded ${loadedTrips.length} trips');
         setState(() {
@@ -240,16 +239,16 @@ class _TripsScreenState extends State<TripsScreen> {
   Map<String, double> _extractCoordinatesFromAddress(String address) {
     // This is a very basic implementation that looks for coordinates in the address string
     // In a real app, you would use the Geocoding API to convert addresses to coordinates
-    
+
     // Default coordinates (Mumbai)
     double latitude = 19.0760;
     double longitude = 72.8777;
-    
+
     // Example: if location contains "Pune", use Pune coordinates
     if (address.toLowerCase().contains('pune')) {
       latitude = 18.5204;
       longitude = 73.8567;
-    } 
+    }
     // Example: if location contains "Mumbai", use Mumbai coordinates
     else if (address.toLowerCase().contains('mumbai')) {
       latitude = 19.0760;
@@ -261,39 +260,42 @@ class _TripsScreenState extends State<TripsScreen> {
       longitude = 77.2090;
     }
     // Example: if location contains "Bangalore", use Bangalore coordinates
-    else if (address.toLowerCase().contains('bangalore') || address.toLowerCase().contains('bengaluru')) {
+    else if (address.toLowerCase().contains('bangalore') ||
+        address.toLowerCase().contains('bengaluru')) {
       latitude = 12.9716;
       longitude = 77.5946;
     }
-    
-    return {
-      'latitude': latitude,
-      'longitude': longitude
-    };
+
+    return {'latitude': latitude, 'longitude': longitude};
   }
 
   void _handleTrackPress(Trip trip) {
     try {
       // Extract user and driver location coordinates
-      final double userLatitude = trip.carRentalUser?['userlatitude']?.toDouble() ?? 0.0;
-      final double userLongitude = trip.carRentalUser?['userlongitude']?.toDouble() ?? 0.0;
-      
-      final double driverLatitude = trip.vendorDriver?['driverLatitude']?.toDouble() ?? 0.0;
-      final double driverLongitude = trip.vendorDriver?['driverLongitude']?.toDouble() ?? 0.0;
-      
+      final double userLatitude =
+          trip.carRentalUser?['userlatitude']?.toDouble() ?? 0.0;
+      final double userLongitude =
+          trip.carRentalUser?['userlongitude']?.toDouble() ?? 0.0;
+
+      final double driverLatitude =
+          trip.vendorDriver?['driverLatitude']?.toDouble() ?? 0.0;
+      final double driverLongitude =
+          trip.vendorDriver?['driverLongitude']?.toDouble() ?? 0.0;
+
       // If user coordinates not available, try to geocode from pickup address
       Map<String, double> pickupCoords = {
         'latitude': userLatitude,
         'longitude': userLongitude
       };
-      
+
       if (userLatitude == 0.0 || userLongitude == 0.0) {
         pickupCoords = _extractCoordinatesFromAddress(trip.fromLocation);
       }
-      
+
       // If destination coordinates not available, try to geocode from destination address
-      Map<String, double> destCoords = _extractCoordinatesFromAddress(trip.toLocation);
-      
+      Map<String, double> destCoords =
+          _extractCoordinatesFromAddress(trip.toLocation);
+
       // Prepare booking data with null checks and default values
       final Map<String, dynamic> bookingData = {
         'bookingId': trip.bookingId,
@@ -305,12 +307,10 @@ class _TripsScreenState extends State<TripsScreen> {
           'rating': trip.vendorDriver?['rating'] ?? 4.5,
           'vehicleModel': trip.vendorCab?['carName'] ?? trip.car ?? 'Vehicle',
           'vehicleColor': trip.vendorCab?['carColor'] ?? 'White',
-          'licensePlate':
-              trip.vendorCab?['vehicleNo'] ??
+          'licensePlate': trip.vendorCab?['vehicleNo'] ??
               trip.vendorCab?['rCNo'] ??
               'Not Available',
-          'phoneNumber':
-              trip.vendorDriver?['contactNo'] ??
+          'phoneNumber': trip.vendorDriver?['contactNo'] ??
               trip.vendorDriver?['altContactNo'] ??
               trip.phone ??
               'Not Available',
@@ -436,11 +436,11 @@ class _TripsScreenState extends State<TripsScreen> {
       );
       return;
     }
-    
+
     // Sanitize phone number - remove spaces and special characters except '+'
     final sanitizedNumber = phoneNumber.replaceAll(RegExp(r'[^\d+]'), '');
     final String telUrl = 'tel:$sanitizedNumber';
-    
+
     try {
       // Use the more reliable launchUrlString
       if (await canLaunchUrlString(telUrl)) {
@@ -457,7 +457,8 @@ class _TripsScreenState extends State<TripsScreen> {
       print('Error launching phone dialer: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error launching phone dialer. Please try manually dialing $sanitizedNumber'),
+          content: Text(
+              'Error launching phone dialer. Please try manually dialing $sanitizedNumber'),
           backgroundColor: dangerColor,
         ),
       );
@@ -476,7 +477,7 @@ class _TripsScreenState extends State<TripsScreen> {
         ),
       );
     }
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -566,45 +567,46 @@ class _TripsScreenState extends State<TripsScreen> {
           ),
         ),
         actions: [
-            Container(
+          Container(
             margin: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
+            decoration: BoxDecoration(
               color: primaryColor.withOpacity(0.8),
               shape: BoxShape.circle,
             ),
             child: IconButton(
-              icon: const Icon(Icons.notifications_outlined, color: Colors.white, size: 20),
+              icon: const Icon(Icons.notifications_outlined,
+                  color: Colors.white, size: 20),
               onPressed: () {},
             ),
-                  ),
-                ],
-              ),
+          ),
+        ],
+      ),
       body: Column(
         children: [
           // Tab navigation - updated to match design
           Container(
             color: Colors.white,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _buildTabButton('Upcoming', 0),
-                    _buildTabButton('Completed', 1),
-                    _buildTabButton('Cancelled', 2),
-                  ],
-                ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildTabButton('Upcoming', 0),
+                  _buildTabButton('Completed', 1),
+                  _buildTabButton('Cancelled', 2),
+                ],
               ),
             ),
-            Expanded(
+          ),
+          Expanded(
             child: _isLoading
-                      ? Center(
-                  child: CircularProgressIndicator(color: primaryColor),
-                      )
-                      : filteredTrips.isEmpty
-                      ? _buildNoTrips()
-                      : RefreshIndicator(
-                  color: primaryColor,
+                ? Center(
+                    child: CircularProgressIndicator(color: primaryColor),
+                  )
+                : filteredTrips.isEmpty
+                    ? _buildNoTrips()
+                    : RefreshIndicator(
+                        color: primaryColor,
                         onRefresh: _getUserTripInfo,
                         child: ListView.builder(
                           padding: const EdgeInsets.all(16),
@@ -615,8 +617,8 @@ class _TripsScreenState extends State<TripsScreen> {
                           },
                         ),
                       ),
-            ),
-          ],
+          ),
+        ],
       ),
     );
   }
@@ -766,8 +768,8 @@ class _TripsScreenState extends State<TripsScreen> {
                   trip.status == 0
                       ? 'Confirmed'
                       : trip.status == 2
-                      ? 'Completed'
-                      : 'Cancelled',
+                          ? 'Completed'
+                          : 'Cancelled',
                   _getStatusColor(trip.status),
                 ),
               ],
@@ -781,14 +783,17 @@ class _TripsScreenState extends State<TripsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Driver info section
-                if (trip.status == 0) ...[  // Only for upcoming trips
+                if (trip.status == 0) ...[
+                  // Only for upcoming trips
                   Row(
                     children: [
                       CircleAvatar(
                         radius: 20,
                         backgroundColor: lightAccentColor,
                         child: Text(
-                          trip.name.isNotEmpty ? trip.name.substring(0, 1).toUpperCase() : 'D',
+                          trip.name.isNotEmpty
+                              ? trip.name.substring(0, 1).toUpperCase()
+                              : 'D',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -825,7 +830,7 @@ class _TripsScreenState extends State<TripsScreen> {
                                     color: lightTextColor,
                                   ),
                                 ),
-                                const SizedBox(width: 16),
+                                const SizedBox(width: 14),
                                 Icon(
                                   MaterialCommunityIcons.phone,
                                   size: 14,
@@ -850,8 +855,8 @@ class _TripsScreenState extends State<TripsScreen> {
                             makePhoneCall(trip.phone);
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: const Text('Phone number not available'),
+                              const SnackBar(
+                                content: Text('Phone number not available'),
                                 backgroundColor: dangerColor,
                               ),
                             );
@@ -882,34 +887,36 @@ class _TripsScreenState extends State<TripsScreen> {
                 _buildLocationItem(
                   Icons.circle,
                   Colors.blue,
-                        trip.fromLocation,
-                      ),
+                  trip.fromLocation,
+                ),
                 Container(
                   margin: const EdgeInsets.only(left: 10),
-                          height: 30,
-                          width: 1,
+                  height: 30,
+                  width: 1,
                   color: Colors.grey.withOpacity(0.3),
-                        ),
+                ),
                 _buildLocationItem(
-                        Icons.location_on,
+                  Icons.location_on,
                   Colors.red,
-                        trip.toLocation,
+                  trip.toLocation,
                 ),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 15),
 
                 // Trip details in a row
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     _buildTripDetailItem("Date", trip.startDate),
+                    const SizedBox(width: 8),
                     _buildTripDetailItem("Time", trip.time),
+                    const SizedBox(width: 8),
                     _buildTripDetailItem("Booking ID", trip.bookingId),
                   ],
                 ),
-                
-                const SizedBox(height: 20),
-                
+
+                const SizedBox(height: 15),
+
                 // Action buttons matching the image
                 Row(
                   children: [
@@ -933,8 +940,8 @@ class _TripsScreenState extends State<TripsScreen> {
                               makePhoneCall(trip.phone);
                             } else {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: const Text('Phone number not available'),
+                                const SnackBar(
+                                  content: Text('Phone number not available'),
                                   backgroundColor: dangerColor,
                                 ),
                               );
@@ -949,8 +956,8 @@ class _TripsScreenState extends State<TripsScreen> {
                         trip.status == 0 ? Icons.close : Icons.refresh,
                         trip.status == 0 ? 'Cancel' : 'Rebook',
                         trip.status == 0 ? Colors.red.shade300 : Colors.green,
-                        () => trip.status == 0 
-                            ? _handleCancelPress(trip) 
+                        () => trip.status == 0
+                            ? _handleCancelPress(trip)
                             : _handleRebookPress(trip),
                       ),
                     ),
@@ -974,13 +981,13 @@ class _TripsScreenState extends State<TripsScreen> {
         const SizedBox(width: 12),
         Expanded(
           child: Text(
-                location,
-                style: const TextStyle(
+            location,
+            style: const TextStyle(
               fontSize: 15,
-                  color: textColor,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+              color: textColor,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       ],
@@ -993,16 +1000,13 @@ class _TripsScreenState extends State<TripsScreen> {
       children: [
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 12, 
-            color: lightTextColor
-          ),
+          style: const TextStyle(fontSize: 12, color: lightTextColor),
         ),
         const SizedBox(height: 4),
         Text(
           value,
           style: const TextStyle(
-            fontSize: 14,
+            fontSize: 13,
             fontWeight: FontWeight.bold,
             color: textColor,
           ),

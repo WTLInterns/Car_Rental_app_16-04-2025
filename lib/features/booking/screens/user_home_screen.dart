@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
@@ -45,12 +46,14 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
         ? AppBar(
             backgroundColor: const Color(AppConfig.primaryColorHex),
             elevation: 0,
-            title: const Text(
-              'World Trip Link',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
+            title: const Center(
+              child: Text(
+                'World Trip Link',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                ),
               ),
             ),
             actions: [
@@ -164,7 +167,7 @@ class _HomeContentState extends State<_HomeContent> {
   
   // Simplified search method with mock data for testing
   Future<void> _searchPlaces(String query) async {
-    if (query.length < 2) {
+    if (query.isEmpty) {
       setState(() {
         _searchSuggestions = [];
       });
@@ -271,11 +274,21 @@ class _HomeContentState extends State<_HomeContent> {
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
           return AlertDialog(
-            title: const Text('Where do you want to go?'),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            backgroundColor: Colors.white,
+            title: const Row(
+              children: [
+                Icon(Icons.location_searching, color: Colors.blueAccent),
+                SizedBox(width: 10),
+                Text('Where do you want to go?', style: TextStyle(fontSize:15,fontWeight: FontWeight.bold)),
+              ],
+            ),
             content: Container(
               width: double.maxFinite,
               constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(context).size.height * 0.5, // Limit height
+                maxHeight: MediaQuery.of(context).size.height * 0.6,
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -283,17 +296,25 @@ class _HomeContentState extends State<_HomeContent> {
                   TextField(
                     controller: _searchController,
                     decoration: InputDecoration(
-                      hintText: 'Enter destination',
+                      hintText: 'Search for your destination...',
                       prefixIcon: const Icon(Icons.search),
+                      filled: true,
+                      fillColor: Colors.grey[100],
+                      contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
                       ),
                     ),
                     onChanged: (value) async {
                       if (value.isNotEmpty) {
+                        setDialogState(() {
+                          _isSearching = true;
+                        });
                         await _searchPlaces(value);
-                        // Important: Use setDialogState to update the dialog UI
-                        setDialogState(() {});
+                        setDialogState(() {
+                          _isSearching = false;
+                        });
                       } else {
                         setDialogState(() {
                           _searchSuggestions = [];
@@ -301,37 +322,54 @@ class _HomeContentState extends State<_HomeContent> {
                       }
                     },
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
                   if (_isSearching)
                     const Center(child: CircularProgressIndicator())
                   else if (_searchSuggestions.isEmpty && _searchController.text.isNotEmpty)
                     const Padding(
-                      padding: EdgeInsets.all(16.0),
-                      child: Text('No locations found. Try a different search term.'),
+                      padding: EdgeInsets.all(20.0),
+                      child: Column(
+                        children: [
+                          Icon(Icons.location_off, size: 40, color: Colors.grey),
+                          SizedBox(height: 10),
+                          Text(
+                            'No results found',
+                            style: TextStyle(color: Colors.grey),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
                     )
                   else
-                    Flexible(
+                    Expanded(
                       child: ListView.builder(
-                        shrinkWrap: true,
                         itemCount: _searchSuggestions.length,
                         itemBuilder: (context, index) {
                           final suggestion = _searchSuggestions[index];
-                          return ListTile(
-                            leading: const Icon(Icons.location_on),
-                            title: Text(suggestion['description'] ?? 'Unknown location'),
-                            subtitle: Text(suggestion['structured_formatting']?['secondary_text'] ?? ''),
-                            onTap: () {
-                              print('Selected location: ${suggestion['description']}');
-                              Navigator.pop(context);
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => CabBookingScreen(
-                                    dropLocation: suggestion['description'],
+                          return Card(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            margin: const EdgeInsets.symmetric(vertical: 6),
+                            child: ListTile(
+                              leading: const Icon(Icons.location_on_outlined, color: Colors.blueAccent),
+                              title: Text(suggestion['description'] ?? 'Unknown location'),
+                              subtitle: Text(
+                                suggestion['structured_formatting']?['secondary_text'] ?? '',
+                                style: const TextStyle(color: Colors.grey),
+                              ),
+                              onTap: () {
+                                Navigator.pop(context);
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => CabBookingScreen(
+                                      dropLocation: suggestion['description'],
+                                    ),
                                   ),
-                                ),
-                              );
-                            },
+                                );
+                              },
+                            ),
                           );
                         },
                       ),
@@ -341,9 +379,10 @@ class _HomeContentState extends State<_HomeContent> {
             ),
             actions: [
               TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
+                onPressed: () => Navigator.pop(context),
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.red,
+                ),
                 child: const Text('Cancel'),
               ),
             ],
@@ -765,93 +804,102 @@ class _HomeContentState extends State<_HomeContent> {
   ];
 
   Widget _buildFeaturedRides() {
-    return SizedBox(
-    height: 180,
-    child: PageView.builder(
-      controller: _pageController,
-      itemCount: featuredRides.length,
-      itemBuilder: (context, index) {
-        return Container(
-          margin: const EdgeInsets.only(right: 10),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(15),
-            color: Colors.grey[300],
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withAlpha((0.1 * 255).round()),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(15),
-            child: Stack(
-              children: [
-                Positioned.fill(
-                  child: Image.asset(
-                    featuredRides[index]['image'],
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      // Fallback if image doesn't load
-                      return Container(
-                        color: Colors.grey[300],
-                        child: const Center(
-                          child: Icon(
-                            Icons.image_not_supported,
-                            size: 50,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    padding: const EdgeInsets.all(15),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.bottomCenter,
-                        end: Alignment.topCenter,
-                        colors: [
-                          Colors.black.withAlpha((0.8 * 255).round()),
-                          Colors.transparent,
-                        ],
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          featuredRides[index]['title'],
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 5),
-                        Text(
-                          featuredRides[index]['subtitle'],
-                          style: TextStyle(
-                            color: Colors.white.withAlpha((0.8 * 255).round()),
-                            fontSize: 14,
-                          ),
-                        ),
-                        ],
-                      ),
-                    ),
+    return CarouselSlider(
+      options: CarouselOptions(
+        height: 170,
+        enlargeCenterPage: true,
+        enableInfiniteScroll: true,
+        viewportFraction: 0.95,
+        initialPage: 0,
+        autoPlay: true,
+        aspectRatio: 16 / 9,
+        autoPlayInterval: const Duration(seconds: 3),
+        autoPlayAnimationDuration: const Duration(milliseconds: 800),
+      ),
+      items: featuredRides.map((ride) {
+        return Builder(
+          builder: (BuildContext context) {
+            return Container(
+              margin: const EdgeInsets.symmetric(horizontal: 5),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(15),
+                color: Colors.grey[300],
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
-            ),
-          );
-        },
-      ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(15),
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: Image.asset(
+                        ride['image'],
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: Colors.grey[300],
+                            child: const Center(
+                              child: Icon(
+                                Icons.image_not_supported,
+                                size: 50,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(15),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.bottomCenter,
+                            end: Alignment.topCenter,
+                            colors: [
+                              Colors.black.withOpacity(0.8),
+                              Colors.transparent,
+                            ],
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              ride['title'],
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 5),
+                            Text(
+                              ride['subtitle'],
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.8),
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      }).toList(),
     );
   }
 }

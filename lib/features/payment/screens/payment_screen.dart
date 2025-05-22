@@ -746,7 +746,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         const SizedBox(height: 8),
         _buildFareRow('Platform Fee', '₹$platformFee'),
         const SizedBox(height: 8),
-        _buildFareRow('GST (18%)', '₹$gst'),
+        _buildFareRow('GST (5%)', '₹$gst'),
         const SizedBox(height: 8),
         const Divider(),
         _buildFareRow('Total Fare', '₹$totalFare', isTotal: true),
@@ -780,7 +780,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   Widget _buildPaymentMethods() {
     return Card(
-      elevation: 2,
+      elevation: 4,
       shadowColor: Colors.black.withOpacity(0.1),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
@@ -856,7 +856,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   ? lightAccentColor.withOpacity(0.5)
                   : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
-          border: isSelected ? Border.all(color: accentColor, width: 1) : null,
+          border: isSelected ? Border.all(color: successColor, width: 1) : null,
         ),
         child: Row(
           children: [
@@ -865,7 +865,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
               decoration: BoxDecoration(
                 color:
                     isSelected
-                        ? accentColor.withOpacity(0.2)
+                        ? successColor.withOpacity(0.2)
                         : Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(10),
               ),

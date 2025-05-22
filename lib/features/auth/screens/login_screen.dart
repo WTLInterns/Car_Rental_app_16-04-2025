@@ -24,7 +24,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
 
   // Validation patterns
-  final RegExp _mobilePattern = RegExp(r'^[6-9]\d{9}$'); // Indian mobile number pattern
+  final RegExp _mobilePattern =
+      RegExp(r'^[6-9]\d{9}$'); // Indian mobile number pattern
 
   @override
   void initState() {
@@ -54,24 +55,25 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     final authBloc = Provider.of<AuthBloc>(context, listen: false);
-    
+
     try {
       await authBloc.login(
         _mobileController.text,
         _passwordController.text,
         _rememberMe,
       );
-      
+
       if (!mounted) return;
-      
+
       // Handle navigation based on auth state
       if (authBloc.state.status == AuthStatus.authenticated) {
         final role = authBloc.currentUser?.role ?? '';
-        
+
         if (role.toUpperCase() == AppConstants.roleUser) {
           Navigator.pushReplacementNamed(context, AppConstants.routeUserHome);
         } else if (role.toUpperCase() == AppConstants.roleDriver) {
-          Navigator.pushReplacementNamed(context, AppConstants.routeDriverTrips);
+          Navigator.pushReplacementNamed(
+              context, AppConstants.routeDriverTrips);
         } else {
           // Handle unknown roles
           ScaffoldMessenger.of(context).showSnackBar(
@@ -81,7 +83,11 @@ class _LoginScreenState extends State<LoginScreen> {
       } else if (authBloc.state.status == AuthStatus.error) {
         // Show error message
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(authBloc.state.errorMessage ?? 'Login failed')),
+          const SnackBar(backgroundColor: Colors.red,
+              content: Text(
+            'Invalid phone number or password. Please try again!',
+            style: TextStyle(fontSize: 12),
+          )), //authBloc.state.errorMessage ??
         );
       }
     } catch (e) {
@@ -111,7 +117,7 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Consumer<AuthBloc>(
           builder: (context, authBloc, _) {
             final isLoading = authBloc.isLoading;
-            
+
             return SingleChildScrollView(
               child: Container(
                 constraints: BoxConstraints(
@@ -121,14 +127,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   horizontal: horizontalPadding,
                   vertical: screenHeight * 0.03,
                 ),
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [
-                      const Color(0xFFF5F7FA), 
-                      Colors.white
-                    ],
+                    colors: [Color(0xFFF5F7FA), Colors.white],
                   ),
                 ),
                 child: Center(
@@ -152,7 +155,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         children: [
                           // Logo
                           Container(
-                            margin: EdgeInsets.only(bottom: screenHeight * 0.02),
+                            margin:
+                                EdgeInsets.only(bottom: screenHeight * 0.02),
                             child: Image.asset(
                               'assets/images/logo.png',
                               width: screenWidth * 0.5,
@@ -160,6 +164,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               fit: BoxFit.contain,
                             ),
                           ),
+
 
                           // Welcome Text
                           Text(
@@ -247,13 +252,15 @@ class _LoginScreenState extends State<LoginScreen> {
                                           border: Border.all(
                                             color: const Color(0xFFCCCCCC),
                                           ),
-                                          borderRadius: BorderRadius.circular(4),
+                                          borderRadius:
+                                              BorderRadius.circular(4),
                                         ),
                                         child: _rememberMe
                                             ? const Icon(
                                                 Icons.check,
                                                 size: 14,
-                                                color: Color(AppConfig.secondaryColorHex),
+                                                color: Color(AppConfig
+                                                    .secondaryColorHex),
                                               )
                                             : null,
                                       ),
@@ -261,18 +268,20 @@ class _LoginScreenState extends State<LoginScreen> {
                                       Text(
                                         'Remember me',
                                         style: TextStyle(
-                                          color: const Color(AppConfig.lightTextColorHex),
+                                          color: const Color(
+                                              AppConfig.lightTextColorHex),
                                           fontSize: isSmallScreen ? 12 : 14,
                                         ),
                                       ),
                                     ],
                                   ),
                                 ),
-                                
+
                                 // Forgot Password
                                 TextButton(
                                   onPressed: () {
-                                    Navigator.pushNamed(context, AppConstants.routeForgotPassword);
+                                    Navigator.pushNamed(context,
+                                        AppConstants.routeForgotPassword);
                                   },
                                   style: TextButton.styleFrom(
                                     padding: EdgeInsets.symmetric(
@@ -283,7 +292,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                   child: Text(
                                     'Forgot password?',
                                     style: TextStyle(
-                                      color: const Color(AppConfig.secondaryColorHex),
+                                      color: const Color(
+                                          AppConfig.secondaryColorHex),
                                       fontWeight: FontWeight.w500,
                                       fontSize: isSmallScreen ? 12 : 14,
                                     ),
@@ -312,11 +322,13 @@ class _LoginScreenState extends State<LoginScreen> {
                                 child: Divider(color: Color(0xFFE0E0E0)),
                               ),
                               Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 10),
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 10),
                                 child: Text(
                                   'Or continue with',
                                   style: TextStyle(
-                                    color: const Color(AppConfig.mutedTextColorHex),
+                                    color: const Color(
+                                        AppConfig.mutedTextColorHex),
                                     fontSize: isSmallScreen ? 12 : 14,
                                   ),
                                 ),
@@ -333,22 +345,25 @@ class _LoginScreenState extends State<LoginScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                "Don't have an account? ",
+                                "Don't have an account?",
                                 style: TextStyle(
-                                  color: const Color(AppConfig.lightTextColorHex),
-                                  fontSize: isSmallScreen ? 12 : 14,
+                                  color:
+                                      const Color(AppConfig.lightTextColorHex),
+                                  fontSize: isSmallScreen ? 11 : 13,
                                 ),
                               ),
                               TextButton(
                                 onPressed: () {
-                                  Navigator.pushNamed(context, AppConstants.routeRegister);
+                                  Navigator.pushNamed(
+                                      context, AppConstants.routeRegister);
                                 },
                                 child: Text(
                                   'Create Account',
                                   style: TextStyle(
-                                    color: const Color(AppConfig.secondaryColorHex),
+                                    color: const Color(
+                                        AppConfig.secondaryColorHex),
                                     fontWeight: FontWeight.w600,
-                                    fontSize: isSmallScreen ? 12 : 14,
+                                    fontSize: isSmallScreen ? 11 : 13,
                                   ),
                                 ),
                               ),
@@ -373,4 +388,4 @@ class _LoginScreenState extends State<LoginScreen> {
     _passwordController.dispose();
     super.dispose();
   }
-} 
+}

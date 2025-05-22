@@ -18,60 +18,59 @@ class EtsBookingScreen extends StatefulWidget {
 }
 
 class _EtsBookingScreenState extends State<EtsBookingScreen> with SingleTickerProviderStateMixin {
+  // Initialize currentMonth right away to avoid LateInitializationError
+  DateTime currentMonth = DateTime(DateTime.now().year, DateTime.now().month);
+
   final TextEditingController _pickupController = TextEditingController();
   final TextEditingController _dropController = TextEditingController();
-  List<DateTime> _selectedDates = [];
   TimeOfDay? _selectedTime;
   bool _isOneWay = true;
 
-  // Animation controller for subtle UI animations
+  // calendar changes
+  List<DateTime> _selectedDates = [];
+  final List<DateTime> _holidays = [
+    DateTime(2025, 4, 2),
+    DateTime(2025, 4, 14),
+    DateTime(2025, 5, 1),
+    DateTime(2025, 8, 15),
+    DateTime(2025, 10, 2),
+  ];
+
   late AnimationController _animationController;
   late Animation<double> _fadeInAnimation;
-  
-  // Variables for Google Maps integration
+
   List<dynamic> _pickupSuggestions = [];
   List<dynamic> _dropSuggestions = [];
   bool _isLoadingLocation = false;
 
-  // List to store government holidays
-  final List<DateTime> _holidays = [
-    DateTime(2025, 4, 2),
-    DateTime(2025, 4, 14),
-    DateTime(2025, 5, 1),  // Added Labor Day
-    DateTime(2025, 8, 15), // Added Independence Day
-    DateTime(2025, 10, 2), // Added Gandhi Jayanti
-  ];
-
-  // Track active input field for better UX
   String? _activeField;
-  
+
   @override
   void initState() {
     super.initState();
-    // Initialize animation controller first
+
+    // Remove initialization of currentMonth here since it is initialized above
+    // currentMonth = DateTime(DateTime.now().year, DateTime.now().month);
+
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
-    
-    // Then initialize the animation
+
     _fadeInAnimation = CurvedAnimation(
       parent: _animationController,
       curve: Curves.easeInOut,
     );
-    
-    // Start the animation
+
     _animationController.forward();
-    
-    // Add listeners to text controllers
+
     _pickupController.addListener(() {
       setState(() {});
     });
     _dropController.addListener(() {
       setState(() {});
     });
-    
-    // Initialize location after animations are set up
+
     _getCurrentLocation();
   }
 
@@ -82,7 +81,106 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> with SingleTickerPr
     _animationController.dispose();
     super.dispose();
   }
-  
+
+  //  _changeMonth
+  void _changeMonth(int increment) {
+    setState(() {
+      currentMonth = DateTime(currentMonth.year, currentMonth.month + increment);
+    });
+  }
+
+  //   _buildCustomCalendar
+  Widget _buildCustomCalendar(StateSetter setState) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Header
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.chevron_left),
+              onPressed: (){
+                setState(() {
+                  _changeMonth(-1);
+                });
+              },
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
+            Text(
+              DateFormat('MMMM yyyy').format(currentMonth),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            IconButton(
+              icon: const Icon(Icons.chevron_right),
+              onPressed: () {
+                setState((){
+                  _changeMonth(1);
+                });
+              },
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+
+        // Legend
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildLegendItem(const Color(0xFF81D4FA), 'Selected'),
+            const SizedBox(width: 16),
+            _buildLegendItem(Colors.red[100]!, 'Holiday/Sunday'),
+          ],
+        ),
+        const SizedBox(height: 12),
+
+        // Calendar Grid
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey[200]!),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
+            children: [
+              // Days of the week
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Row(
+                  children: ['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day) {
+                    return Expanded(
+                      child: Text(
+                        day,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                          color: day == 'S' ? Colors.red[300] : Colors.grey[700],
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+
+              // Calendar days
+              SizedBox(
+                height: 200,
+                child: Column(
+                  children: [
+                    for (int i = 0; i < 5; i++) _buildCalendarWeekRow(currentMonth, i,setState),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // Safely access animation, with fallback
@@ -808,9 +906,9 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> with SingleTickerPr
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Days-of-week header with zero padding
+                // Days-of-week header with 3 padding
                 Padding(
-                  padding: EdgeInsets.zero,
+                  padding: const EdgeInsets.all(3.0),
                   child: Row(
                     children: [
                       for (final day in ['S', 'M', 'T', 'W', 'T', 'F', 'S'])
@@ -833,11 +931,11 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> with SingleTickerPr
 
                 // Date grid with zero spacing and square cells
                 SizedBox(
-                  height: 82,
+                  height: 120,
                   child: GridView.count(
                     physics: const NeverScrollableScrollPhysics(),
                     crossAxisCount: 7,
-                    childAspectRatio: 3.0,
+                    childAspectRatio: 2.0,
                     shrinkWrap: true,
                     mainAxisSpacing: 0,
                     crossAxisSpacing: 0,
@@ -1356,96 +1454,83 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> with SingleTickerPr
     );
   }
 
-  Widget _buildCustomCalendar(StateSetter setState) {
-    final now = DateTime.now();
-    final currentMonth = DateTime(now.year, now.month, 1);
-    
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Month header with navigation
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.chevron_left),
-              onPressed: () {},
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-            ),
-            Text(
-              DateFormat('MMMM yyyy').format(currentMonth),
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
+  Widget _buildCalendarWeekRow(DateTime currentMonth, int weekIndex,StateSetter setState) {
+    final today = DateTime.now();
+    final firstDayOfMonth = DateTime(currentMonth.year, currentMonth.month, 1);
+    final daysInMonth = DateTime(currentMonth.year, currentMonth.month + 1, 0).day;
+    final firstWeekDay = firstDayOfMonth.weekday % 7;
+
+    return Row(
+      children: List.generate(7, (dayIndex) {
+        final dayNumber = (weekIndex * 7 + dayIndex + 1) - firstWeekDay;
+
+        if (dayNumber < 1 || dayNumber > daysInMonth) {
+          return Expanded(
+            child: Container(
+              height: 32,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey[100]!),
               ),
             ),
-            IconButton(
-              icon: const Icon(Icons.chevron_right),
-              onPressed: () {},
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        
-        // Calendar legend
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _buildLegendItem(const Color(0xFF81D4FA), 'Selected'),
-            const SizedBox(width: 16),
-            _buildLegendItem(Colors.red[100]!, 'Holiday/Sunday'),
-          ],
-        ),
-        const SizedBox(height: 12),
-        
-        // Table-style calendar
-        Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey[200]!),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Days of week header
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Row(
-                  children: [
-                    for (final day in ['S', 'M', 'T', 'W', 'T', 'F', 'S'])
-                      Expanded(
-                        child: Text(
-                          day,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                            color: day == 'S' ? Colors.red[300] : Colors.grey[700],
-                          ),
-                        ),
-                      ),
-                  ],
+          );
+        }
+
+        final date = DateTime(currentMonth.year, currentMonth.month, dayNumber);
+        final isSunday = date.weekday == DateTime.sunday;
+        final isHoliday = _holidays.any((holiday) =>
+        holiday.year == date.year &&
+            holiday.month == date.month &&
+            holiday.day == date.day);
+        final isSelected = _selectedDates.any((selectedDate) =>
+        selectedDate.year == date.year &&
+            selectedDate.month == date.month &&
+            selectedDate.day == date.day);
+        final isPast = date.isBefore(DateTime(today.year, today.month, today.day));
+
+        return Expanded(
+          child: GestureDetector(
+            onTap: isPast
+                ? null
+                : () {
+              setState(() {
+                if (isSelected) {
+                  _selectedDates.removeWhere((selectedDate) =>
+                  selectedDate.year == date.year &&
+                      selectedDate.month == date.month &&
+                      selectedDate.day == date.day);
+                } else {
+                  _selectedDates.add(date);
+                }
+              });
+            },
+            child: Container(
+              height: 32,
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? const Color(0xFF81D4FA)
+                    : (isHoliday || isSunday) && !isPast
+                    ? Colors.red[50]
+                    : Colors.white,
+                border: Border.all(color: Colors.grey[100]!),
+              ),
+              child: Center(
+                child: Text(
+                  dayNumber.toString(),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isPast
+                        ? Colors.grey[400]
+                        : (isHoliday || isSunday)
+                        ? Colors.red[400]
+                        : Colors.grey[800],
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  ),
                 ),
               ),
-              
-              // Calendar rows - reduced to 5 rows to save space
-              SizedBox(
-                height: 200,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    for (int week = 0; week < 5; week++) // Only show 5 weeks max
-                      _buildCalendarWeekRow(now, week, setState),
-                  ],
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
-      ],
+        );
+      }),
     );
   }
 
@@ -1469,89 +1554,6 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> with SingleTickerPr
           ),
         ),
       ],
-    );
-  }
-  
-  Widget _buildCalendarWeekRow(DateTime now, int weekIndex, StateSetter setState) {
-    final firstDayOfMonth = DateTime(now.year, now.month, 1);
-    final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
-    
-    // Calculate the first day to display in the first week
-    final firstWeekDay = firstDayOfMonth.weekday % 7; // 0 = Sunday, 6 = Saturday
-    
-    // Create a row for each week
-    return Row(
-      children: List.generate(7, (dayIndex) {
-        final dayNumber = (weekIndex * 7 + dayIndex + 1) - firstWeekDay;
-        
-        if (dayNumber < 1 || dayNumber > daysInMonth) {
-          // Empty cell or day from next/previous month
-          return Expanded(
-            child: Container(
-              height: 32,
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey[100]!),
-              ),
-            ),
-          );
-        }
-        
-        final date = DateTime(now.year, now.month, dayNumber);
-        final isSunday = date.weekday == DateTime.sunday;
-        final isHoliday = _holidays.any((holiday) =>
-            holiday.year == date.year &&
-            holiday.month == date.month &&
-            holiday.day == date.day);
-        final isSelected = _selectedDates.any((selectedDate) =>
-            selectedDate.year == date.year &&
-            selectedDate.month == date.month &&
-            selectedDate.day == date.day);
-        final isPast = date.isBefore(DateTime(now.year, now.month, now.day));
-        
-        return Expanded(
-          child: GestureDetector(
-            onTap: isPast
-                ? null
-                : () {
-                    setState(() {
-                      if (isSelected) {
-                        _selectedDates.removeWhere((selectedDate) =>
-                            selectedDate.year == date.year &&
-                            selectedDate.month == date.month &&
-                            selectedDate.day == date.day);
-                      } else {
-                        _selectedDates.add(date);
-                      }
-                    });
-                  },
-            child: Container(
-              height: 32,
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? const Color(0xFF81D4FA) // Light blue for selected dates
-                    : (isHoliday || isSunday) && !isPast
-                        ? Colors.red[50] // Light red for holidays and Sundays
-                        : Colors.white,
-                border: Border.all(color: Colors.grey[100]!),
-              ),
-              child: Center(
-                child: Text(
-                  dayNumber.toString(),
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isPast
-                        ? Colors.grey[400]
-                        : (isHoliday || isSunday)
-                            ? Colors.red[400]
-                            : Colors.grey[800],
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      }),
     );
   }
 
@@ -1685,7 +1687,7 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> with SingleTickerPr
   }
 
   Future<void> _searchPlaces(String query, String type) async {
-    if (query.length < 2) {
+    if (query.isEmpty) {
       setState(() {
         if (type == 'pickup') {
           _pickupSuggestions = [];

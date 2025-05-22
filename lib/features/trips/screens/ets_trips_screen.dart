@@ -320,7 +320,7 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
     return GestureDetector(
       onTap: onPressed,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10),
+        padding: const EdgeInsets.symmetric(vertical: 10,horizontal: 40),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(8),
@@ -537,7 +537,7 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
           // Header with booking ID and status
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: surfaceColor,
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(12),
@@ -637,25 +637,22 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
                 const SizedBox(height: 16),
                 // Action buttons
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     if (trip.status == 0) // Upcoming trip
-                      Expanded(
-                        child: _buildActionButton(
-                          Icons.cancel_outlined,
-                          'Cancel',
-                          dangerColor,
-                          () => _handleCancelPress(trip),
-                        ),
+                      _buildActionButton(
+                        Icons.cancel_outlined,
+                        'Cancel',
+                        dangerColor,
+                        () => _handleCancelPress(trip),
                       ),
                     if (trip.status == 0 && trip.status == 3) // Space between buttons
                       const SizedBox(width: 12),
-                    Expanded(
-                      child: _buildActionButton(
-                        Icons.info_outline,
-                        'Track',
-                        primaryColor,
-                        () => _handleDetailsPress(trip),
-                      ),
+                    _buildActionButton(
+                      Icons.info_outline,
+                      'Track',
+                      primaryColor,
+                      () => _handleDetailsPress(trip),
                     ),
                     if (trip.status == 2 || trip.status == 3) // Completed or cancelled trip
                       const SizedBox(width: 12),
@@ -707,7 +704,7 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
-                              color: accentColor.withOpacity(0.2),
+                              color: secondaryColor.withOpacity(0.2),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: const Text(
@@ -715,7 +712,7 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
-                                color: accentColor,
+                                color: secondaryColor,
                               ),
                             ),
                           ),
@@ -732,12 +729,13 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
                           ),
                         ],
                       ),
+                      const SizedBox(height: 10),
                       if (trip.corporateName != null) 
                         Padding(
                           padding: const EdgeInsets.only(top: 4),
                           child: Text(
                             trip.corporateName!,
-                            style: TextStyle(
+                            style: const TextStyle(
                               color: primaryColor,
                               fontWeight: FontWeight.bold,
                             ),
@@ -839,7 +837,7 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
                               child: Center(
                                 child: Text(
                                   shift['shift'].toString().substring(0, 1),
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
                                     color: primaryColor,
@@ -853,14 +851,14 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    '${shift['date']} • ${shift['time']}',
+                                    '${shift['date']}   • ${shift['time']}',
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       color: textColor,
                                     ),
                                   ),
                                   Text(
-                                    '${shift['shift']} Shift • ${shift['employees']} Employees',
+                                    '${shift['shift']} Shift     • ${shift['employees']} Employees',
                                     style: TextStyle(
                                       color: textColor.withOpacity(0.7),
                                       fontSize: 12,

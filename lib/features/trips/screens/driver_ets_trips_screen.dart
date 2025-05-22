@@ -790,7 +790,7 @@ class _DriverETSTripsScreenState extends State<DriverETSTripsScreen> with Single
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: accentColor.withOpacity(0.2),
+                          color: const Color(0xFFFFF3E0),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: const Text(
@@ -798,7 +798,7 @@ class _DriverETSTripsScreenState extends State<DriverETSTripsScreen> with Single
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
-                            color: accentColor,
+                            color: Color(0xFFF57C00),
                           ),
                         ),
                       ),

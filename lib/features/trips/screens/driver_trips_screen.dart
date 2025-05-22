@@ -868,7 +868,7 @@ class _DriverTripsScreenState extends State<DriverTripsScreen> with SingleTicker
                               : trip['email'] != null && trip['email'].toString().isNotEmpty
                                   ? trip['email'].toString().substring(0, 1).toUpperCase()
                                   : '?',
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                             color: secondaryColor,
@@ -939,8 +939,9 @@ class _DriverTripsScreenState extends State<DriverTripsScreen> with SingleTicker
                           height: 40,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
+                            color: Colors.blue.shade50
                           ),
-                          child: Icon(
+                          child: const Icon(
                             MaterialCommunityIcons.phone,
                             size: 20,
                             color: secondaryColor,
@@ -992,11 +993,13 @@ class _DriverTripsScreenState extends State<DriverTripsScreen> with SingleTicker
                     ),
                     
                     // Connection line
-                    Container(
-                      margin: const EdgeInsets.only(left: 9),
-                      height: 30,
-                      width: 1,
-                      color: Colors.grey.withOpacity(0.3),
+                    Padding(
+                      padding: const EdgeInsets.only(right: 300.0),
+                      child: Container(
+                        height: 35,
+                        width: 1,
+                        color: Colors.grey.withOpacity(0.3),
+                      ),
                     ),
                     
                     // Destination location
@@ -1035,9 +1038,9 @@ class _DriverTripsScreenState extends State<DriverTripsScreen> with SingleTicker
                   ],
                 ),
                 
-                const SizedBox(height: 16),
+                const SizedBox(height: 14),
                 const Divider(),
-                const SizedBox(height: 16),
+                const SizedBox(height: 14),
                 
                 // Trip Info
                 Row(
