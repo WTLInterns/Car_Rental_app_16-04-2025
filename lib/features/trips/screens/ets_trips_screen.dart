@@ -66,33 +66,69 @@ class ETSTrip {
   });
 
   factory ETSTrip.fromJson(Map<String, dynamic> json) {
+    // Convert status string to int
+    int statusCode = 0;
+    if (json['status'] != null) {
+      if (json['status'] is int) {
+        statusCode = json['status'];
+      } else if (json['status'] is String) {
+        switch(json['status'].toString().toUpperCase()) {
+          case 'CONFIRMED':
+            statusCode = 0;
+            break;
+          case 'ONGOING':
+            statusCode = 1;
+            break;
+          case 'COMPLETED':
+            statusCode = 2;
+            break;
+          case 'CANCELLED':
+            statusCode = 3;
+            break;
+          default:
+            statusCode = 0;
+        }
+      }
+    }
+    
+    // Parse scheduled dates if available
+    List<Map<String, dynamic>>? shiftDates;
+    if (json['scheduledDates'] != null) {
+      shiftDates = List<Map<String, dynamic>>.from(
+        json['scheduledDates'].map((date) => {
+          'date': date['date'] ?? '',
+          'time': '',
+          'shift': date['status'] ?? 'PENDING',
+          'employees': 0,
+          'destinations': []
+        })
+      );
+    }
+    
     return ETSTrip(
-      bookingId: json['bookingId'] ?? json['bookid'] ?? 'N/A',
-      fromLocation:
-          json['fromLocation'] ?? json['userPickup'] ?? 'Unknown location',
-      toLocation: json['toLocation'] ?? json['userDrop'] ?? 'Unknown location',
-      startDate: json['startDate'] ?? json['date'] ?? 'N/A',
-      time: json['time'] ?? 'N/A',
-      car: (json['car'] ?? json['vehicleType'] ?? 'cab').toString(),
-      amount:
-          json['amount'] is num
-              ? (json['amount'] as num).toDouble()
-              : double.tryParse(json['amount']?.toString() ?? '') ?? 0.0,
-      status:
-          json['status'] is String
-              ? int.tryParse(json['status']) ?? 0
-              : json['status'] as int? ?? 0,
-      name: json['driverName'] ?? 'Unknown',
-      phone: json['driverContact'] ?? 'N/A',
-      distance:
-          json['distance'] is num
-              ? (json['distance'] as num).toDouble()
-              : double.tryParse(json['distance']?.toString() ?? '') ?? 0.0,
+      bookingId: json['bookId'] ?? json['bookingId'] ?? 'N/A',
+      fromLocation: json['pickUpLocation'] ?? json['fromLocation'] ?? json['userPickup'] ?? 'Unknown location',
+      toLocation: json['dropLocation'] ?? json['toLocation'] ?? json['userDrop'] ?? 'Unknown location',
+      startDate: json['scheduledDates'] != null && json['scheduledDates'].isNotEmpty 
+          ? json['scheduledDates'][0]['date'] 
+          : json['startDate'] ?? json['date'] ?? 'N/A',
+      time: json['time'] ?? json['returnTime'] ?? 'N/A',
+      car: (json['cabType'] ?? json['car'] ?? json['vehicleType'] ?? 'cab').toString(),
+      amount: json['finalAmount'] is num
+          ? (json['finalAmount'] as num).toDouble()
+          : double.tryParse(json['finalAmount']?.toString() ?? '') ?? 
+              (json['amount'] is num
+                  ? (json['amount'] as num).toDouble()
+                  : double.tryParse(json['amount']?.toString() ?? '') ?? 0.0),
+      status: statusCode,
+      name: json['driverName'] ?? 'Assigned Driver',
+      phone: json['driverContact'] ?? 'Contact Support',
+      distance: json['distance'] is num
+          ? (json['distance'] as num).toDouble()
+          : double.tryParse(json['distance']?.toString() ?? '') ?? 0.0,
       tripType: json['tripType'] ?? 'oneWay',
       isCorporateBooking: json['isCorporateBooking'] ?? false,
-      shiftDates: json['shiftDates'] != null 
-          ? List<Map<String, dynamic>>.from(json['shiftDates']) 
-          : null,
+      shiftDates: shiftDates,
       corporateName: json['corporateName'],
     );
   }
@@ -115,113 +151,52 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
   void initState() {
     super.initState();
     _loadUserData();
-    // Add sample trip data for testing
-    _addSampleTrips();
   }
 
-  void _addSampleTrips() {
-    _trips = [
-      ETSTrip(
-        bookingId: 'ETS123456',
-        fromLocation: 'Office HQ, Mumbai',
-        toLocation: 'Airport Terminal 2, Mumbai',
-        startDate: '2024-04-20',
-        time: '08:30',
-        car: 'Toyota Innova',
-        amount: 1200.0,
-        status: 0, // Upcoming
-        name: 'Rahul Sharma',
-        phone: '+91 9876543210',
-        distance: 22.5,
-        tripType: 'oneWay',
-      ),
-      ETSTrip(
-        bookingId: 'ETS123457',
-        fromLocation: 'Office HQ, Mumbai',
-        toLocation: 'Taj Hotel, Colaba, Mumbai',
-        startDate: '2024-04-15',
-        time: '14:30',
-        car: 'Toyota Etios',
-        amount: 800.0,
-        status: 2, // Completed
-        name: 'Suresh Kumar',
-        phone: '+91 9876543211',
-        distance: 18.5,
-        tripType: 'oneWay',
-      ),
-      ETSTrip(
-        bookingId: 'ETS123458',
-        fromLocation: 'Office HQ, Mumbai',
-        toLocation: 'Bandra Kurla Complex, Mumbai',
-        startDate: '2024-04-10',
-        time: '09:15',
-        car: 'Toyota Innova',
-        amount: 950.0,
-        status: 3, // Cancelled
-        name: 'Amit Patel',
-        phone: '+91 9876543212',
-        distance: 12.0,
-        tripType: 'oneWay',
-      ),
-      // Corporate booking with multiple shift dates
-      ETSTrip(
-        bookingId: 'ETSCORP001',
-        fromLocation: 'TCS Office, Hinjewadi',
-        toLocation: 'Various Locations',
-        startDate: '2024-04-20',
-        time: 'Multiple Shifts',
-        car: 'Toyota Innova',
-        amount: 5000.0,
-        status: 0, // Upcoming
-        name: 'Corporate Driver',
-        phone: '+91 9876543220',
-        distance: 0.0,
-        tripType: 'corporate',
-        isCorporateBooking: true,
-        corporateName: 'TCS Technologies',
-        shiftDates: [
-          {
-            'date': '2024-04-20',
-            'time': '08:00',
-            'employees': 4,
-            'shift': 'Morning',
-            'destinations': ['Baner', 'Aundh', 'Shivaji Nagar', 'Viman Nagar']
-          },
-          {
-            'date': '2024-04-20',
-            'time': '17:30',
-            'employees': 4,
-            'shift': 'Evening',
-            'destinations': ['Baner', 'Aundh', 'Shivaji Nagar', 'Viman Nagar']
-          },
-          {
-            'date': '2024-04-21',
-            'time': '08:00',
-            'employees': 4,
-            'shift': 'Morning',
-            'destinations': ['Baner', 'Aundh', 'Shivaji Nagar', 'Viman Nagar']
-          },
-          {
-            'date': '2024-04-21',
-            'time': '17:30',
-            'employees': 4,
-            'shift': 'Evening',
-            'destinations': ['Baner', 'Aundh', 'Shivaji Nagar', 'Viman Nagar']
-          },
-        ],
-      ),
-    ];
+  Future<void> _fetchTrips() async {
     setState(() {
-      _isLoading = false;
+      _isLoading = true;
     });
+    
+    try {
+      final response = await http.get(Uri.parse('http://192.168.27.114:8081/schedule/byUserId/$_userId'));
+      
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        setState(() {
+          _trips = data.map((tripJson) => ETSTrip.fromJson(tripJson)).toList();
+          _isLoading = false;
+        });
+      } else {
+        // Handle API error
+        setState(() {
+          _isLoading = false;
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load trips: ${response.statusCode}')),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${e.toString()}')),
+      );
+    }
   }
 
   Future<void> _loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       _userId =
-          prefs.getInt('userId')?.toString() ?? prefs.getString('userId') ?? '';
+          prefs.getInt('userId')?.toString() ?? prefs.getString('userId') ?? '123';
     });
+    
+    // Fetch trips after user ID is loaded
+    await _fetchTrips();
   }
 
   List<ETSTrip> _filterTrips() {
@@ -252,6 +227,11 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
       default:
         return 'Pending';
     }
+  }
+  
+  // Method to refresh trips
+  Future<void> _refreshTrips() async {
+    await _fetchTrips();
   }
 
   void _handleDetailsPress(ETSTrip trip) {
@@ -408,20 +388,30 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
             ),
           ),
           Expanded(
-            child: _isLoading
-              ? Center(
-                  child: CircularProgressIndicator(color: primaryColor),
-                )
-              : filteredTrips.isEmpty
-                ? _buildNoTrips()
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: filteredTrips.length,
-                    itemBuilder: (ctx, index) {
-                      final trip = filteredTrips[index];
-                      return _buildTripCard(trip);
-                    },
-                  ),
+            child: RefreshIndicator(
+              onRefresh: _refreshTrips,
+              color: primaryColor,
+              child: _isLoading
+                ? Center(
+                    child: CircularProgressIndicator(color: primaryColor),
+                  )
+                : filteredTrips.isEmpty
+                  ? Stack(
+                      children: [
+                        _buildNoTrips(),
+                        // This ListView is needed for RefreshIndicator to work with an empty list
+                        ListView()
+                      ],
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: filteredTrips.length,
+                      itemBuilder: (ctx, index) {
+                        final trip = filteredTrips[index];
+                        return _buildTripCard(trip);
+                      },
+                    ),
+            ),
           ),
         ],
       ),
