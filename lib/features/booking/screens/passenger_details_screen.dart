@@ -192,17 +192,19 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                   valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
                 ),
               )
-              : SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildTripSummary(),
-                    const SizedBox(height: 24),
-                    _buildPassengerForm(),
-                    const SizedBox(height: 24),
-                    _buildProceedButton(),
-                  ],
+              : SafeArea(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildTripSummary(),
+                      const SizedBox(height: 24),
+                      _buildPassengerForm(),
+                      const SizedBox(height: 24),
+                      _buildProceedButton(),
+                    ],
+                  ),
                 ),
               ),
     );

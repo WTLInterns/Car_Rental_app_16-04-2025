@@ -1,0 +1,24 @@
+class Discount {
+  int? id;
+  String? discountCoupon;
+  int? price;
+  String? isEnabled;
+
+  Discount({this.id, this.discountCoupon, this.price, this.isEnabled});
+
+  Discount.fromJson(Map<String, dynamic> json) {
+    id = json['id'];
+    discountCoupon = json['discountCoupon'];
+    price = json['price'];
+    isEnabled = json['isEnabled'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['id'] = this.id;
+    data['discountCoupon'] = this.discountCoupon;
+    data['price'] = this.price;
+    data['isEnabled'] = this.isEnabled;
+    return data;
+  }
+}

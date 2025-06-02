@@ -534,27 +534,29 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
   }
 
   Widget _buildCategoryNavBar() {
-    return Container(
-      height: 70,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildCategoryNavItem('HatchBack', 'Hatchback'),
-          _buildCategoryNavItem('Sedan', 'Sedan'),
-          _buildCategoryNavItem('SedanPremium', 'Premium'),
-          _buildCategoryNavItem('SUV', 'SUV'),
-          _buildCategoryNavItem('SUVPlus', 'SUV+'),
-        ],
+    return SafeArea(
+      child: Container(
+        height: 70,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, -5),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _buildCategoryNavItem('HatchBack', 'Hatchback'),
+            _buildCategoryNavItem('Sedan', 'Sedan'),
+            _buildCategoryNavItem('SedanPremium', 'Premium'),
+            _buildCategoryNavItem('SUV', 'SUV'),
+            _buildCategoryNavItem('SUVPlus', 'SUV+'),
+          ],
+        ),
       ),
     );
   }

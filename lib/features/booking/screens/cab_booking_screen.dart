@@ -301,450 +301,343 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
           },
         ),
       ),
-      body: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Trip Type
-              Container(
-                margin: const EdgeInsets.only(bottom: 4),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Trip Type",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: textColor,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      Row(
-                        children: [
-                          _buildTripTypeButton(
-                            'One Way',
-                            Icons.arrow_forward,
-                            'oneWay',
-                          ),
-                          const SizedBox(width: 12),
-                          _buildTripTypeButton(
-                            'Round Trip',
-                            Icons.sync,
-                            'roundTrip',
-                          ),
-                          const SizedBox(width: 12),
-                          _buildTripTypeButton(
-                            'Rental',
-                            Icons.car_rental,
-                            'rental',
-                          ),
-                        ],
+      body: SafeArea(
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Trip Type
+                Container(
+                  margin: const EdgeInsets.only(bottom: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
                       ),
                     ],
                   ),
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Pickup & Drop
-              Container(
-                margin: const EdgeInsets.symmetric(vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Pickup & Drop",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: textColor,
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Trip Type",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: textColor,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 24),
-                      // Pickup location
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SizedBox(
-                            width: 24,
-                            child: Padding(
-                              padding: const EdgeInsets.only(top: 4.0),
-                              child: Icon(
-                                Icons.circle,
-                                color: pickupIconColor,
-                                size: 16,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  "Pickup",
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey[600],
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Stack(
-                                  alignment: Alignment.centerRight,
-                                  children: [
-                                    TextFormField(
-                                      controller: _pickupController,
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        color: textColor,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                      decoration: InputDecoration(
-                                        hintText: "  Enter pickup location",
-                                        hintStyle: TextStyle(
-                                          color: Colors.grey[400],
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.normal,
-                                        ),
-                                        border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(10),
-                                          borderSide: BorderSide(color: Colors.grey.shade300)
-                                        ),
-                                        contentPadding: const EdgeInsets.symmetric(vertical: 12,horizontal: 12),
-                                        suffixIcon:
-                                            _pickupController.text.isNotEmpty
-                                                ? const SizedBox(width: 80)
-                                                : _isLoadingLocation
-                                                    ? const SizedBox(width: 40)
-                                                    : const SizedBox(width: 40),
-                                      ),
-                                      onChanged: (value) =>
-                                          _searchPlaces(value, 'pickup'),
-                                    ),
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        if (_pickupController.text.isNotEmpty)
-                                          IconButton(
-                                            icon: Icon(Icons.clear,
-                                                size: 18,
-                                                color: Colors.grey[400]),
-                                            onPressed: () {
-                                              _pickupController.clear();
-                                              _searchPlaces('', 'pickup');
-                                            },
-                                            constraints:
-                                                const BoxConstraints(maxWidth: 32),
-                                            padding: EdgeInsets.zero,
-                                          ),
-                                        _isLoadingLocation
-                                            ? SizedBox(
-                                                width: 24,
-                                                height: 24,
-                                                child:
-                                                    CircularProgressIndicator(
-                                                  strokeWidth: 2,
-                                                  valueColor:
-                                                      AlwaysStoppedAnimation<
-                                                              Color>(
-                                                          secondaryColor),
-                                                ),
-                                              )
-                                            : IconButton(
-                                                icon: Icon(
-                                                  Icons.my_location,
-                                                  color: pickupIconColor,
-                                                  size: 22,
-                                                ),
-                                                onPressed: _getCurrentLocation,
-                                                tooltip: 'Use current location',
-                                                constraints: BoxConstraints(
-                                                    maxWidth: 32),
-                                                padding: EdgeInsets.zero,
-                                              ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                                if (_pickupSuggestions.isNotEmpty)
-                                  _buildSuggestionsList(_pickupSuggestions,
-                                      _pickupController, 'pickup'),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      Divider(
-                          height: 32, thickness: 1, color: Colors.grey[200]),
-
-                      // Drop location
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SizedBox(
-                            width: 24,
-                            child: Padding(
-                              padding: const EdgeInsets.only(top: 4.0),
-                              child: Icon(
-                                Icons.location_on,
-                                color: dropIconColor,
-                                size: 16,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  "Drop",
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey[600],
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Stack(
-                                  alignment: Alignment.centerRight,
-                                  children: [
-                                    TextFormField(
-                                      controller: _dropController,
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        color: textColor,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                      decoration: InputDecoration(
-                                        hintText: "Enter drop location",
-                                        hintStyle: TextStyle(
-                                          color: Colors.grey[400],
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.normal,
-                                        ),
-                                        border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(10),
-                                          borderSide: BorderSide(color: Colors.grey.shade300)
-                                        ),
-                                        contentPadding: const EdgeInsets.symmetric(vertical: 12,horizontal: 12),
-                                        suffixIcon:
-                                            _dropController.text.isNotEmpty
-                                                ? const SizedBox(width: 40)
-                                                : null,
-                                      ),
-                                      onChanged: (value) =>
-                                          _searchPlaces(value, 'drop'),
-                                    ),
-                                    if (_dropController.text.isNotEmpty)
-                                      IconButton(
-                                        icon: Icon(Icons.clear,
-                                            size: 18, color: Colors.grey[400]),
-                                        onPressed: () {
-                                          _dropController.clear();
-                                          _searchPlaces('', 'drop');
-                                        },
-                                        constraints:
-                                            const BoxConstraints(maxWidth: 32),
-                                        padding: EdgeInsets.zero,
-                                      ),
-                                  ],
-                                ),
-                                if (_dropSuggestions.isNotEmpty)
-                                  _buildSuggestionsList(_dropSuggestions,
-                                      _dropController, 'drop'),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Date & Time
-              Container(
-                margin: const EdgeInsets.only(top: 8, bottom: 16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Date & Time",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: textColor,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Date selector
-                      Row(
-                        children: [
-                          SizedBox(
-                            width: 40,
-                            child: Icon(
-                              Icons.calendar_today_outlined,
-                              color: primaryColor,
-                              size: 24,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  "Date",
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey[600],
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                InkWell(
-                                  onTap: () => _selectDate(context, false),
-                                  child: Padding(
-                                    padding:
-                                        const EdgeInsets.symmetric(vertical: 8),
-                                    child: Text(
-                                      _selectedDate != null
-                                          ? DateFormat('dd MMM yyyy')
-                                              .format(_selectedDate!)
-                                          : "Select date",
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w500,
-                                        color: _selectedDate != null
-                                            ? textColor
-                                            : Colors.grey[500],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      Divider(
-                          height: 32, thickness: 1, color: Colors.grey[200]),
-
-                      // Time selector
-                      Row(
-                        children: [
-                          SizedBox(
-                            width: 40,
-                            child: Icon(
-                              Icons.access_time,
-                              color: primaryColor,
-                              size: 24,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  "Time",
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey[600],
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                InkWell(
-                                  onTap: () => _selectTime(context),
-                                  child: Padding(
-                                    padding:
-                                        const EdgeInsets.symmetric(vertical: 8),
-                                    child: Text(
-                                      _selectedTime != null
-                                          ? _selectedTime!.format(context)
-                                          : "Select time",
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w500,
-                                        color: _selectedTime != null
-                                            ? textColor
-                                            : Colors.grey[500],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      if (_bookingType == 'roundTrip') ...[
-                        Divider(
-                            height: 32, thickness: 1, color: Colors.grey[200]),
-
-                        // Return date selector
+                        const SizedBox(height: 24),
                         Row(
                           children: [
-                            Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: Colors.blue[50],
-                                borderRadius: BorderRadius.circular(8),
+                            _buildTripTypeButton(
+                              'One Way',
+                              Icons.arrow_forward,
+                              'oneWay',
+                            ),
+                            const SizedBox(width: 12),
+                            _buildTripTypeButton(
+                              'Round Trip',
+                              Icons.sync,
+                              'roundTrip',
+                            ),
+                            const SizedBox(width: 12),
+                            _buildTripTypeButton(
+                              'Rental',
+                              Icons.car_rental,
+                              'rental',
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+        
+                const SizedBox(height: 16),
+        
+                // Pickup & Drop
+                Container(
+                  margin: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Pickup & Drop",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: textColor,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        // Pickup location
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(
+                              width: 24,
+                              child: Padding(
+                                padding: const EdgeInsets.only(top: 4.0),
+                                child: Icon(
+                                  Icons.circle,
+                                  color: pickupIconColor,
+                                  size: 16,
+                                ),
                               ),
-                              child: Icon(Icons.calendar_today,
-                                  color: primaryColor, size: 20),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "Pickup",
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey[600],
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Stack(
+                                    alignment: Alignment.centerRight,
+                                    children: [
+                                      TextFormField(
+                                        controller: _pickupController,
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: textColor,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                        decoration: InputDecoration(
+                                          hintText: "  Enter pickup location",
+                                          hintStyle: TextStyle(
+                                            color: Colors.grey[400],
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.normal,
+                                          ),
+                                          border: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(10),
+                                            borderSide: BorderSide(color: Colors.grey.shade300)
+                                          ),
+                                          contentPadding: const EdgeInsets.symmetric(vertical: 12,horizontal: 12),
+                                          suffixIcon:
+                                              _pickupController.text.isNotEmpty
+                                                  ? const SizedBox(width: 80)
+                                                  : _isLoadingLocation
+                                                      ? const SizedBox(width: 40)
+                                                      : const SizedBox(width: 40),
+                                        ),
+                                        onChanged: (value) =>
+                                            _searchPlaces(value, 'pickup'),
+                                      ),
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          if (_pickupController.text.isNotEmpty)
+                                            IconButton(
+                                              icon: Icon(Icons.clear,
+                                                  size: 18,
+                                                  color: Colors.grey[400]),
+                                              onPressed: () {
+                                                _pickupController.clear();
+                                                _searchPlaces('', 'pickup');
+                                              },
+                                              constraints:
+                                                  const BoxConstraints(maxWidth: 32),
+                                              padding: EdgeInsets.zero,
+                                            ),
+                                          _isLoadingLocation
+                                              ? SizedBox(
+                                                  width: 24,
+                                                  height: 24,
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                    strokeWidth: 2,
+                                                    valueColor:
+                                                        AlwaysStoppedAnimation<
+                                                                Color>(
+                                                            secondaryColor),
+                                                  ),
+                                                )
+                                              : IconButton(
+                                                  icon: Icon(
+                                                    Icons.my_location,
+                                                    color: pickupIconColor,
+                                                    size: 22,
+                                                  ),
+                                                  onPressed: _getCurrentLocation,
+                                                  tooltip: 'Use current location',
+                                                  constraints: BoxConstraints(
+                                                      maxWidth: 32),
+                                                  padding: EdgeInsets.zero,
+                                                ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                  if (_pickupSuggestions.isNotEmpty)
+                                    _buildSuggestionsList(_pickupSuggestions,
+                                        _pickupController, 'pickup'),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+        
+                        Divider(
+                            height: 32, thickness: 1, color: Colors.grey[200]),
+        
+                        // Drop location
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(
+                              width: 24,
+                              child: Padding(
+                                padding: const EdgeInsets.only(top: 4.0),
+                                child: Icon(
+                                  Icons.location_on,
+                                  color: dropIconColor,
+                                  size: 16,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "Drop",
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey[600],
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Stack(
+                                    alignment: Alignment.centerRight,
+                                    children: [
+                                      TextFormField(
+                                        controller: _dropController,
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: textColor,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                        decoration: InputDecoration(
+                                          hintText: "Enter drop location",
+                                          hintStyle: TextStyle(
+                                            color: Colors.grey[400],
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.normal,
+                                          ),
+                                          border: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(10),
+                                            borderSide: BorderSide(color: Colors.grey.shade300)
+                                          ),
+                                          contentPadding: const EdgeInsets.symmetric(vertical: 12,horizontal: 12),
+                                          suffixIcon:
+                                              _dropController.text.isNotEmpty
+                                                  ? const SizedBox(width: 40)
+                                                  : null,
+                                        ),
+                                        onChanged: (value) =>
+                                            _searchPlaces(value, 'drop'),
+                                      ),
+                                      if (_dropController.text.isNotEmpty)
+                                        IconButton(
+                                          icon: Icon(Icons.clear,
+                                              size: 18, color: Colors.grey[400]),
+                                          onPressed: () {
+                                            _dropController.clear();
+                                            _searchPlaces('', 'drop');
+                                          },
+                                          constraints:
+                                              const BoxConstraints(maxWidth: 32),
+                                          padding: EdgeInsets.zero,
+                                        ),
+                                    ],
+                                  ),
+                                  if (_dropSuggestions.isNotEmpty)
+                                    _buildSuggestionsList(_dropSuggestions,
+                                        _dropController, 'drop'),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+        
+                const SizedBox(height: 16),
+        
+                // Date & Time
+                Container(
+                  margin: const EdgeInsets.only(top: 8, bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Date & Time",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: textColor,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+        
+                        // Date selector
+                        Row(
+                          children: [
+                            SizedBox(
+                              width: 40,
+                              child: Icon(
+                                Icons.calendar_today_outlined,
+                                color: primaryColor,
+                                size: 24,
+                              ),
                             ),
                             const SizedBox(width: 16),
                             Expanded(
@@ -752,7 +645,7 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    "Return Date",
+                                    "Date",
                                     style: TextStyle(
                                       fontSize: 14,
                                       color: Colors.grey[600],
@@ -760,19 +653,19 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
                                     ),
                                   ),
                                   InkWell(
-                                    onTap: () => _selectDate(context, true),
+                                    onTap: () => _selectDate(context, false),
                                     child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 8),
+                                      padding:
+                                          const EdgeInsets.symmetric(vertical: 8),
                                       child: Text(
-                                        _selectedReturnDate != null
+                                        _selectedDate != null
                                             ? DateFormat('dd MMM yyyy')
-                                                .format(_selectedReturnDate!)
-                                            : "Select return date",
+                                                .format(_selectedDate!)
+                                            : "Select date",
                                         style: TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.w500,
-                                          color: _selectedReturnDate != null
+                                          color: _selectedDate != null
                                               ? textColor
                                               : Colors.grey[500],
                                         ),
@@ -784,24 +677,20 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
                             ),
                           ],
                         ),
-                      ],
-
-                      if (_bookingType == 'rental') ...[
+        
                         Divider(
                             height: 32, thickness: 1, color: Colors.grey[200]),
-
-                        // Rental hours
+        
+                        // Time selector
                         Row(
                           children: [
-                            Container(
+                            SizedBox(
                               width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: Colors.blue[50],
-                                borderRadius: BorderRadius.circular(8),
+                              child: Icon(
+                                Icons.access_time,
+                                color: primaryColor,
+                                size: 24,
                               ),
-                              child: Icon(Icons.timer,
-                                  color: primaryColor, size: 20),
                             ),
                             const SizedBox(width: 16),
                             Expanded(
@@ -809,84 +698,197 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    "Rental Duration",
+                                    "Time",
                                     style: TextStyle(
                                       fontSize: 14,
                                       color: Colors.grey[600],
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
-                                  TextFormField(
-                                    initialValue: _hours,
-                                    decoration: InputDecoration(
-                                      hintText: "Enter hours",
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                        borderSide: BorderSide(color: Colors.grey.shade300),
+                                  InkWell(
+                                    onTap: () => _selectTime(context),
+                                    child: Padding(
+                                      padding:
+                                          const EdgeInsets.symmetric(vertical: 8),
+                                      child: Text(
+                                        _selectedTime != null
+                                            ? _selectedTime!.format(context)
+                                            : "Select time",
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                          color: _selectedTime != null
+                                              ? textColor
+                                              : Colors.grey[500],
+                                        ),
                                       ),
-                                      contentPadding:
-                                         const EdgeInsets.symmetric(vertical: 12,horizontal: 12),
                                     ),
-                                    keyboardType: TextInputType.number,
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                    onChanged: (value) =>
-                                        setState(() => _hours = value),
-                                    validator: (value) {
-                                      if (_bookingType == 'rental') {
-                                        if (value == null || value.isEmpty) {
-                                          return 'Please enter rental duration';
-                                        }
-                                        if (int.tryParse(value) == null ||
-                                            int.parse(value) < 1) {
-                                          return 'Please enter a valid duration';
-                                        }
-                                      }
-                                      return null;
-                                    },
                                   ),
                                 ],
                               ),
                             ),
                           ],
                         ),
+        
+                        if (_bookingType == 'roundTrip') ...[
+                          Divider(
+                              height: 32, thickness: 1, color: Colors.grey[200]),
+        
+                          // Return date selector
+                          Row(
+                            children: [
+                              Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: Colors.blue[50],
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(Icons.calendar_today,
+                                    color: primaryColor, size: 20),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "Return Date",
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.grey[600],
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    InkWell(
+                                      onTap: () => _selectDate(context, true),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 8),
+                                        child: Text(
+                                          _selectedReturnDate != null
+                                              ? DateFormat('dd MMM yyyy')
+                                                  .format(_selectedReturnDate!)
+                                              : "Select return date",
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w500,
+                                            color: _selectedReturnDate != null
+                                                ? textColor
+                                                : Colors.grey[500],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+        
+                        if (_bookingType == 'rental') ...[
+                          Divider(
+                              height: 32, thickness: 1, color: Colors.grey[200]),
+        
+                          // Rental hours
+                          Row(
+                            children: [
+                              Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: Colors.blue[50],
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(Icons.timer,
+                                    color: primaryColor, size: 20),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "Rental Duration",
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.grey[600],
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    TextFormField(
+                                      initialValue: _hours,
+                                      decoration: InputDecoration(
+                                        hintText: "Enter hours",
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                          borderSide: BorderSide(color: Colors.grey.shade300),
+                                        ),
+                                        contentPadding:
+                                           const EdgeInsets.symmetric(vertical: 12,horizontal: 12),
+                                      ),
+                                      keyboardType: TextInputType.number,
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                      onChanged: (value) =>
+                                          setState(() => _hours = value),
+                                      validator: (value) {
+                                        if (_bookingType == 'rental') {
+                                          if (value == null || value.isEmpty) {
+                                            return 'Please enter rental duration';
+                                          }
+                                          if (int.tryParse(value) == null ||
+                                              int.parse(value) < 1) {
+                                            return 'Please enter a valid duration';
+                                          }
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ],
-                    ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Book Now Button
-              Container(
-                width: double.infinity,
-                height: 56,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryColor,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    elevation: 0,
-                  ),
-                  onPressed: _handleBookNow,
-                  child: const Text(
-                    'Book Now',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
-              ),
-            ],
+        
+                const SizedBox(height: 24),
+        
+                // Book Now Button
+                Container(
+                  width: double.infinity,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryColor,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      elevation: 0,
+                    ),
+                    onPressed: _handleBookNow,
+                    child: const Text(
+                      'Book Now',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
