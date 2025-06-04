@@ -70,7 +70,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
   Timer? _locationUpdateTimer;
 
   // WebSocket config
-  final String _websocketUrl = "'https://api.worldtriplink.com/ws-trip-tracking/";
+  final String _websocketUrl = "'https://api.worldtriplink.com/ws-trip-tracking/websocket";
 
   // Connection status
   bool _isConnected = false;

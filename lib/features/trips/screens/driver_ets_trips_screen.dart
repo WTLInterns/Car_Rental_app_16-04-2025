@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:math';
 import 'package:url_launcher/url_launcher_string.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../features/profile/screens/driver_profile_screen.dart';
 import '../../../features/tracking/screens/ets_tracking_screen.dart';
-import '../../../features/tracking/screens/driver_tracking_screen.dart';
 import '../../../features/trips/screens/driver_trips_screen.dart';
 // Updated color palette to match the app's professional style
 const Color primaryColor = Color(0xFF3057E3);      // Royal blue
@@ -37,6 +36,17 @@ class DummyETSTrip {
   final String date;
   final String time;
   final int passengerCount;
+  
+  // Added fields needed for tracking navigation
+  final String? etsId;
+  final String? pickupLocation;
+  final String? dropLocation;
+
+  // Getters to simplify access for single-passenger trips
+  double? get pickupLatitude => pickupLats.isNotEmpty ? pickupLats[0] : null;
+  double? get pickupLongitude => pickupLngs.isNotEmpty ? pickupLngs[0] : null;
+  double? get dropLatitude => destLats.isNotEmpty ? destLats[0] : null;
+  double? get dropLongitude => destLngs.isNotEmpty ? destLngs[0] : null;
 
   DummyETSTrip({
     required this.bookingId,
@@ -53,6 +63,9 @@ class DummyETSTrip {
     required this.date,
     required this.time,
     required this.passengerCount,
+    this.etsId,
+    this.pickupLocation,
+    this.dropLocation,
   });
 }
 
@@ -67,6 +80,7 @@ class _DriverETSTripsScreenState extends State<DriverETSTripsScreen> with Single
   String activeTab = 'upcoming';
   Map<String, dynamic>? driver;
   String _userId = '';
+  String driverId = ''; // Added driver ID for tracking
   bool isLoading = true;
   bool isRefreshing = false;
   late AnimationController _animationController;
@@ -259,10 +273,24 @@ class _DriverETSTripsScreenState extends State<DriverETSTripsScreen> with Single
   }
 
   void handleNavigateToETSTracking(DummyETSTrip trip) {
+    // Extract coordinates from trip data
+    // For demo purposes, generating coordinates around Bangalore if not available
+    final pickupLat = trip.pickupLatitude ?? 12.9716;
+    final pickupLng = trip.pickupLongitude ?? 77.5946;
+    final dropLat = trip.dropLatitude ?? 13.0827;
+    final dropLng = trip.dropLongitude ?? 77.5851;
+    
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const ETSTrackingScreen(),
+        builder: (context) => ETSDriverTrackingScreen(
+          etsId: trip.etsId,
+          driverId: driverId,
+          fromLocation: trip.pickupLocation,
+          toLocation: trip.dropLocation,
+          pickupCoordinates: LatLng(pickupLat, pickupLng),
+          dropCoordinates: LatLng(dropLat, dropLng),
+        ),
       ),
     );
   }
@@ -1085,7 +1113,7 @@ class _DriverETSTripsScreenState extends State<DriverETSTripsScreen> with Single
     return GestureDetector(
       onTap: onPressed,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10),
+        padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(8),
@@ -1095,7 +1123,7 @@ class _DriverETSTripsScreenState extends State<DriverETSTripsScreen> with Single
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon, size: 16, color: color),
-            const SizedBox(width: 4),
+            const SizedBox(width: 8),
             Text(
               text,
               style: TextStyle(

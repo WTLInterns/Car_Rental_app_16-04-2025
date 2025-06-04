@@ -159,7 +159,10 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
     });
     
     try {
-      final response = await http.get(Uri.parse('http://192.168.27.114:8081/schedule/byUserId/$_userId'));
+      // For testing, comment out API call and use dummy data instead
+      // Uncomment this section when you want to use the real API
+      /*
+      final response = await http.get(Uri.parse('http://192.168.1.42:8081/schedule/byUserId/$_userId'));
       
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
@@ -177,6 +180,14 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
           SnackBar(content: Text('Failed to load trips: ${response.statusCode}')),
         );
       }
+      */
+      
+      // Using dummy data for testing purposes
+      _loadDummyTrips();
+      
+      setState(() {
+        _isLoading = false;
+      });
     } catch (e) {
       setState(() {
         _isLoading = false;
@@ -186,6 +197,170 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
         SnackBar(content: Text('Error: ${e.toString()}')),
       );
     }
+  }
+  
+  void _loadDummyTrips() {
+    // Create sample trips with different statuses for testing
+    _trips = [
+      // Upcoming trips (status 0)
+      ETSTrip(
+        bookingId: 'ETS-1001',
+        fromLocation: 'Hinjewadi Phase 1',
+        toLocation: 'Kharadi IT Park',
+        startDate: '2025-06-05',
+        time: '09:30 AM',
+        car: 'Sedan',
+        amount: 350.0,
+        status: 0,
+        name: 'Rahul Sharma',
+        phone: '9876543210',
+        distance: 18.5,
+      ),
+      ETSTrip(
+        bookingId: 'ETS-1002',
+        fromLocation: 'Baner Road',
+        toLocation: 'Magarpatta City',
+        startDate: '2025-06-07',
+        time: '10:00 AM',
+        car: 'SUV',
+        amount: 450.0,
+        status: 0,
+        name: 'Priya Patel',
+        phone: '9876123450',
+        distance: 22.3,
+      ),
+      
+      // Corporate bookings with multiple shifts (upcoming)
+      ETSTrip(
+        bookingId: 'ETS-C001',
+        fromLocation: 'Infosys Campus, Hinjewadi',
+        toLocation: 'Multiple Drop Locations',
+        startDate: '2025-06-04',
+        time: '06:00 PM',
+        car: 'Tempo Traveller',
+        amount: 12000.0,
+        status: 0,
+        name: 'Sanjay Kumar',
+        phone: '8765432109',
+        distance: 35.0,
+        isCorporateBooking: true,
+        corporateName: 'Infosys Technologies Ltd',
+        tripType: 'corporate',
+        shiftDates: [
+          {
+            'date': '2025-06-04',
+            'time': '06:00 PM',
+            'shift': 'EVENING',
+            'employees': 12,
+            'destinations': ['Wakad', 'Aundh', 'Shivaji Nagar']
+          },
+          {
+            'date': '2025-06-05',
+            'time': '06:00 PM',
+            'shift': 'EVENING',
+            'employees': 14,
+            'destinations': ['Wakad', 'Aundh', 'Shivaji Nagar']
+          },
+          {
+            'date': '2025-06-06',
+            'time': '06:00 PM',
+            'shift': 'EVENING',
+            'employees': 10,
+            'destinations': ['Wakad', 'Aundh', 'Shivaji Nagar']
+          },
+        ],
+      ),
+      
+      // Completed trips (status 2)
+      ETSTrip(
+        bookingId: 'ETS-0986',
+        fromLocation: 'Pune Airport',
+        toLocation: 'Koregaon Park',
+        startDate: '2025-05-28',
+        time: '14:45 PM',
+        car: 'Sedan',
+        amount: 380.0,
+        status: 2,
+        name: 'Amit Desai',
+        phone: '7654321098',
+        distance: 12.7,
+      ),
+      ETSTrip(
+        bookingId: 'ETS-0973',
+        fromLocation: 'Pune Railway Station',
+        toLocation: 'Symbiosis College, Model Colony',
+        startDate: '2025-05-25',
+        time: '11:30 AM',
+        car: 'Hatchback',
+        amount: 250.0,
+        status: 2,
+        name: 'Vikram Singh',
+        phone: '9123456780',
+        distance: 8.4,
+      ),
+      
+      // Corporate booking (completed)
+      ETSTrip(
+        bookingId: 'ETS-C000',
+        fromLocation: 'TCS Campus, Hinjewadi Phase 3',
+        toLocation: 'Multiple Drop Locations',
+        startDate: '2025-05-20',
+        time: '07:00 AM',
+        car: 'Tempo Traveller',
+        amount: 9800.0,
+        status: 2,
+        name: 'Rajesh Verma',
+        phone: '8123456789',
+        distance: 42.0,
+        isCorporateBooking: true,
+        corporateName: 'Tata Consultancy Services',
+        tripType: 'corporate',
+        shiftDates: [
+          {
+            'date': '2025-05-20',
+            'time': '07:00 AM',
+            'shift': 'MORNING',
+            'employees': 16,
+            'destinations': ['Kothrud', 'Warje', 'Sinhagad Road']
+          },
+          {
+            'date': '2025-05-21',
+            'time': '07:00 AM',
+            'shift': 'MORNING',
+            'employees': 15,
+            'destinations': ['Kothrud', 'Warje', 'Sinhagad Road']
+          },
+        ],
+      ),
+      
+      // Cancelled trips (status 3)
+      ETSTrip(
+        bookingId: 'ETS-0954',
+        fromLocation: 'FC Road',
+        toLocation: 'Aga Khan Palace',
+        startDate: '2025-05-18',
+        time: '16:30 PM',
+        car: 'Sedan',
+        amount: 320.0,
+        status: 3,
+        name: 'Neha Sharma',
+        phone: '9871234560',
+        distance: 10.2,
+      ),
+      ETSTrip(
+        bookingId: 'ETS-0942',
+        fromLocation: 'Phoenix Mall',
+        toLocation: 'Amanora Park Town',
+        startDate: '2025-05-15',
+        time: '19:00 PM',
+        car: 'SUV',
+        amount: 380.0,
+        status: 3,
+        name: 'Kunal Mehta',
+        phone: '8901234567',
+        distance: 7.8,
+      ),
+    ];
   }
 
   Future<void> _loadUserData() async {
@@ -238,14 +413,14 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => ETSUserTrackingScreen(
-        etsId: trip.bookingId,
-        fromLocation: trip.fromLocation,
-        toLocation: trip.toLocation,
+        slotId: trip.bookingId, // bookingId is used as slotId
+        pickupLocationText: trip.fromLocation,
+        dropLocationText: trip.toLocation,
         userId: _userId,
-        driverId: 'D${trip.phone.substring(trip.phone.length - 6)}', // Create a simple driver ID from phone
-        // Example coordinates - in a real app, these would come from the database
-        pickupCoordinates: LatLng(18.5090, 73.8310),  // Pune coordinates
-        dropCoordinates: LatLng(18.9402, 72.8347),    // Mumbai coordinates
+        // Example coordinates - in a real app, these would come from the ETSTrip model if available
+        // For now, using the hardcoded examples as before. If trip object has actual coordinates, use them.
+        pickupCoordinates: LatLng(18.5090, 73.8310), 
+        dropCoordinates: LatLng(18.9402, 72.8347),   
       )),
     );
   }
