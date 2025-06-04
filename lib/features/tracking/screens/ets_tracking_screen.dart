@@ -92,6 +92,7 @@ class _ETSDriverTrackingScreenState extends State<ETSDriverTrackingScreen> {
   Position? _currentPosition;
   StreamSubscription<Position>? _positionStream;
   Timer? _locationUpdateTimer;
+  Timer? _userCheckTimer; // Fixed naming for clarity
   
   // Connection status
   bool _isConnected = false;
@@ -109,10 +110,8 @@ class _ETSDriverTrackingScreenState extends State<ETSDriverTrackingScreen> {
   double _distanceToPickup = 0.0;
   int _etaToPickup = 0;
   
-  // API Base URL - Change this to your Spring Boot server URL
-  static const String baseUrl = "http://192.168.1.42:8081"; // For Android emulator
-  // static const String baseUrl = "http://localhost:8080"; // For web
-  // static const String baseUrl = "http://your-server-ip:8080"; // For real device
+  // API Base URL
+  static const String baseUrl = "http://192.168.1.42:8081";
   
   @override
   void initState() {
@@ -139,27 +138,29 @@ class _ETSDriverTrackingScreenState extends State<ETSDriverTrackingScreen> {
   }
   
   void _addInitialMarkersAndRoute() {
-    if (widget.pickupCoordinates == null || widget.dropCoordinates == null) return;
+    if (widget.pickupCoordinates == null || widget.dropCoordinates == null || !mounted) return;
     
-    // Add pickup marker
-    _markers.add(
-      Marker(
-        markerId: const MarkerId('pickup'),
-        position: widget.pickupCoordinates!,
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-        infoWindow: InfoWindow(title: 'Pickup', snippet: widget.fromLocation ?? 'Pickup Location'),
-      ),
-    );
-    
-    // Add drop marker
-    _markers.add(
-      Marker(
-        markerId: const MarkerId('drop'),
-        position: widget.dropCoordinates!,
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
-        infoWindow: InfoWindow(title: 'Drop', snippet: widget.toLocation ?? 'Drop Location'),
-      ),
-    );
+    setState(() {
+      // Add pickup marker
+      _markers.add(
+        Marker(
+          markerId: const MarkerId('pickup'),
+          position: widget.pickupCoordinates!,
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+          infoWindow: InfoWindow(title: 'Pickup', snippet: widget.fromLocation ?? 'Pickup Location'),
+        ),
+      );
+      
+      // Add drop marker
+      _markers.add(
+        Marker(
+          markerId: const MarkerId('drop'),
+          position: widget.dropCoordinates!,
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+          infoWindow: InfoWindow(title: 'Drop', snippet: widget.toLocation ?? 'Drop Location'),
+        ),
+      );
+    });
     
     // Draw route between pickup and drop
     _drawInitialRoute();
@@ -204,7 +205,7 @@ class _ETSDriverTrackingScreenState extends State<ETSDriverTrackingScreen> {
   }
   
   Future<void> _drawInitialRoute() async {
-    if (widget.pickupCoordinates == null || widget.dropCoordinates == null) return;
+    if (widget.pickupCoordinates == null || widget.dropCoordinates == null || !mounted) return;
     
     try {
       final pickupLat = widget.pickupCoordinates!.latitude;
@@ -215,7 +216,7 @@ class _ETSDriverTrackingScreenState extends State<ETSDriverTrackingScreen> {
       final url = 'https://router.project-osrm.org/route/v1/driving/$pickupLng,$pickupLat;$dropLng,$dropLat?overview=full&geometries=polyline';
       final response = await http.get(Uri.parse(url));
       
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 && mounted) {
         final data = json.decode(response.body);
         if (data['routes'].isNotEmpty) {
           final polyline = data['routes'][0]['geometry'];
@@ -240,20 +241,22 @@ class _ETSDriverTrackingScreenState extends State<ETSDriverTrackingScreen> {
     } catch (e) {
       print('Error drawing initial route: $e');
       // Draw fallback straight line
-      setState(() {
-        _polylines.add(
-          Polyline(
-            polylineId: const PolylineId('initial_route'),
-            points: [
-              widget.pickupCoordinates!,
-              widget.dropCoordinates!,
-            ],
-            color: Colors.blue,
-            width: 5,
-            patterns: [PatternItem.dash(20), PatternItem.gap(10)],
-          ),
-        );
-      });
+      if (mounted) {
+        setState(() {
+          _polylines.add(
+            Polyline(
+              polylineId: const PolylineId('initial_route'),
+              points: [
+                widget.pickupCoordinates!,
+                widget.dropCoordinates!,
+              ],
+              color: Colors.blue,
+              width: 5,
+              patterns: [PatternItem.dash(20), PatternItem.gap(10)],
+            ),
+          );
+        });
+      }
     }
   }
   
@@ -264,9 +267,11 @@ class _ETSDriverTrackingScreenState extends State<ETSDriverTrackingScreen> {
     try {
       serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        setState(() {
-          _statusMessage = 'Location services are disabled. Please enable location services.';
-        });
+        if (mounted) {
+          setState(() {
+            _statusMessage = 'Location services are disabled. Please enable location services.';
+          });
+        }
         return;
       }
 
@@ -274,38 +279,48 @@ class _ETSDriverTrackingScreenState extends State<ETSDriverTrackingScreen> {
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
-          setState(() {
-            _statusMessage = 'Location permissions are denied.';
-          });
+          if (mounted) {
+            setState(() {
+              _statusMessage = 'Location permissions are denied.';
+            });
+          }
           return;
         }
       }
       
       if (permission == LocationPermission.deniedForever) {
-        setState(() {
-          _statusMessage = 'Location permissions are permanently denied.';
-        });
+        if (mounted) {
+          setState(() {
+            _statusMessage = 'Location permissions are permanently denied.';
+          });
+        }
         return;
       } 
 
       Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high
+          desiredAccuracy: LocationAccuracy.high
       );
       
-      setState(() {
-        _currentPosition = position;
-      });
-      
-      _updateMarkers();
+      if (mounted) {
+        setState(() {
+          _currentPosition = position;
+        });
+        
+        _updateMarkers();
+      }
       
     } catch (e) {
-      setState(() {
-        _statusMessage = 'Error accessing location: $e';
-      });
+      if (mounted) {
+        setState(() {
+          _statusMessage = 'Error accessing location: $e';
+        });
+      }
     }
   }
   
   void _updateMarkers() {
+    if (!mounted) return;
+    
     Set<Marker> markers = {};
     
     // Driver marker
@@ -364,14 +379,14 @@ class _ETSDriverTrackingScreenState extends State<ETSDriverTrackingScreen> {
   }
   
   Future<void> _drawRoute(UserLocationData user) async {
-    if (user.pickupLatitude == null || user.pickupLongitude == null || 
+    if (!mounted || user.pickupLatitude == null || user.pickupLongitude == null || 
         user.dropLatitude == null || user.dropLongitude == null) return;
     
     try {
       final url = 'https://router.project-osrm.org/route/v1/driving/${user.pickupLongitude},${user.pickupLatitude};${user.dropLongitude},${user.dropLatitude}?overview=full&geometries=polyline';
       final response = await http.get(Uri.parse(url));
       
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 && mounted) {
         final data = json.decode(response.body);
         if (data['routes'].isNotEmpty) {
           final polyline = data['routes'][0]['geometry'];
@@ -402,9 +417,9 @@ class _ETSDriverTrackingScreenState extends State<ETSDriverTrackingScreen> {
   }
   
   void _drawFallbackRoute(UserLocationData user) {
-    if (user.pickupLatitude == null || user.pickupLongitude == null || 
+    if (!mounted || user.pickupLatitude == null || user.pickupLongitude == null || 
         user.dropLatitude == null || user.dropLongitude == null) return;
-        
+    
     final polylineCoordinates = [
       LatLng(user.pickupLatitude!, user.pickupLongitude!),
       LatLng(user.dropLatitude!, user.dropLongitude!),
@@ -438,38 +453,43 @@ class _ETSDriverTrackingScreenState extends State<ETSDriverTrackingScreen> {
     // Start location updates
     _startLocationUpdates();
     
-    // Connect to WebSocket
+    // Connect to WebSocket - using HTTP polling for now
     _connectToWebSocket();
   }
   
   void _startLocationUpdates() {
+    // Cancel any existing timers first
+    _cancelTimers();
+    
     // Send location updates every 5 seconds
     _locationUpdateTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
-      if (_isConnected && _currentPosition != null) {
+      if (_isConnected && _currentPosition != null && mounted) {
         _sendDriverLocation();
       }
     });
   }
   
   void _connectToWebSocket() {
-    // Note: WebSocket implementation removed for now as it's not fully implemented
-    // Will use HTTP polling instead
+    // Cancel any existing timer first
+    _userCheckTimer?.cancel();
     
     // Set up a timer to check for user locations periodically
-    Timer.periodic(const Duration(seconds: 3), (timer) {
-      if (_isConnected) {
+    _userCheckTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      if (_isConnected && mounted) {
         _checkUserLocations();
       }
     });
   }
   
   Future<void> _checkUserLocations() async {
+    if (!mounted || !_isConnected) return;
+    
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/api/location/users/${_slotIdController.text}'),
       );
       
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 && mounted) {
         final List<dynamic> userLocationsJson = json.decode(response.body);
         final userLocations = userLocationsJson
             .map((json) => UserLocationData.fromJson(json))
@@ -495,7 +515,7 @@ class _ETSDriverTrackingScreenState extends State<ETSDriverTrackingScreen> {
   }
   
   Future<void> _sendDriverLocation() async {
-    if (_currentPosition == null) return;
+    if (!mounted || _currentPosition == null) return;
     
     final locationData = {
       'userId': '',
@@ -514,7 +534,7 @@ class _ETSDriverTrackingScreenState extends State<ETSDriverTrackingScreen> {
         body: json.encode(locationData),
       );
       
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 && mounted) {
         final responseData = json.decode(response.body);
         
         // Update ride info if available
@@ -553,7 +573,7 @@ class _ETSDriverTrackingScreenState extends State<ETSDriverTrackingScreen> {
         }),
       );
       
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 && mounted) {
         final responseData = json.decode(response.body);
         if (responseData['status'] == 'success') {
           setState(() {
@@ -570,11 +590,13 @@ class _ETSDriverTrackingScreenState extends State<ETSDriverTrackingScreen> {
           if (status == 'DROPPED') {
             // Reset after drop-off
             Timer(const Duration(seconds: 3), () {
-              setState(() {
-                _selectedUserId = null;
-                _currentRideStatus = 'PENDING';
-                _showOtpVerification = false;
-              });
+              if (mounted) {
+                setState(() {
+                  _selectedUserId = null;
+                  _currentRideStatus = 'PENDING';
+                  _showOtpVerification = false;
+                });
+              }
             });
           }
         } else {
@@ -604,7 +626,7 @@ class _ETSDriverTrackingScreenState extends State<ETSDriverTrackingScreen> {
         }),
       );
       
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 && mounted) {
         final responseData = json.decode(response.body);
         if (responseData['status'] == 'success') {
           _updateStatus('OTP verified successfully!', Colors.green);
@@ -632,7 +654,7 @@ class _ETSDriverTrackingScreenState extends State<ETSDriverTrackingScreen> {
   }
   
   Future<void> _focusOnUser(UserLocationData user) async {
-    if (!_mapController.isCompleted) return;
+    if (!_mapController.isCompleted || !mounted) return;
     
     final controller = await _mapController.future;
     
@@ -673,15 +695,25 @@ class _ETSDriverTrackingScreenState extends State<ETSDriverTrackingScreen> {
   }
   
   void _updateStatus(String message, Color color) {
-    setState(() {
-      _statusMessage = message;
-    });
+    if (mounted) {
+      setState(() {
+        _statusMessage = message;
+      });
+    }
+  }
+  
+  // CRITICAL: Cancel all timers and subscriptions to prevent memory leaks
+  void _cancelTimers() {
+    _locationUpdateTimer?.cancel();
+    _userCheckTimer?.cancel();
+    _positionStream?.cancel();
   }
   
   @override
   void dispose() {
-    _locationUpdateTimer?.cancel();
-    _positionStream?.cancel();
+    // CRITICAL: Cancel all timers and subscriptions before disposing
+    _cancelTimers();
+    
     _driverIdController.dispose();
     _slotIdController.dispose();
     _otpController.dispose();
@@ -698,30 +730,11 @@ class _ETSDriverTrackingScreenState extends State<ETSDriverTrackingScreen> {
           foregroundColor: Colors.white,
           elevation: 0,
         ),
+        resizeToAvoidBottomInset: true,
         body: Column(
           children: [
-            // Status
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              margin: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.blue.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue.shade200),
-              ),
-              child: Text(
-                _statusMessage,
-                style: TextStyle(color: textColor, fontWeight: FontWeight.w500),
-              ),
-            ),
-            
-            // Ride Info
-            _buildRideInfo(),
-            
-            // Ride Controls
+            const SizedBox(height: 4),
             _buildRideControls(),
-            
             // Map
             Expanded(child: _buildMap()),
           ],
@@ -735,26 +748,11 @@ class _ETSDriverTrackingScreenState extends State<ETSDriverTrackingScreen> {
           foregroundColor: Colors.white,
           elevation: 0,
         ),
+        resizeToAvoidBottomInset: true,
         body: Column(
           children: [
             // Connection Form
             _buildConnectionForm(),
-            
-            // Status
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              margin: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.blue.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue.shade200),
-              ),
-              child: Text(
-                _statusMessage,
-                style: TextStyle(color: textColor, fontWeight: FontWeight.w500),
-              ),
-            ),
           ],
         ),
       );
@@ -768,136 +766,134 @@ class _ETSDriverTrackingScreenState extends State<ETSDriverTrackingScreen> {
       zoom: 14.0,
     );
     
-    return GoogleMap(
-      initialCameraPosition: initialPosition,
-      onMapCreated: (GoogleMapController controller) {
-        if (!_mapController.isCompleted) {
-          _mapController.complete(controller);
-        }
-      },
-      markers: _markers,
-      polylines: _polylines,
-      mapType: MapType.normal,
-      myLocationEnabled: true,
-      myLocationButtonEnabled: true,
-      compassEnabled: true,
-      zoomControlsEnabled: true,
+    return Padding(
+      padding: const EdgeInsets.all(10),
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all()
+        ),
+        child: GoogleMap(
+          initialCameraPosition: initialPosition,
+          onMapCreated: (GoogleMapController controller) {
+            if (!_mapController.isCompleted) {
+              _mapController.complete(controller);
+            }
+          },
+          markers: _markers,
+          polylines: _polylines,
+          mapType: MapType.normal,
+          myLocationEnabled: true,
+          myLocationButtonEnabled: true,
+          compassEnabled: true,
+          zoomControlsEnabled: true,
+        ),
+      ),
     );
   }
   
   Widget _buildConnectionForm() {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(8),
+    return SingleChildScrollView(
+      child: Container(
+        margin: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade50,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _driverIdController,
+                    decoration: const InputDecoration(
+                      labelText: 'Driver ID',
+                      border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextField(
+                    controller: _slotIdController,
+                    decoration: const InputDecoration(
+                      labelText: 'Slot ID',
+                      border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _connect,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                child: const Text('Connect & Start Tracking', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue.shade200),
+              ),
+              child: Text(
+                _statusMessage,
+                style: TextStyle(color: Colors.blue.shade700),
+              ),
+            ),
+          ],
+        ),
       ),
-      child: Column(
-        children: [
-          Row(
+    );
+  }
+
+  Widget _buildRideControls() {
+    return Flexible(
+      child: SingleChildScrollView(
+        child: Container(
+          margin: const EdgeInsets.fromLTRB(16,4,16,8),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: [BoxShadow(color: Colors.grey.shade400, blurRadius: 4, offset: const Offset(0, 2))],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Expanded(
-                child: TextField(
-                  controller: _driverIdController,
-                  decoration: const InputDecoration(
-                    labelText: 'Driver ID',
-                    border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  ),
+              const Text('Ride Controls', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+
+              // Users list
+              const Text('Users in this slot:', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 6),
+
+              if (_activeUsers.isEmpty)
+                const Text('No active users', style: TextStyle(color: Colors.grey, fontSize: 12))
+              else
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: _activeUsers.map((user) => _buildUserItem(user)).toList(),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: TextField(
-                  controller: _slotIdController,
-                  decoration: const InputDecoration(
-                    labelText: 'Slot ID',
-                    border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  ),
-                ),
-              ),
+
+              // Selected user controls
+              if (_selectedUserId != null) _buildSelectedUserControls(),
             ],
           ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _connect,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-              ),
-              child: const Text('Connect & Start Tracking', style: TextStyle(fontWeight: FontWeight.bold)),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-  
-  Widget _buildRideInfo() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Text(
-            "Distance to pickup: ${_distanceToPickup.toStringAsFixed(2)} km",
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            "ETA to pickup: ${_etaToPickup} min",
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-        ],
-      ),
-    );
-  }
-  
-  Widget _buildRideControls() {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 4, offset: const Offset(0, 2))],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Ride Controls', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 12),
-          
-          // Users list
-          const Text('Users in this slot:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 8),
-          
-          if (_activeUsers.isEmpty)
-            const Text('No active users', style: TextStyle(color: Colors.grey))
-          else
-            Column(
-              children: _activeUsers.map((user) => _buildUserItem(user)).toList(),
-            ),
-          
-          // Selected user controls
-          if (_selectedUserId != null) _buildSelectedUserControls(),
-        ],
+        ),
       ),
     );
   }
@@ -922,7 +918,7 @@ class _ETSDriverTrackingScreenState extends State<ETSDriverTrackingScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(user.userId, style: const TextStyle(fontWeight: FontWeight.bold)),
+              Text('User ID: ${user.userId}', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
               Text('Pickup: ${user.pickupLocation}', style: const TextStyle(fontSize: 12)),
               Text('Drop: ${user.dropLocation}', style: const TextStyle(fontSize: 12)),
             ],
@@ -936,10 +932,10 @@ class _ETSDriverTrackingScreenState extends State<ETSDriverTrackingScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 16),
+        const SizedBox(height: 4),
         Text('Selected User: $_selectedUserId', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 12),
-        
+        const SizedBox(height: 8),
+
         // Action buttons
         Row(
           children: [
@@ -947,10 +943,10 @@ class _ETSDriverTrackingScreenState extends State<ETSDriverTrackingScreen> {
               child: ElevatedButton(
                 onPressed: () => _updateRideStatus('ARRIVED'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange,
+                  backgroundColor: Colors.orange.shade700,
                   foregroundColor: Colors.white,
                 ),
-                child: const Text('Mark as Arrived'),
+                child: const Text('Mark as Arrived', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
               ),
             ),
             const SizedBox(width: 8),
@@ -961,7 +957,7 @@ class _ETSDriverTrackingScreenState extends State<ETSDriverTrackingScreen> {
                   backgroundColor: Colors.green,
                   foregroundColor: Colors.white,
                 ),
-                child: const Text('Pick Up User'),
+                child: const Text('Pick Up User', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
               ),
             ),
             const SizedBox(width: 8),
@@ -972,7 +968,7 @@ class _ETSDriverTrackingScreenState extends State<ETSDriverTrackingScreen> {
                   backgroundColor: Colors.purple,
                   foregroundColor: Colors.white,
                 ),
-                child: const Text('Complete Ride'),
+                child: const Text('Complete Ride', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
               ),
             ),
           ],
@@ -1031,5 +1027,4 @@ class _ETSDriverTrackingScreenState extends State<ETSDriverTrackingScreen> {
       ),
     );
   }
-
 }
