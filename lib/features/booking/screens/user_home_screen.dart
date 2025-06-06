@@ -999,13 +999,13 @@ class _HomeContentState extends State<_HomeContent> with SingleTickerProviderSta
 
   Widget _buildFeaturedRides() {
     return SizedBox(
-      height: 220, // Increased height to prevent RenderFlex overflow
+      height: 220, // Increased height for a prominent card and large image
       child: CarouselSlider(
         options: CarouselOptions(
-          height: 200, // Ensure this matches or is less than the SizedBox height
+          height: 210,
           enlargeCenterPage: true,
           enableInfiniteScroll: true,
-          viewportFraction: 0.9,
+          viewportFraction: 0.95,
           initialPage: 0,
           autoPlay: true,
           aspectRatio: 16 / 9,
@@ -1018,84 +1018,71 @@ class _HomeContentState extends State<_HomeContent> with SingleTickerProviderSta
               return Container(
                 margin: const EdgeInsets.symmetric(horizontal: 8),
                 decoration: BoxDecoration(
-                  color: cardColor,
-                  borderRadius: BorderRadius.circular(16),
+                  gradient: LinearGradient(
+                    colors: [primaryColor, accentColor],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
+                      color: primaryColor.withOpacity(0.15),
+                      blurRadius: 12,
+                      offset: const Offset(0, 6),
                     ),
                   ],
                 ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: Stack(
-                    children: [
-                      // Background gradient
-                      Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              (ride['color'] ?? primaryColor).withOpacity(0.1),
-                              (ride['color'] ?? primaryColor).withOpacity(0.05),
-                            ],
+                child: Row(
+                  children: [
+                    // Car image (large)
+                    Expanded(
+                      flex: 2,
+                      child: Padding(
+                        padding: const EdgeInsets.all(18),
+                        child: Image.asset(
+                          ride['image'],
+                          fit: BoxFit.contain,
+                          height: 120,
+                          width: 120,
+                          errorBuilder: (context, error, stackTrace) => Icon(
+                            Icons.directions_car,
+                            color: Colors.white,
+                            size: 80,
                           ),
                         ),
                       ),
-                      // Car image
-                      Positioned(
-                        right: 0,
-                        bottom: 0,
-                        top: 0,
-                        child: Image.asset(
-                          ride['image'],
-                          width: 120,
-                          fit: BoxFit.contain,
-                        ),
-                      ),
-                      // Content
-                      Padding(
-                        padding: const EdgeInsets.all(20),
+                    ),
+                    // Details and button
+                    Expanded(
+                      flex: 3,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 8),
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: (ride['color'] ?? primaryColor).withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Icon(
-                                MaterialCommunityIcons.car,
-                                color: (ride['color'] ?? primaryColor),
-                                size: 32,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
                             Text(
                               ride['title'],
                               style: const TextStyle(
-                                color: textColor,
-                                fontSize: 18,
+                                color: Colors.white,
+                                fontSize: 20,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                             const SizedBox(height: 8),
                             Text(
                               ride['subtitle'],
-                              style: TextStyle(
-                                color: lightTextColor,
+                              style: const TextStyle(
+                                color: Colors.white70,
                                 fontSize: 14,
-                                height: 1.3,
                               ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 18),
                             SizedBox(
                               width: 120,
+                              height: 38,
                               child: ElevatedButton(
                                 onPressed: () {
                                   Navigator.push(
@@ -1106,19 +1093,19 @@ class _HomeContentState extends State<_HomeContent> with SingleTickerProviderSta
                                   );
                                 },
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: (ride['color'] ?? primaryColor),
-                                  foregroundColor: Colors.white,
+                                  backgroundColor: secondaryColor,
+                                  foregroundColor: textColor,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(20),
                                   ),
                                   elevation: 0,
-                                  padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 10),
+                                  padding: EdgeInsets.zero,
                                 ),
                                 child: const Text(
                                   'Book Now',
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
-                                    fontSize: 12,
+                                    fontSize: 15,
                                   ),
                                 ),
                               ),
@@ -1126,21 +1113,8 @@ class _HomeContentState extends State<_HomeContent> with SingleTickerProviderSta
                           ],
                         ),
                       ),
-                      // Decorative elements
-                      Positioned(
-                        right: -20,
-                        bottom: -20,
-                        child: Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            color: (ride['color'] ?? primaryColor).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(40),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               );
             },
