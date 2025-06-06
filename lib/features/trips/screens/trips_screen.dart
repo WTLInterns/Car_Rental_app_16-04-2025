@@ -6,6 +6,7 @@ import 'dart:convert';
 import '../../../features/tracking/screens/tracking_screen.dart';
 import '../../../features/booking/screens/user_home_screen.dart';
 import 'package:url_launcher/url_launcher_string.dart';
+import 'package:intl/intl.dart';
 
 // Professional color palette - matching login screen
 const Color primaryColor =
@@ -204,6 +205,13 @@ class _TripsScreenState extends State<TripsScreen> {
           );
           return Trip.fromJson(tripJson);
         }).toList();
+
+        // Sort by startDate in descending order (newest first)
+        loadedTrips.sort((a, b) {
+          final aDate = DateTime.tryParse(a.startDate) ?? DateTime.now();
+          final bDate = DateTime.tryParse(b.startDate) ?? DateTime.now();
+          return bDate.compareTo(aDate);
+        });
 
         print('Successfully loaded ${loadedTrips.length} trips');
         setState(() {
@@ -907,7 +915,7 @@ class _TripsScreenState extends State<TripsScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildTripDetailItem("Date", trip.startDate),
+                    _buildTripDetailItem("Date", _formatDate(trip.startDate)),
                     const SizedBox(width: 8),
                     _buildTripDetailItem("Time", trip.time),
                     const SizedBox(width: 8),
@@ -1046,6 +1054,16 @@ class _TripsScreenState extends State<TripsScreen> {
         return dangerColor; // Red for cancelled
       default:
         return accentColor; // Blue for other statuses
+    }
+  }
+
+  String _formatDate(String dateStr) {
+    try {
+      final date = DateTime.tryParse(dateStr);
+      if (date == null) return dateStr;
+      return DateFormat('dd-MM-yyyy').format(date);
+    } catch (e) {
+      return dateStr;
     }
   }
 }

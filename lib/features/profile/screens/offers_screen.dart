@@ -5,7 +5,6 @@ import '../../../features/booking/screens/user_home_screen.dart';
 
 // Professional color palette
 const Color primaryColor = Color(0xFF4A90E2); 
-
 const Color accentColor = Color(0xFF4A90E2);
 const Color secondaryColor = Color(0xFFFFCC00);
 const Color backgroundColor = Color(0xFFF8F9FA);

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import '../../../core/config/app_config.dart';
 import '../../auth/blocs/auth_bloc.dart';
 import '../../trips/screens/trips_screen.dart';
@@ -12,6 +13,16 @@ import 'cab_booking_screen.dart';
 import 'ets_booking_screen.dart';
 import '../../profile/screens/notification_screen.dart';
 import '../../profile/screens/offers_screen.dart';
+
+// Consistent color palette matching offers_screen.dart
+const Color primaryColor = Color(0xFF4A90E2); 
+const Color accentColor = Color(0xFF4A90E2);
+const Color secondaryColor = Color(0xFFFFCC00);
+const Color backgroundColor = Color(0xFFF8F9FA);
+const Color cardColor = Colors.white;
+const Color textColor = Color(0xFF333333);
+const Color lightTextColor = Color(0xFF666666);
+const Color mutedTextColor = Color(0xFF999999);
 
 class UserHomeScreen extends StatefulWidget {
   const UserHomeScreen({super.key});
@@ -44,7 +55,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     return Scaffold(
       appBar: _currentIndex == 0
         ? AppBar(
-            backgroundColor: const Color(AppConfig.primaryColorHex),
+            backgroundColor: primaryColor,
             elevation: 0,
             title: const Center(
               child: Text(
@@ -57,61 +68,83 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
               ),
             ),
             actions: [
-              IconButton(
-                icon: const Icon(Icons.notifications_outlined, color: Colors.white),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const NotificationScreen(),
-                    ),
-                  );
-                },
+              Container(
+                margin: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: primaryColor.withOpacity(0.8),
+                  shape: BoxShape.circle,
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.notifications_outlined, color: Colors.white, size: 20),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const NotificationScreen(),
+                      ),
+                    );
+                  },
+                ),
               ),
             ],
           )
         : null,
-      body: _screens[_currentIndex],
+      body: Container(
+        color: backgroundColor,
+        child: _screens[_currentIndex],
+      ),
       bottomNavigationBar: _buildBottomNav(),
     );
   }
 
   Widget _buildBottomNav() {
-    return BottomNavigationBar(
-      currentIndex: _currentIndex,
-      onTap: (index) => setState(() => _currentIndex = index),
-      type: BottomNavigationBarType.fixed,
-      selectedItemColor: const Color(AppConfig.primaryColorHex),
-      unselectedItemColor: const Color(AppConfig.mutedTextColorHex),
-      selectedLabelStyle: const TextStyle(
-        fontWeight: FontWeight.w600,
-        fontSize: 12,
+    return Container(
+      decoration: BoxDecoration(
+        color: cardColor,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            offset: const Offset(0, -2),
+            blurRadius: 8,
+          ),
+        ],
       ),
-      unselectedLabelStyle: const TextStyle(fontSize: 12),
-      elevation: 8,
-      backgroundColor: Colors.white,
-      items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home_outlined),
-          activeIcon: Icon(Icons.home),
-          label: 'Home',
+      child: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: (index) => setState(() => _currentIndex = index),
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: primaryColor,
+        unselectedItemColor: mutedTextColor,
+        selectedLabelStyle: const TextStyle(
+          fontWeight: FontWeight.w600,
+          fontSize: 12,
         ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.history_outlined),
-          activeIcon: Icon(Icons.history),
-          label: 'Trips',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.local_offer_outlined),
-          activeIcon: Icon(Icons.local_offer),
-          label: 'Offers',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person_outline),
-          activeIcon: Icon(Icons.person),
-          label: 'Profile',
-        ),
-      ],
+        unselectedLabelStyle: const TextStyle(fontSize: 12),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home_outlined),
+            activeIcon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.history_outlined),
+            activeIcon: Icon(Icons.history),
+            label: 'Trips',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.local_offer_outlined),
+            activeIcon: Icon(Icons.local_offer),
+            label: 'Offers',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline),
+            activeIcon: Icon(Icons.person),
+            label: 'Profile',
+          ),
+        ],
+      ),
     );
   }
 }
@@ -123,12 +156,14 @@ class _HomeContent extends StatefulWidget {
   State<_HomeContent> createState() => _HomeContentState();
 }
 
-class _HomeContentState extends State<_HomeContent> {
+class _HomeContentState extends State<_HomeContent> with SingleTickerProviderStateMixin {
   final PageController _pageController = PageController(viewportFraction: 0.9);
   int _currentPage = 0;
   late Timer _timer;
+  late AnimationController _animationController;
+  late Animation<double> _animation = kAlwaysCompleteAnimation;
   
-  // Add these variables for search functionality
+  // Search functionality variables
   final TextEditingController _searchController = TextEditingController();
   List<dynamic> _searchSuggestions = [];
   bool _isSearching = false;
@@ -136,11 +171,26 @@ class _HomeContentState extends State<_HomeContent> {
   @override
   void initState() {
     super.initState();
+    
+    // Initialize animation controller
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    );
+    _animation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    );
+    _animationController.forward();
+    
+    // Page controller listener
     _pageController.addListener(() {
       setState(() {
         _currentPage = _pageController.page?.round() ?? 0;
       });
     });
+    
+    // Auto-scroll timer
     _timer = Timer.periodic(const Duration(seconds: 3), (Timer timer) {
       if (_currentPage < 2) {
         _currentPage++;
@@ -162,10 +212,11 @@ class _HomeContentState extends State<_HomeContent> {
     _timer.cancel();
     _pageController.dispose();
     _searchController.dispose();
+    _animationController.dispose();
     super.dispose();
   }
   
-  // Simplified search method with mock data for testing
+  // Search functionality
   Future<void> _searchPlaces(String query) async {
     if (query.isEmpty) {
       setState(() {
@@ -179,7 +230,6 @@ class _HomeContentState extends State<_HomeContent> {
     });
 
     try {
-      // First try the Google Places API
       final response = await http.get(
         Uri.parse(
           'https://maps.googleapis.com/maps/api/place/autocomplete/json?'
@@ -189,7 +239,6 @@ class _HomeContentState extends State<_HomeContent> {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        print('Google Places API Response: ${response.body}');
         
         if (data['status'] == 'OK' && (data['predictions'] as List).isNotEmpty) {
           setState(() {
@@ -197,23 +246,17 @@ class _HomeContentState extends State<_HomeContent> {
             _isSearching = false;
           });
         } else {
-          // Fallback to mock data if API fails or returns no results
           _useMockData(query);
         }
       } else {
-        // Fallback to mock data if API request fails
         _useMockData(query);
       }
     } catch (e) {
-      print('Exception during API call: $e');
-      // Fallback to mock data if API throws exception
       _useMockData(query);
     }
   }
   
-  // Helper method to use mock data when API fails
   void _useMockData(String query) {
-    // Common Indian cities for testing
     final List<Map<String, dynamic>> mockCities = [
       {
         'description': 'Mumbai, Maharashtra, India',
@@ -253,7 +296,6 @@ class _HomeContentState extends State<_HomeContent> {
       },
     ];
     
-    // Filter mock data based on query
     final filteredCities = mockCities.where((city) => 
       city['description'].toString().toLowerCase().contains(query.toLowerCase())
     ).toList();
@@ -264,10 +306,9 @@ class _HomeContentState extends State<_HomeContent> {
     });
   }
   
-  // Updated method to show the search dialog
   void _showSearchDialog(BuildContext context) {
-    _searchController.clear(); // Clear previous search
-    _searchSuggestions = []; // Clear previous suggestions
+    _searchController.clear();
+    _searchSuggestions = [];
     
     showDialog(
       context: context,
@@ -275,14 +316,23 @@ class _HomeContentState extends State<_HomeContent> {
         builder: (context, setDialogState) {
           return AlertDialog(
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(16),
             ),
-            backgroundColor: Colors.white,
-            title: const Row(
+            backgroundColor: cardColor,
+            title: Row(
               children: [
-                Icon(Icons.location_searching, color: Colors.blueAccent),
-                SizedBox(width: 10),
-                Text('Where do you want to go?', style: TextStyle(fontSize:15,fontWeight: FontWeight.bold)),
+                Icon(Icons.location_searching, color: primaryColor),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Text(
+                    'Where do you want to go?',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: textColor,
+                    ),
+                  ),
+                ),
               ],
             ),
             content: Container(
@@ -293,48 +343,55 @@ class _HomeContentState extends State<_HomeContent> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      hintText: 'Search for your destination...',
-                      prefixIcon: const Icon(Icons.search),
-                      filled: true,
-                      fillColor: Colors.grey[100],
-                      contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: backgroundColor,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: primaryColor.withOpacity(0.3)),
                     ),
-                    onChanged: (value) async {
-                      if (value.isNotEmpty) {
-                        setDialogState(() {
-                          _isSearching = true;
-                        });
-                        await _searchPlaces(value);
-                        setDialogState(() {
-                          _isSearching = false;
-                        });
-                      } else {
-                        setDialogState(() {
-                          _searchSuggestions = [];
-                        });
-                      }
-                    },
+                    child: TextField(
+                      controller: _searchController,
+                      decoration: InputDecoration(
+                        hintText: 'Search for your destination...',
+                        hintStyle: TextStyle(color: mutedTextColor),
+                        prefixIcon: Icon(Icons.search, color: primaryColor),
+                        filled: true,
+                        fillColor: Colors.transparent,
+                        contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                      ),
+                      onChanged: (value) async {
+                        if (value.isNotEmpty) {
+                          setDialogState(() {
+                            _isSearching = true;
+                          });
+                          await _searchPlaces(value);
+                          setDialogState(() {
+                            _isSearching = false;
+                          });
+                        } else {
+                          setDialogState(() {
+                            _searchSuggestions = [];
+                          });
+                        }
+                      },
+                    ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
                   if (_isSearching)
-                    const Center(child: CircularProgressIndicator())
+                    Center(child: CircularProgressIndicator(color: primaryColor))
                   else if (_searchSuggestions.isEmpty && _searchController.text.isNotEmpty)
-                    const Padding(
-                      padding: EdgeInsets.all(20.0),
+                    Padding(
+                      padding: const EdgeInsets.all(20.0),
                       child: Column(
                         children: [
-                          Icon(Icons.location_off, size: 40, color: Colors.grey),
-                          SizedBox(height: 10),
+                          Icon(Icons.location_off, size: 40, color: mutedTextColor),
+                          const SizedBox(height: 10),
                           Text(
                             'No results found',
-                            style: TextStyle(color: Colors.grey),
+                            style: TextStyle(color: mutedTextColor),
                             textAlign: TextAlign.center,
                           ),
                         ],
@@ -346,17 +403,32 @@ class _HomeContentState extends State<_HomeContent> {
                         itemCount: _searchSuggestions.length,
                         itemBuilder: (context, index) {
                           final suggestion = _searchSuggestions[index];
-                          return Card(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
+                          return Container(
+                            margin: const EdgeInsets.symmetric(vertical: 4),
+                            decoration: BoxDecoration(
+                              color: cardColor,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: backgroundColor),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
                             ),
-                            margin: const EdgeInsets.symmetric(vertical: 6),
                             child: ListTile(
-                              leading: const Icon(Icons.location_on_outlined, color: Colors.blueAccent),
-                              title: Text(suggestion['description'] ?? 'Unknown location'),
+                              leading: Icon(Icons.location_on_outlined, color: primaryColor),
+                              title: Text(
+                                suggestion['description'] ?? 'Unknown location',
+                                style: const TextStyle(
+                                  color: textColor,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
                               subtitle: Text(
                                 suggestion['structured_formatting']?['secondary_text'] ?? '',
-                                style: const TextStyle(color: Colors.grey),
+                                style: TextStyle(color: lightTextColor),
                               ),
                               onTap: () {
                                 Navigator.pop(context);
@@ -381,7 +453,7 @@ class _HomeContentState extends State<_HomeContent> {
               TextButton(
                 onPressed: () => Navigator.pop(context),
                 style: TextButton.styleFrom(
-                  foregroundColor: Colors.red,
+                  foregroundColor: mutedTextColor,
                 ),
                 child: const Text('Cancel'),
               ),
@@ -398,188 +470,236 @@ class _HomeContentState extends State<_HomeContent> {
       builder: (context, authBloc, _) {
         final userName = authBloc.currentUser?.username ?? 'User';
         
-        return SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Container(
-            color: Colors.white,
-            child: Column(
-              children: [
-                // Greeting Section with Search
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Hello, $userName',
-                                style: const TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(AppConfig.textColorHex),
+        return FadeTransition(
+          opacity: _animation,
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Container(
+              color: backgroundColor,
+              child: Column(
+                children: [
+                  // Greeting Section with Search
+                  Container(
+                    margin: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: cardColor,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Hello, $userName',
+                                    style: const TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                      color: textColor,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  const Text(
+                                    'Where are you going today?',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: lightTextColor,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Container(
+                              width: 50,
+                              height: 50,
+                              decoration: BoxDecoration(
+                                color: primaryColor,
+                                borderRadius: BorderRadius.circular(25),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: primaryColor.withOpacity(0.3),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Center(
+                                child: Text(
+                                  userName.isNotEmpty
+                                      ? userName[0].toUpperCase()
+                                      : 'U',
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
                                 ),
                               ),
-                              const SizedBox(height: 4), // Fixed SizedBox
-                              const Text(
-                                'Where are you going today?',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Color(AppConfig.lightTextColorHex),
-                                ),
-                              ),
-                            ],
-                          ),
-                          Container(
-                            width: 50,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        GestureDetector(
+                          onTap: () => _showSearchDialog(context),
+                          child: Container(
                             height: 50,
                             decoration: BoxDecoration(
-                              color: const Color(AppConfig.primaryColorHex),
-                              borderRadius: BorderRadius.circular(25),
+                              color: backgroundColor,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: primaryColor.withOpacity(0.3)),
                             ),
-                            child: Center(
-                              child: Text(
-                                userName.isNotEmpty
-                                    ? userName[0].toUpperCase()
-                                    : 'U',
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 15),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.search,
+                                  size: 22,
+                                  color: primaryColor,
+                                ),
+                                const SizedBox(width: 10),
+                                Text(
+                                  'Where do you want to go?',
+                                  style: TextStyle(
+                                    fontSize: 16, 
+                                    color: mutedTextColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Services Section
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: cardColor,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Our Services',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: textColor,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            _buildServiceCard(
+                              icon: MaterialCommunityIcons.car,
+                              label: 'Cab',
+                              iconColor: Colors.amber,
+                              bgColor: Colors.amber.withOpacity(0.1),
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const CabBookingScreen(),
                                 ),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      GestureDetector(
-                        onTap: () {
-                          _showSearchDialog(context);
-                        },
-                        child: Container(
-                          height: 50,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: Colors.grey.withAlpha((0.2 * 255).round())),
-                          ),
-                          padding: const EdgeInsets.symmetric(horizontal: 15),
-                          child: const Row(
-                            children: [
-                              Icon(
-                                Icons.search,
-                                size: 22,
-                                color: Colors.grey,
-                              ),
-                              SizedBox(width: 10),
-                              Text(
-                                'Where do you want to go?',
-                                style: TextStyle(
-                                  fontSize: 16, 
-                                  color: Color(AppConfig.mutedTextColorHex)
+                            
+                            _buildServiceCard(
+                              icon: MaterialCommunityIcons.badge_account,
+                              label: 'ETS',
+                              iconColor: primaryColor,
+                              bgColor: primaryColor.withOpacity(0.1),
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const EtsBookingScreen(),
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                            
+                            _buildServiceCard(
+                              icon: MaterialCommunityIcons.bus,
+                              label: 'Bus',
+                              iconColor: const Color(0xFF4CAF50),
+                              bgColor: const Color(0xFF4CAF50).withOpacity(0.1),
+                              onTap: () {},
+                            ),
+                            
+                            _buildServiceCard(
+                              icon: MaterialCommunityIcons.airplane,
+                              label: 'Flight',
+                              iconColor: const Color(0xFFFF6B6B),
+                              bgColor: const Color(0xFFFF6B6B).withOpacity(0.1),
+                              onTap: () {},
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
 
-                // Services Section
-                Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Service Cards Row
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          _buildServiceCard(
-                            icon: Icons.directions_car,
-                            label: 'Cab',
-                            iconColor: Colors.amber,
-                            bgColor: Colors.amber.withAlpha((0.2 * 255).round()),
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const CabBookingScreen(),
-                              ),
+                  const SizedBox(height: 16),
+
+                  // Featured Rides Section
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                          child: Text(
+                            'Featured Rides',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: textColor,
                             ),
                           ),
-                          
-                          _buildServiceCard(
-                            icon: Icons.badge,
-                            label: 'ETS',
-                            iconColor: const Color(AppConfig.primaryColorHex),
-                            bgColor: const Color(AppConfig.primaryColorHex).withAlpha((0.2 * 255).round()),
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const EtsBookingScreen(),
-                              ),
-                            ),
-                          ),
-                          
-                          _buildServiceCard(
-                            icon: Icons.check,
-                            label: 'Bus',
-                            iconColor: const Color(AppConfig.primaryColorHex),
-                            bgColor: const Color(AppConfig.primaryColorHex).withAlpha((0.2 * 255).round()),
-                            onTap: () {},
-                          ),
-                          _buildServiceCard(
-                            icon: Icons.star,
-                            label: 'Flight',
-                            iconColor: Colors.green,
-                            bgColor: Colors.green.withAlpha((0.2 * 255).round()),
-                            onTap: () {},
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Keep the Featured Rides carousel
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Featured Rides',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Color(AppConfig.textColorHex),
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      _buildFeaturedRides(),
-                    ],
+                        const SizedBox(height: 8),
+                        _buildFeaturedRides(),
+                      ],
+                    ),
                   ),
-                ),
 
-                // Premium Service Card
-                _buildPremiumServiceCard(),
+                  const SizedBox(height: 16),
 
-                // Promotional Cards
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  child: _buildDiscountCard(),
-                ),
-              ],
+                  // Premium Service Card
+                 // _buildPremiumServiceCard(),
+
+                  const SizedBox(height: 16),
+
+                  // Promotional Cards
+                  _buildDiscountCard(),
+
+                  const SizedBox(height: 20),
+                ],
+              ),
             ),
           ),
         );
@@ -596,106 +716,114 @@ class _HomeContentState extends State<_HomeContent> {
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(25),
-      child: Column(
-        children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: bgColor,
-              borderRadius: BorderRadius.circular(25),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Column(
+          children: [
+            Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                color: bgColor,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: iconColor.withOpacity(0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Icon(
+                icon,
+                color: iconColor,
+                size: 28,
+              ),
             ),
-            child: Icon(
-              icon,
-              color: iconColor,
-              size: 30,
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: textColor,
+              ),
             ),
-          ),
-          const SizedBox(height: 8), // Fixed SizedBox
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: Color(AppConfig.textColorHex),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildPremiumServiceCard() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F7FF),
-        borderRadius: BorderRadius.circular(15),
+        color: cardColor,
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha((0.05 * 255).round()),
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
-            offset: const Offset(0, 5),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: const Color(AppConfig.primaryColorHex).withAlpha((0.2 * 255).round()),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(
-                  Icons.star,
-                  color: Color(AppConfig.primaryColorHex),
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 15), // Fixed SizedBox (line 529)
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Premium Service',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(AppConfig.textColorHex),
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    const Text(
-                      'Get priority booking and exclusive offers',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Color(AppConfig.lightTextColorHex),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  // Handle premium service action
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(AppConfig.primaryColorHex),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: primaryColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              MaterialCommunityIcons.star_circle,
+              color: primaryColor,
+              size: 32,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Premium Service',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: textColor,
                   ),
                 ),
-                child: const Text('Upgrade'),
+                const SizedBox(height: 4),
+                Text(
+                  'Get priority booking and exclusive offers',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: lightTextColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {},
+            style: ElevatedButton.styleFrom(
+              backgroundColor: primaryColor,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
               ),
-            ],
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            ),
+            child: const Text(
+              'Upgrade',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
           ),
         ],
       ),
@@ -704,80 +832,143 @@ class _HomeContentState extends State<_HomeContent> {
 
   Widget _buildDiscountCard() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(AppConfig.primaryColorHex), Color(0xFF7C4DFF)],
+        gradient: LinearGradient(
+          colors: [primaryColor, accentColor],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: primaryColor.withOpacity(0.3),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          const Text(
-            'Special Offer',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 10), // Fixed SizedBox (line 576)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Special Offer',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 15), // Fixed SizedBox (line 637)
-                  Text(
-                    'Get 25% off on your next ride',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  'SAVE25',
-                  style: TextStyle(
-                    color: const Color(AppConfig.primaryColorHex),
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 15),
-          ElevatedButton(
-            onPressed: () {
-              // Handle offer action
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: const Color(AppConfig.primaryColorHex),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+          // Background pattern
+          Positioned(
+            right: -20,
+            bottom: -20,
+            child: Container(
+              width: 150,
+              height: 150,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(75),
               ),
             ),
-            child: const Text('Book Now'),
+          ),
+          Positioned(
+            left: -40,
+            top: -40,
+            child: Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(50),
+              ),
+            ),
+          ),
+
+          // Content
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: secondaryColor,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Text(
+                          'SPECIAL OFFER',
+                          style: TextStyle(
+                            color: textColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 10,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Get 25% off on your next ride',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Use code SAVE25 to get discount',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: () {},
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: primaryColor,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        ),
+                        child: const Text(
+                          'Book Now',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: secondaryColor,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: const Center(
+                    child: Text(
+                      '25%\nOFF',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: textColor,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -790,116 +981,172 @@ class _HomeContentState extends State<_HomeContent> {
       'image': 'assets/images/sedan.png',
       'title': 'Premium Sedans',
       'subtitle': 'Comfortable rides at affordable prices',
+      'color': const Color(0xFF4CAF50),
     },
     {
       'image': 'assets/images/suv.png',
       'title': 'Luxury SUVs',
       'subtitle': 'Travel in style with our luxury fleet',
+      'color': primaryColor,
     },
     {
       'image': 'assets/images/hatchback.png',
       'title': 'Budget Options',
       'subtitle': 'Economy rides that don\'t compromise on quality',
+      'color': const Color(0xFFFF6B6B),
     },
   ];
 
   Widget _buildFeaturedRides() {
-    return CarouselSlider(
-      options: CarouselOptions(
-        height: 170,
-        enlargeCenterPage: true,
-        enableInfiniteScroll: true,
-        viewportFraction: 0.95,
-        initialPage: 0,
-        autoPlay: true,
-        aspectRatio: 16 / 9,
-        autoPlayInterval: const Duration(seconds: 3),
-        autoPlayAnimationDuration: const Duration(milliseconds: 800),
-      ),
-      items: featuredRides.map((ride) {
-        return Builder(
-          builder: (BuildContext context) {
-            return Container(
-              margin: const EdgeInsets.symmetric(horizontal: 5),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(15),
-                color: Colors.grey[300],
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(15),
-                child: Stack(
-                  children: [
-                    Positioned.fill(
-                      child: Image.asset(
-                        ride['image'],
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            color: Colors.grey[300],
-                            child: const Center(
-                              child: Icon(
-                                Icons.image_not_supported,
-                                size: 50,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
+    return SizedBox(
+      height: 220, // Increased height to prevent RenderFlex overflow
+      child: CarouselSlider(
+        options: CarouselOptions(
+          height: 200, // Ensure this matches or is less than the SizedBox height
+          enlargeCenterPage: true,
+          enableInfiniteScroll: true,
+          viewportFraction: 0.9,
+          initialPage: 0,
+          autoPlay: true,
+          aspectRatio: 16 / 9,
+          autoPlayInterval: const Duration(seconds: 3),
+          autoPlayAnimationDuration: const Duration(milliseconds: 800),
+        ),
+        items: featuredRides.map((ride) {
+          return Builder(
+            builder: (BuildContext context) {
+              return Container(
+                margin: const EdgeInsets.symmetric(horizontal: 8),
+                decoration: BoxDecoration(
+                  color: cardColor,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
                     ),
-                    Positioned(
-                      bottom: 0,
-                      left: 0,
-                      right: 0,
-                      child: Container(
-                        padding: const EdgeInsets.all(15),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Stack(
+                    children: [
+                      // Background gradient
+                      Container(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
-                            begin: Alignment.bottomCenter,
-                            end: Alignment.topCenter,
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
                             colors: [
-                              Colors.black.withOpacity(0.8),
-                              Colors.transparent,
+                              (ride['color'] ?? primaryColor).withOpacity(0.1),
+                              (ride['color'] ?? primaryColor).withOpacity(0.05),
                             ],
                           ),
                         ),
+                      ),
+                      // Car image
+                      Positioned(
+                        right: 0,
+                        bottom: 0,
+                        top: 0,
+                        child: Image.asset(
+                          ride['image'],
+                          width: 120,
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                      // Content
+                      Padding(
+                        padding: const EdgeInsets.all(20),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: (ride['color'] ?? primaryColor).withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(
+                                MaterialCommunityIcons.car,
+                                color: (ride['color'] ?? primaryColor),
+                                size: 32,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
                             Text(
                               ride['title'],
                               style: const TextStyle(
-                                color: Colors.white,
+                                color: textColor,
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            const SizedBox(height: 5),
+                            const SizedBox(height: 8),
                             Text(
                               ride['subtitle'],
                               style: TextStyle(
-                                color: Colors.white.withOpacity(0.8),
+                                color: lightTextColor,
                                 fontSize: 14,
+                                height: 1.3,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            SizedBox(
+                              width: 120,
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const CabBookingScreen(),
+                                    ),
+                                  );
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: (ride['color'] ?? primaryColor),
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  elevation: 0,
+                                  padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 10),
+                                ),
+                                child: const Text(
+                                  'Book Now',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
+                                ),
                               ),
                             ),
                           ],
                         ),
                       ),
-                    ),
-                  ],
+                      // Decorative elements
+                      Positioned(
+                        right: -20,
+                        bottom: -20,
+                        child: Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            color: (ride['color'] ?? primaryColor).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(40),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            );
-          },
-        );
-      }).toList(),
+              );
+            },
+          );
+        }).toList(),
+      ),
     );
   }
 }

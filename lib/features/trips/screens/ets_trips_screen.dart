@@ -205,8 +205,8 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
       // Upcoming trips (status 0)
       ETSTrip(
         bookingId: 'ETS-1001',
-        fromLocation: 'Hinjewadi Phase 1',
-        toLocation: 'Kharadi IT Park',
+        fromLocation: 'pune',
+        toLocation: 'mumbai',
         startDate: '2025-06-05',
         time: '09:30 AM',
         car: 'Sedan',
