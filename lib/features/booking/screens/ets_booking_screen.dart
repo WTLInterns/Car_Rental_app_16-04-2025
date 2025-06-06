@@ -1570,7 +1570,7 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> with SingleTickerPr
               surface: Colors.white,
               onSurface: Colors.black,
             ),
-            dialogTheme: const DialogTheme(
+            dialogTheme: const DialogThemeData(
               backgroundColor: Colors.white,
             ),
           ),

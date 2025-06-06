@@ -16,6 +16,7 @@ const Color textColor = Color(0xFF333333);
 class ETSDriverTrackingScreen extends StatefulWidget {
   final String? etsId;
   final String? driverId;
+  final String? slotId;
   final String? fromLocation;
   final String? toLocation;
   final LatLng? pickupCoordinates;
@@ -25,6 +26,7 @@ class ETSDriverTrackingScreen extends StatefulWidget {
     super.key,
     this.etsId,
     this.driverId,
+    this.slotId,
     this.fromLocation,
     this.toLocation,
     this.pickupCoordinates,

@@ -174,7 +174,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
             // Replace the current route with SelectVehicleScreen
-            Navigator.pushReplacement(
+            Navigator.pop(
               context,
               MaterialPageRoute(
                 builder:

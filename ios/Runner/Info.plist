@@ -24,10 +24,78 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+
+	<!-- Location Permissions -->
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>This app needs access to location to show your position on the map and track your ride.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string>This app needs access to location to track your ride even when the app is in the background.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>This app needs access to location to track your ride both when in use and in the background.</string>
+
+	<!-- Camera Permission -->
+	<key>NSCameraUsageDescription</key>
+	<string>This app needs access to camera to take photos for your trip memories.</string>
+
+	<!-- Photo Library Permissions -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This app needs access to photo library to save and share your trip photos.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>This app needs permission to save photos to your photo library.</string>
+
+	<!-- Microphone Permission -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>This app needs access to microphone to record audio notes for your trips.</string>
+
+	<!-- Contacts Permission -->
+	<key>NSContactsUsageDescription</key>
+	<string>This app needs access to contacts to help you share trip details with friends.</string>
+
+	<!-- Calendar Permission -->
+	<key>NSCalendarsUsageDescription</key>
+	<string>This app needs access to calendar to add trip events and reminders.</string>
+
+	<!-- Notifications Permission -->
+	<key>NSUserNotificationsUsageDescription</key>
+	<string>This app sends notifications about trip updates and reminders.</string>
+
+	<!-- Motion & Fitness Permission -->
+	<key>NSMotionUsageDescription</key>
+	<string>This app uses motion data to track your activities during trips.</string>
+
+	<!-- Bluetooth Permission -->
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>This app uses Bluetooth to connect with nearby devices and share trip information.</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>This app uses Bluetooth to connect with nearby devices.</string>
+
+	<!-- Face ID / Touch ID Permission -->
+	<key>NSFaceIDUsageDescription</key>
+	<string>This app uses Face ID for secure authentication to protect your trip data.</string>
+
+	<!-- Network Permission -->
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>This app needs access to local network to discover and connect to nearby devices.</string>
+
+	<!-- File Access Permission -->
+	<key>NSDocumentsFolderUsageDescription</key>
+	<string>This app needs access to documents to save and manage your trip files.</string>
+
+	<!-- Speech Recognition Permission -->
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>This app uses speech recognition to convert your voice notes to text.</string>
+
+	<!-- Siri Permission -->
+	<key>NSSiriUsageDescription</key>
+	<string>This app integrates with Siri to provide voice shortcuts for trip management.</string>
+
+	<!-- Health Permission (if needed) -->
+	<key>NSHealthShareUsageDescription</key>
+	<string>This app reads health data to track your fitness activities during trips.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>This app writes health data to record your trip activities.</string>
+
+	<!-- UI Configuration -->
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
@@ -49,5 +117,26 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+
+	<!-- Background Modes (if needed) -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+		<string>background-fetch</string>
+		<string>remote-notification</string>
+	</array>
+
+	<!-- URL Schemes (if needed) -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>worldtriplink</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>worldtriplink</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

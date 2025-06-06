@@ -39,6 +39,7 @@ class DummyETSTrip {
   
   // Added fields needed for tracking navigation
   final String? etsId;
+  final String? slotId;
   final String? pickupLocation;
   final String? dropLocation;
 
@@ -64,6 +65,7 @@ class DummyETSTrip {
     required this.time,
     required this.passengerCount,
     this.etsId,
+    this.slotId,
     this.pickupLocation,
     this.dropLocation,
   });
@@ -286,6 +288,7 @@ class _DriverETSTripsScreenState extends State<DriverETSTripsScreen> with Single
         builder: (context) => ETSDriverTrackingScreen(
           etsId: trip.etsId,
           driverId: driverId,
+          slotId: trip.slotId,
           fromLocation: trip.pickupLocation,
           toLocation: trip.dropLocation,
           pickupCoordinates: LatLng(pickupLat, pickupLng),

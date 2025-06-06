@@ -14,7 +14,7 @@ class AppTheme {
         background: const Color(AppConfig.backgroundColorHex),
         error: Colors.redAccent,
       ),
-      cardTheme: const CardTheme(
+      cardTheme: const CardThemeData(
         color: Color(AppConfig.cardColorHex),
         elevation: 2,
         shape: RoundedRectangleBorder(

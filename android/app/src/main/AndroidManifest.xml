@@ -12,6 +12,12 @@
     
     <!-- Phone Call Permission -->
     <uses-permission android:name="android.permission.CALL_PHONE" />
+
+    <!-- Gallery and Camera Permission -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     
     <application
         android:label="World Trip Link"

@@ -15,7 +15,7 @@ import '../../profile/screens/notification_screen.dart';
 import '../../profile/screens/offers_screen.dart';
 
 // Consistent color palette matching offers_screen.dart
-const Color primaryColor = Color(0xFF4A90E2); 
+const Color primaryColor = Color(0xFF4A90E2);
 const Color accentColor = Color(0xFF4A90E2);
 const Color secondaryColor = Color(0xFFFFCC00);
 const Color backgroundColor = Color(0xFFF8F9FA);
@@ -53,42 +53,6 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: _currentIndex == 0
-        ? AppBar(
-            backgroundColor: primaryColor,
-            elevation: 0,
-            title: const Center(
-              child: Text(
-                'World Trip Link',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                ),
-              ),
-            ),
-            actions: [
-              Container(
-                margin: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: primaryColor.withOpacity(0.8),
-                  shape: BoxShape.circle,
-                ),
-                child: IconButton(
-                  icon: const Icon(Icons.notifications_outlined, color: Colors.white, size: 20),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const NotificationScreen(),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          )
-        : null,
       body: Container(
         color: backgroundColor,
         child: _screens[_currentIndex],
@@ -162,7 +126,7 @@ class _HomeContentState extends State<_HomeContent> with SingleTickerProviderSta
   late Timer _timer;
   late AnimationController _animationController;
   late Animation<double> _animation = kAlwaysCompleteAnimation;
-  
+
   // Search functionality variables
   final TextEditingController _searchController = TextEditingController();
   List<dynamic> _searchSuggestions = [];
@@ -171,7 +135,7 @@ class _HomeContentState extends State<_HomeContent> with SingleTickerProviderSta
   @override
   void initState() {
     super.initState();
-    
+
     // Initialize animation controller
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 1000),
@@ -182,14 +146,14 @@ class _HomeContentState extends State<_HomeContent> with SingleTickerProviderSta
       curve: Curves.easeInOut,
     );
     _animationController.forward();
-    
+
     // Page controller listener
     _pageController.addListener(() {
       setState(() {
         _currentPage = _pageController.page?.round() ?? 0;
       });
     });
-    
+
     // Auto-scroll timer
     _timer = Timer.periodic(const Duration(seconds: 3), (Timer timer) {
       if (_currentPage < 2) {
@@ -215,7 +179,7 @@ class _HomeContentState extends State<_HomeContent> with SingleTickerProviderSta
     _animationController.dispose();
     super.dispose();
   }
-  
+
   // Search functionality
   Future<void> _searchPlaces(String query) async {
     if (query.isEmpty) {
@@ -224,7 +188,7 @@ class _HomeContentState extends State<_HomeContent> with SingleTickerProviderSta
       });
       return;
     }
-    
+
     setState(() {
       _isSearching = true;
     });
@@ -233,13 +197,13 @@ class _HomeContentState extends State<_HomeContent> with SingleTickerProviderSta
       final response = await http.get(
         Uri.parse(
           'https://maps.googleapis.com/maps/api/place/autocomplete/json?'
-          'input=$query&key=AIzaSyCelDo4I5cPQ72TfCTQW-arhPZ7ALNcp8w&components=country:in',
+              'input=$query&key=AIzaSyCelDo4I5cPQ72TfCTQW-arhPZ7ALNcp8w&components=country:in',
         ),
       );
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        
+
         if (data['status'] == 'OK' && (data['predictions'] as List).isNotEmpty) {
           setState(() {
             _searchSuggestions = data['predictions'];
@@ -255,7 +219,7 @@ class _HomeContentState extends State<_HomeContent> with SingleTickerProviderSta
       _useMockData(query);
     }
   }
-  
+
   void _useMockData(String query) {
     final List<Map<String, dynamic>> mockCities = [
       {
@@ -295,21 +259,21 @@ class _HomeContentState extends State<_HomeContent> with SingleTickerProviderSta
         'structured_formatting': {'secondary_text': 'Rajasthan, India'}
       },
     ];
-    
-    final filteredCities = mockCities.where((city) => 
-      city['description'].toString().toLowerCase().contains(query.toLowerCase())
+
+    final filteredCities = mockCities.where((city) =>
+        city['description'].toString().toLowerCase().contains(query.toLowerCase())
     ).toList();
-    
+
     setState(() {
       _searchSuggestions = filteredCities;
       _isSearching = false;
     });
   }
-  
+
   void _showSearchDialog(BuildContext context) {
     _searchController.clear();
     _searchSuggestions = [];
-    
+
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -431,12 +395,16 @@ class _HomeContentState extends State<_HomeContent> with SingleTickerProviderSta
                                 style: TextStyle(color: lightTextColor),
                               ),
                               onTap: () {
+                                _searchController.text = suggestion['description'] ?? '';
+                                setState(() {
+                                  _searchSuggestions = [];
+                                });
                                 Navigator.pop(context);
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) => CabBookingScreen(
-                                      dropLocation: suggestion['description'],
+                                      initialDropLocation: suggestion['description'] ?? '',
                                     ),
                                   ),
                                 );
@@ -464,246 +432,329 @@ class _HomeContentState extends State<_HomeContent> with SingleTickerProviderSta
     );
   }
 
+  Widget _buildSearchBoxWithSuggestions() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          height: 50,
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: primaryColor.withOpacity(0.3)),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 15),
+          child: Row(
+            children: [
+              Icon(
+                Icons.search,
+                size: 22,
+                color: primaryColor,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: TextField(
+                  controller: _searchController,
+                  decoration: const InputDecoration(
+                    border: InputBorder.none,
+                    hintText: 'Where do you want to go?',
+                    hintStyle: TextStyle(
+                      fontSize: 16,
+                      color: mutedTextColor,
+                    ),
+                  ),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: textColor,
+                  ),
+                  onChanged: (value) async {
+                    await _searchPlaces(value);
+                    setState(() {}); // To update suggestions
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (_searchController.text.isNotEmpty && _searchSuggestions.isNotEmpty)
+          Container(
+            margin: const EdgeInsets.only(top: 2),
+            decoration: BoxDecoration(
+              color: cardColor,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: primaryColor.withOpacity(0.15)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            constraints: const BoxConstraints(maxHeight: 180),
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: _searchSuggestions.length,
+              itemBuilder: (context, index) {
+                final suggestion = _searchSuggestions[index];
+                return ListTile(
+                  dense: true,
+                  leading: const Icon(Icons.location_on, color: primaryColor, size: 20),
+                  title: Text(
+                    suggestion['description'] ?? '',
+                    style: const TextStyle(fontSize: 15, color: textColor),
+                  ),
+                  onTap: () {
+                    _searchController.text = suggestion['description'] ?? '';
+                    setState(() {
+                      _searchSuggestions = [];
+                    });
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CabBookingScreen(
+                          initialDropLocation: suggestion['description'] ?? '',
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<AuthBloc>(
-      builder: (context, authBloc, _) {
-        final userName = authBloc.currentUser?.username ?? 'User';
-        
-        return FadeTransition(
-          opacity: _animation,
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            child: Container(
-              color: backgroundColor,
-              child: Column(
-                children: [
-                  // Greeting Section with Search
-                  Container(
-                    margin: const EdgeInsets.all(16),
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: cardColor,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Hello, $userName',
-                                    style: const TextStyle(
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.bold,
-                                      color: textColor,
+        builder: (context, authBloc, _) {
+          final userName = authBloc.currentUser?.username ?? 'User';
+
+          return FadeTransition(
+            opacity: _animation,
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Container(
+                color: backgroundColor,
+                child: Column(
+                  children: [
+                    // Greeting Section with Search
+                    Container(
+                      margin: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: cardColor,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Hello, $userName',
+                                      style: const TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold,
+                                        color: textColor,
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  const Text(
-                                    'Where are you going today?',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: lightTextColor,
+                                    const SizedBox(height: 4),
+                                    const Text(
+                                      'Where are you going today?',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        color: lightTextColor,
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Container(
-                              width: 50,
-                              height: 50,
-                              decoration: BoxDecoration(
-                                color: primaryColor,
-                                borderRadius: BorderRadius.circular(25),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: primaryColor.withOpacity(0.3),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Center(
-                                child: Text(
-                                  userName.isNotEmpty
-                                      ? userName[0].toUpperCase()
-                                      : 'U',
-                                  style: const TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
+                                  ],
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-                        GestureDetector(
-                          onTap: () => _showSearchDialog(context),
-                          child: Container(
-                            height: 50,
-                            decoration: BoxDecoration(
-                              color: backgroundColor,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: primaryColor.withOpacity(0.3)),
-                            ),
-                            padding: const EdgeInsets.symmetric(horizontal: 15),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.search,
-                                  size: 22,
+                              Container(
+                                width: 50,
+                                height: 50,
+                                decoration: BoxDecoration(
                                   color: primaryColor,
+                                  borderRadius: BorderRadius.circular(25),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: primaryColor.withOpacity(0.3),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(width: 10),
-                                Text(
-                                  'Where do you want to go?',
-                                  style: TextStyle(
-                                    fontSize: 16, 
-                                    color: mutedTextColor,
+                                child: Center(
+                                  child: Text(
+                                    userName.isNotEmpty
+                                        ? userName[0].toUpperCase()
+                                        : 'U',
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
                                   ),
                                 ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Services Section
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 16),
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: cardColor,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Our Services',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: textColor,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          children: [
-                            _buildServiceCard(
-                              icon: MaterialCommunityIcons.car,
-                              label: 'Cab',
-                              iconColor: Colors.amber,
-                              bgColor: Colors.amber.withOpacity(0.1),
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const CabBookingScreen(),
-                                ),
                               ),
-                            ),
-                            
-                            _buildServiceCard(
-                              icon: MaterialCommunityIcons.badge_account,
-                              label: 'ETS',
-                              iconColor: primaryColor,
-                              bgColor: primaryColor.withOpacity(0.1),
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const EtsBookingScreen(),
-                                ),
-                              ),
-                            ),
-                            
-                            _buildServiceCard(
-                              icon: MaterialCommunityIcons.bus,
-                              label: 'Bus',
-                              iconColor: const Color(0xFF4CAF50),
-                              bgColor: const Color(0xFF4CAF50).withOpacity(0.1),
-                              onTap: () {},
-                            ),
-                            
-                            _buildServiceCard(
-                              icon: MaterialCommunityIcons.airplane,
-                              label: 'Flight',
-                              iconColor: const Color(0xFFFF6B6B),
-                              bgColor: const Color(0xFFFF6B6B).withOpacity(0.1),
-                              onTap: () {},
-                            ),
-                          ],
-                        ),
-                      ],
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            child: _buildSearchBoxWithSuggestions(),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
 
-                  const SizedBox(height: 16),
-
-                  // Featured Rides Section
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                          child: Text(
-                            'Featured Rides',
+                    // Services Section
+                    Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: cardColor,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Our Services',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                               color: textColor,
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        _buildFeaturedRides(),
-                      ],
+                          const SizedBox(height: 16),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              _buildServiceCard(
+                                icon: MaterialCommunityIcons.car,
+                                label: 'Cab',
+                                iconColor: Colors.amber,
+                                bgColor: Colors.amber.withOpacity(0.1),
+                                onTap: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const CabBookingScreen(),
+                                  ),
+                                ),
+                              ),
+
+                              _buildServiceCard(
+                                icon: MaterialCommunityIcons.badge_account,
+                                label: 'ETS',
+                                iconColor: primaryColor,
+                                bgColor: primaryColor.withOpacity(0.1),
+                                onTap: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const EtsBookingScreen(),
+                                  ),
+                                ),
+                              ),
+
+                              _buildServiceCard(
+                                icon: MaterialCommunityIcons.bus,
+                                label: 'Bus',
+                                iconColor: const Color(0xFF4CAF50),
+                                bgColor: const Color(0xFF4CAF50).withOpacity(0.1),
+                                onTap: () {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Bus service coming soon!'),
+                                      duration: Duration(seconds: 2),
+                                    ),
+                                  );
+                                },
+                              ),
+
+                              _buildServiceCard(
+                                icon: MaterialCommunityIcons.airplane,
+                                label: 'Flight',
+                                iconColor: const Color(0xFFFF6B6B),
+                                bgColor: const Color(0xFFFF6B6B).withOpacity(0.1),
+                                onTap: () {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Flight service coming soon!'),
+                                      duration: Duration(seconds: 2),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
 
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
-                  // Premium Service Card
-                 // _buildPremiumServiceCard(),
+                    // Featured Rides Section
+                    Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                            child: Text(
+                              'Featured Rides',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: textColor,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          _buildFeaturedRides(),
+                        ],
+                      ),
+                    ),
 
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
-                  // Promotional Cards
-                  _buildDiscountCard(),
+                    // Premium Service Card
+                    // _buildPremiumServiceCard(),
 
-                  const SizedBox(height: 20),
-                ],
+                    const SizedBox(height: 16),
+
+                    // Promotional Cards
+                    _buildDiscountCard(),
+
+                    const SizedBox(height: 20),
+                  ],
+                ),
               ),
             ),
-          ),
-        );
-      }
+          );
+        }
     );
   }
 
@@ -974,7 +1025,7 @@ class _HomeContentState extends State<_HomeContent> with SingleTickerProviderSta
       ),
     );
   }
-  
+
   // List of featured ride images
   final List<Map<String, dynamic>> featuredRides = [
     {
@@ -999,16 +1050,16 @@ class _HomeContentState extends State<_HomeContent> with SingleTickerProviderSta
 
   Widget _buildFeaturedRides() {
     return SizedBox(
-      height: 220, // Increased height for a prominent card and large image
+      height: 240, // Height to fit image, text, and button
       child: CarouselSlider(
         options: CarouselOptions(
-          height: 210,
+          height: 230,
           enlargeCenterPage: true,
           enableInfiniteScroll: true,
-          viewportFraction: 0.95,
+          viewportFraction: 0.7,
           initialPage: 0,
           autoPlay: true,
-          aspectRatio: 16 / 9,
+          aspectRatio: 1.0,
           autoPlayInterval: const Duration(seconds: 3),
           autoPlayAnimationDuration: const Duration(milliseconds: 800),
         ),
@@ -1018,103 +1069,92 @@ class _HomeContentState extends State<_HomeContent> with SingleTickerProviderSta
               return Container(
                 margin: const EdgeInsets.symmetric(horizontal: 8),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [primaryColor, accentColor],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(20),
+                  color: cardColor,
+                  borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: primaryColor.withOpacity(0.15),
-                      blurRadius: 12,
-                      offset: const Offset(0, 6),
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
-                child: Row(
-                  children: [
-                    // Car image (large)
-                    Expanded(
-                      flex: 2,
-                      child: Padding(
-                        padding: const EdgeInsets.all(18),
-                        child: Image.asset(
-                          ride['image'],
-                          fit: BoxFit.contain,
-                          height: 120,
-                          width: 120,
-                          errorBuilder: (context, error, stackTrace) => Icon(
-                            Icons.directions_car,
-                            color: Colors.white,
-                            size: 80,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), // Reduced vertical padding
+                  child: SingleChildScrollView(
+                    physics: const NeverScrollableScrollPhysics(),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        // Car image
+                        SizedBox(
+                          height: 80,
+                          child: Image.asset(
+                            ride['image'],
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) => Icon(
+                              Icons.directions_car,
+                              color: primaryColor,
+                              size: 60,
+                            ),
                           ),
                         ),
-                      ),
-                    ),
-                    // Details and button
-                    Expanded(
-                      flex: 3,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 8),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              ride['title'],
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
+                        const SizedBox(height: 10),
+                        Text(
+                          ride['title'],
+                          style: const TextStyle(
+                            color: textColor,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          ride['subtitle'],
+                          style: TextStyle(
+                            color: lightTextColor,
+                            fontSize: 13,
+                          ),
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: 110,
+                          height: 36,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const CabBookingScreen(),
+                                ),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: primaryColor,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
                               ),
+                              elevation: 0,
+                              padding: EdgeInsets.zero,
                             ),
-                            const SizedBox(height: 8),
-                            Text(
-                              ride['subtitle'],
-                              style: const TextStyle(
-                                color: Colors.white70,
+                            child: const Text(
+                              'Book Now',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
                                 fontSize: 14,
                               ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
                             ),
-                            const SizedBox(height: 18),
-                            SizedBox(
-                              width: 120,
-                              height: 38,
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => const CabBookingScreen(),
-                                    ),
-                                  );
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: secondaryColor,
-                                  foregroundColor: textColor,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  elevation: 0,
-                                  padding: EdgeInsets.zero,
-                                ),
-                                child: const Text(
-                                  'Book Now',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 15,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
-                      ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               );
             },
