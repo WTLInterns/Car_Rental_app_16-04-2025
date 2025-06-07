@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:worldtriplink/features/profile/account_settings_screen/Contact_Us.dart';
+import 'package:worldtriplink/features/profile/account_settings_screen/Services_screen.dart';
 import 'package:worldtriplink/features/profile/account_settings_screen/about_screen.dart';
 import '../../../features/auth/screens/login_screen.dart';
 import '../../../features/booking/screens/user_home_screen.dart';
@@ -805,6 +806,16 @@ class _ProfileScreenState extends State<ProfileScreen>
                         _buildMenuItem(
                           icon: MaterialCommunityIcons.account_outline,
                           color: accentColor,
+                          title: 'Services',
+                          description:
+                          'Experience premium travel with our diverse range of services',
+                          onTap: (){
+                            Navigator.push(context, MaterialPageRoute(builder: (context) => ServicesScreen(),));
+                          },
+                        ),
+                        _buildMenuItem(
+                          icon: MaterialCommunityIcons.account_outline,
+                          color: accentColor,
                           title: 'Contact Us',
                           description: "We'd love to hear from you",
                           onTap: () {
@@ -815,14 +826,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                                 ));
                           },
                         ),
-                        // _buildMenuItem(
-                        //   icon: MaterialCommunityIcons.account_outline,
-                        //   color: accentColor,
-                        //   title: 'Services',
-                        //   description:
-                        //       'Experience premium travel with our diverse range of services',
-                        //   onTap: _showEditProfileDialog,
-                        // ),
                         _buildMenuItem(
                           icon: MaterialCommunityIcons.account_outline,
                           color: accentColor,
