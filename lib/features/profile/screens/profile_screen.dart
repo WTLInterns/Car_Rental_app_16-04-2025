@@ -885,11 +885,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                       padding: const EdgeInsets.only(bottom: 24, top: 8),
                       child: Column(
                         children: [
-                          const Text('WorldTripLink',
-                              style: TextStyle(
-                                  color: accentColor,
-                                  fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 4),
                           Text('Version 1.0.0',
                               style: TextStyle(
                                   color: mutedTextColor, fontSize: 12)),

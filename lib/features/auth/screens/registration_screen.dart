@@ -67,7 +67,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       
       // Prepare registration data
       final Map<String, dynamic> registrationData = {
-        'firstName': _firstNameController.text,
+        'userName': _firstNameController.text,
         'lastName': _lastNameController.text,
         'email': _emailController.text,
         'phone': _phoneController.text,

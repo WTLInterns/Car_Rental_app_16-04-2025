@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:worldtriplink/features/booking/screens/user_home_screen.dart';
 
+const Color primaryColor = Color(0xFF4A90E2);
+
 class ContactScreen extends StatelessWidget {
   const ContactScreen({super.key});
 

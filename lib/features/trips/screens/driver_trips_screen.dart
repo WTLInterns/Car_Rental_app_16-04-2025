@@ -24,39 +24,6 @@ const Color successColor = Color(0xFF4CAF50);      // Green for success
 const Color errorColor = Color(0xFFE53935);        // Red for errors
 const Color warningColor = Color(0xFFFF9800);      // Orange for warnings
 
-class DummyTrip {
-  final String bookingId;
-  final String passengerName;
-  final String passengerPhone;
-  final String pickup;
-  final String destination;
-  final double pickupLat;
-  final double pickupLng;
-  final double destLat;
-  final double destLng;
-  final String status;
-  final String fare;
-  final String date;
-  final String time;
-
-  DummyTrip({
-    required this.bookingId,
-    required this.passengerName,
-    required this.passengerPhone,
-    required this.pickup,
-    required this.destination,
-    required this.pickupLat,
-    required this.pickupLng,
-    required this.destLat,
-    required this.destLng,
-    required this.status,
-    required this.fare,
-    required this.date,
-    required this.time,
-  });
-}
-
-
 class DriverTripsScreen extends StatefulWidget {
   const DriverTripsScreen({super.key});
 
@@ -69,23 +36,6 @@ class _DriverTripsScreenState extends State<DriverTripsScreen> with SingleTicker
   Map<String, dynamic>? driver;
   String _userId = '';
   List<dynamic> tripInfo = [];
-  List<DummyTrip> dummyTrips = [
-    DummyTrip(
-      bookingId: 'TRIP001',
-      passengerName: 'John Doe',
-      passengerPhone: '+91 9876543210',
-      pickup: 'Pune Station',
-      destination: 'Hinjewadi Phase 1',
-      pickupLat: 18.5294,
-      pickupLng: 73.8744,
-      destLat: 18.5912,
-      destLng: 73.7380,
-      status: 'upcoming',
-      fare: '₹350',
-      date: '2024-02-20',
-      time: '14:30',
-    ),
-  ];
   bool isLoading = true;
   bool isRefreshing = false;
   late AnimationController _animationController;

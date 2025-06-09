@@ -42,10 +42,10 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
 
   // Color scheme for consistent styling - matching the app's professional style
   final Color primaryColor =
-  const Color(0xFF3057E3); // Royal blue from the image
+  const Color(0xFF4A90E2); // Royal blue from the image
   final Color secondaryColor =
-  const Color(0xFF3057E3); // Same blue for consistency
-  final Color accentColor = const Color(0xFFFFCC00); // Yellow/gold accent
+  const Color(0xFF4A90E2); // Same blue for consistency
+  final Color accentColor = const Color(0xFF4A90E2); // Yellow/gold accent
   final Color backgroundColor =
   const Color(0xFFF3F5F9); // Light gray background
   final Color cardColor = Colors.white; // White card background
@@ -280,7 +280,25 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFF3F5F9),
+      backgroundColor: backgroundColor,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(64),
+        child: Container(
+          color: primaryColor,
+          padding: const EdgeInsets.only(top: 40, bottom: 12),
+          width: double.infinity,
+          child: const Center(
+            child: Text(
+              'Booking',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ),
+      ),
       body: SafeArea(
         child: Form(
           key: _formKey,
@@ -1098,23 +1116,39 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
     }
 
     // Additional validation
+    if (_pickupController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter pickup location')),
+      );
+      return;
+    }
+    if (_dropController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter drop location')),
+      );
+      return;
+    }
     if (_selectedDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select a pickup date')),
       );
       return;
     }
-
     if (_selectedTime == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select a pickup time')),
       );
       return;
     }
-
     if (_bookingType == 'roundTrip' && _selectedReturnDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select a return date')),
+      );
+      return;
+    }
+    if (_bookingType == 'rental' && (_hours.isEmpty || int.tryParse(_hours) == null || int.parse(_hours) < 1)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid rental duration (hours)')),
       );
       return;
     }

@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../features/payment/screens/payment_screen.dart';
 import 'dart:convert';
 import '../../../features/booking/screens/select_vehicle_screen.dart';
+import 'package:http/http.dart' as http;
 
 class PassengerDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> bookingData;
@@ -25,9 +26,9 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
   bool _isLoading = true;
 
   // Color scheme for consistent styling - matching the app's professional style
-  final Color primaryColor = const Color(0xFF3057E3);      // Royal blue from the image
-  final Color secondaryColor = const Color(0xFF3057E3);    // Same blue for consistency
-  final Color accentColor = const Color(0xFFFFCC00);       // Yellow/gold accent
+  final Color primaryColor = const Color(0xFF4A90E2);      // Royal blue from the image
+    final Color secondaryColor = const Color(0xFF3057E3);    // Same blue for consistency
+    final Color accentColor = const Color(0xFF4A90E2);       // Yellow/gold accent
   final Color backgroundColor = const Color(0xFFF3F5F9);   // Light gray background
   final Color cardColor = Colors.white;                    // White card background
   final Color surfaceColor = Colors.white;                 // White for inputs/surfaces
@@ -46,43 +47,34 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
   @override
   void initState() {
     super.initState();
-    _loadUserData();
+    _fetchAndFillUserProfile();
   }
 
-  Future<void> _loadUserData() async {
+  Future<void> _fetchAndFillUserProfile() async {
     setState(() => _isLoading = true);
-
     try {
       final prefs = await SharedPreferences.getInstance();
       final userData = prefs.getString('userData');
-
+      String? userId;
       if (userData != null) {
         final parsedData = json.decode(userData);
-
-        setState(() {
-          if (parsedData['username'] != null) {
-            _firstNameController.text = parsedData['username'];
+        userId = parsedData['id']?.toString();
+        if (userId != null) {
+          _userId = userId;
+          final response = await http.get(Uri.parse('https://api.worldtriplink.com/auth/getProfile/$userId'));
+          if (response.statusCode == 200) {
+            final profile = json.decode(response.body);
+            setState(() {
+              _firstNameController.text = profile['userName'] ?? '';
+              _lastNameController.text = profile['lastName'] ?? '';
+              _emailController.text = profile['email'] ?? '';
+              _phoneController.text = profile['phone'] ?? '';
+            });
           }
-
-          if (parsedData['lastName'] != null) {
-            _lastNameController.text = parsedData['lastName'];
-          }
-
-          if (parsedData['email'] != null) {
-            _emailController.text = parsedData['email'];
-          }
-
-          if (parsedData['phone'] != null) {
-            _phoneController.text = parsedData['phone'];
-          }
-
-          if (parsedData['id'] != null) {
-            _userId = parsedData['id'].toString();
-          }
-        });
+        }
       }
     } catch (e) {
-      debugPrint('Error loading user data: $e');
+      debugPrint('Error fetching user profile: $e');
     } finally {
       setState(() => _isLoading = false);
     }
@@ -166,6 +158,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
         backgroundColor: primaryColor,
         foregroundColor: Colors.white,
         elevation: 0,
+        centerTitle: true,
         title: const Text(
           'Passenger Details',
           style: TextStyle(fontWeight: FontWeight.bold),

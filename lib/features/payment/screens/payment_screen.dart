@@ -34,9 +34,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
  bool _isCouponApplied = false;
 
  // Colors
- final Color primaryColor = const Color(0xFF3057E3);
- final Color secondaryColor = const Color(0xFF3057E3);
- final Color accentColor = const Color(0xFFFFCC00);
+ final Color primaryColor = const Color(0xFF4A90E2);
+ final Color secondaryColor = const Color(0xFF4A90E2);
+ final Color accentColor = const Color(0xFF4A90E2);
  final Color backgroundColor = const Color(0xFFF3F5F9);
  final Color cardColor = Colors.white;
  final Color surfaceColor = Colors.white;
@@ -934,13 +934,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
        child: SingleChildScrollView(
         child: Column(
          children: [
-          _buildPaymentOption(
-           'UPI',
-           'Pay using Google Pay, PhonePe, etc.',
-           MaterialCommunityIcons.qrcode_scan,
-           'upi',
-          ),
-          const Divider(),
+        
           _buildPaymentOption(
            'Cash on Arrival',
            'Pay directly to the driver',

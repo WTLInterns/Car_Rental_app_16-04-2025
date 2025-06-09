@@ -24,10 +24,10 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
 
   // Color scheme for consistent styling - matching the app's professional style
   final Color primaryColor =
-      const Color(0xFF3057E3); // Royal blue from the image
+      const Color(0xFF4A90E2); // Royal blue from the image
   final Color secondaryColor =
       const Color(0xFF3057E3); // Same blue for consistency
-  final Color accentColor = const Color(0xFFFFCC00); // Yellow/gold accent
+  final Color accentColor = const Color(0xFF4A90E2); // Yellow/gold accent
   final Color backgroundColor =
       const Color(0xFFF3F5F9); // Light gray background
   final Color cardColor = Colors.white; // White card background
@@ -36,7 +36,7 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
   final Color lightTextColor = const Color(0xFF666666); // Medium gray text
   final Color mutedTextColor = const Color(0xFFAAAAAA); // Light gray text
   final Color lightAccentColor =
-      const Color(0xFFF0F7FF); // Light blue background
+      const Color(0xFF4A90E2); // Light blue background
 
   // Vehicle data organized by category
   Map<String, List<Vehicle>> _vehicleData = {
@@ -326,11 +326,10 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
         backgroundColor: primaryColor,
         foregroundColor: Colors.white,
         elevation: 0,
-        title: const Center(
-          child: Text(
-            'Select Vehicle',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
+        centerTitle: true,
+        title: const Text(
+          'Select Vehicle',
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),

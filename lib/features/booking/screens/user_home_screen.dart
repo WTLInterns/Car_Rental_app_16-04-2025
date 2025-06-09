@@ -53,9 +53,32 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
+      body: Column(
+        children: [
+          if (_currentIndex == 0) ...[
+            Container(
+              color: primaryColor,
+              padding: const EdgeInsets.only(top: 40, bottom: 12),
+              width: double.infinity,
+              child: const Center(
+                child: Text(
+                  'WorldTripLink',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ],
+          Expanded(
+            child: Container(
         color: backgroundColor,
         child: _screens[_currentIndex],
+            ),
+          ),
+        ],
       ),
       bottomNavigationBar: _buildBottomNav(),
     );
