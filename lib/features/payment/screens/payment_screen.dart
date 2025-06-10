@@ -72,7 +72,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
      _discountAmount = _discountData!.priceDiscount ?? 0;
     });
     ScaffoldMessenger.of(context).showSnackBar(
-     const SnackBar(content: Text('Coupon applied successfully!')),
+     const SnackBar(
+      backgroundColor: Colors.green,
+         content: Text('Coupon applied successfully!')),
     );
     return;
    }
@@ -534,10 +536,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
               _buildTripSummary(),
               const SizedBox(height: 16),
               SizedBox(
-               height: 320,
+               height: 180,
                child: _buildPaymentMethods(),
               ),
-              const SizedBox(height: 80),
+              const SizedBox(height: 20),
              ],
             ),
            );
@@ -930,20 +932,15 @@ class _PaymentScreenState extends State<PaymentScreen> {
        ],
       ),
       const SizedBox(height: 16),
-      Expanded(
-       child: SingleChildScrollView(
-        child: Column(
-         children: [
-        
-          _buildPaymentOption(
-           'Cash on Arrival',
-           'Pay directly to the driver',
-           MaterialCommunityIcons.cash,
-           'cash',
-          ),
-         ],
+      Column(
+       children: [
+        _buildPaymentOption(
+         'Cash on Arrival',
+         'Pay directly to the driver',
+         MaterialCommunityIcons.cash,
+         'cash',
         ),
-       ),
+       ],
       ),
      ],
     ),
@@ -1119,6 +1116,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
      controller: _couponController,
      label: 'Have a Coupon Code?',
      hint: 'Enter Coupon Code',
+     validator: (value) {
+      if (value == null || value.trim().isEmpty) {
+       return 'Please enter a coupon code';
+      }
+      return null;
+     },
     ),
     Row(
      children: [
@@ -1136,11 +1139,29 @@ class _PaymentScreenState extends State<PaymentScreen> {
       const Spacer(),
       TextButton(
        onPressed: () {
+        if (_couponController.text.trim().isEmpty) {
+         ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+           duration: Duration(seconds: 1),
+           backgroundColor: Colors.redAccent,
+           content: Center(
+            child: Text(
+             "Please enter a coupon code",
+             style: TextStyle(fontWeight: FontWeight.w800),
+            ),
+           ),
+          ),
+         );
+         return;
+        }
+
         if (bookings.isEmpty) {
          _applyCoupon();
         } else {
          ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
+           duration: Duration(seconds: 1),
+              backgroundColor: Colors.redAccent,
               content: Center(
                   child: Text(
                    "You Are Already Used This Coupon Code",
@@ -1241,8 +1262,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
              Clipboard.setData(ClipboardData(text: coupon));
              ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
+                  duration: Duration(seconds: 1),
+                  backgroundColor: Colors.green,
                   content: Center(
-                      child: Text("Coupon code copied!", style: TextStyle(fontWeight: FontWeight.w800),))),
+                      child: Text("Coupon code copied!", style: TextStyle(fontSize:15,fontWeight: FontWeight.w800),))),
              );
              Navigator.pop(context);
             },

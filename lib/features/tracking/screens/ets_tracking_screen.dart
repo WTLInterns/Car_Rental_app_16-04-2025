@@ -113,7 +113,7 @@ class _ETSDriverTrackingScreenState extends State<ETSDriverTrackingScreen> {
   int _etaToPickup = 0;
   
   // API Base URL
-  static const String baseUrl = "http://192.168.1.42:8081";
+  static const String baseUrl = "https://ets.worldtriplink.com";
   
   @override
   void initState() {

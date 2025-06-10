@@ -7,8 +7,9 @@ import 'package:http/http.dart' as http;
 
 class EtsPassengerDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> bookingData;
+  final List<String> dates;
 
-  const EtsPassengerDetailsScreen({super.key, required this.bookingData});
+  const EtsPassengerDetailsScreen({super.key, required this.bookingData, required this.dates});
 
   @override
   State<EtsPassengerDetailsScreen> createState() => _EtsPassengerDetailsScreenState();
@@ -21,7 +22,6 @@ class _EtsPassengerDetailsScreenState extends State<EtsPassengerDetailsScreen> {
   final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _partnerSharingController = TextEditingController();
 
   String _userId = '';
   bool _isLoading = true;
@@ -43,52 +43,39 @@ class _EtsPassengerDetailsScreenState extends State<EtsPassengerDetailsScreen> {
     'lastName': '',
     'email': '',
     'phone': '',
-    'partnerSharing': '',
   };
 
   @override
   void initState() {
     super.initState();
-    _loadUserData();
+    _fetchAndFillUserProfile();
   }
 
-  Future<void> _loadUserData() async {
+  Future<void> _fetchAndFillUserProfile() async {
     setState(() => _isLoading = true);
-
     try {
       final prefs = await SharedPreferences.getInstance();
       final userData = prefs.getString('userData');
-
+      String? userId;
       if (userData != null) {
         final parsedData = json.decode(userData);
-
-        setState(() {
-          if (parsedData['username'] != null) {
-            _firstNameController.text = parsedData['username'];
+        userId = parsedData['id']?.toString();
+        if (userId != null) {
+          _userId = userId;
+          final response = await http.get(Uri.parse('https://api.worldtriplink.com/auth/getProfile/$userId'));
+          if (response.statusCode == 200) {
+            final profile = json.decode(response.body);
+            setState(() {
+              _firstNameController.text = profile['userName'] ?? '';
+              _lastNameController.text = profile['lastName'] ?? '';
+              _emailController.text = profile['email'] ?? '';
+              _phoneController.text = profile['phone'] ?? '';
+            });
           }
-
-          if (parsedData['lastName'] != null) {
-            _lastNameController.text = parsedData['lastName'];
-          }
-
-          if (parsedData['email'] != null) {
-            _emailController.text = parsedData['email'];
-          }
-
-          if (parsedData['phone'] != null) {
-            _phoneController.text = parsedData['phone'];
-          }
-
-          if (parsedData['id'] != null) {
-            _userId = parsedData['id'].toString();
-          }
-          
-          // Set default partner sharing value
-          _partnerSharingController.text = '2';
-        });
+        }
       }
     } catch (e) {
-      debugPrint('Error loading user data: $e');
+      debugPrint('Error fetching user profile: $e');
     } finally {
       setState(() => _isLoading = false);
     }
@@ -101,7 +88,6 @@ class _EtsPassengerDetailsScreenState extends State<EtsPassengerDetailsScreen> {
       'lastName': '',
       'email': '',
       'phone': '',
-      'partnerSharing': '',
     };
 
     if (_firstNameController.text.trim().isEmpty) {
@@ -128,17 +114,6 @@ class _EtsPassengerDetailsScreenState extends State<EtsPassengerDetailsScreen> {
     } else if (!RegExp(r'^\d{10}$').hasMatch(_phoneController.text.trim())) {
       newErrors['phone'] = 'Please enter a valid 10-digit phone number';
       isValid = false;
-    }
-
-    if (_partnerSharingController.text.trim().isEmpty) {
-      newErrors['partnerSharing'] = 'Partner sharing is required';
-      isValid = false;
-    } else {
-      final partnerSharing = int.tryParse(_partnerSharingController.text);
-      if (partnerSharing == null || partnerSharing < 1 || partnerSharing > 4) {
-        newErrors['partnerSharing'] = 'Partner sharing must be between 1 and 4';
-        isValid = false;
-      }
     }
 
     setState(() => _errors = newErrors);
@@ -168,8 +143,8 @@ class _EtsPassengerDetailsScreenState extends State<EtsPassengerDetailsScreen> {
         'lastName': _lastNameController.text,
         'email': _emailController.text,
         'phone': _phoneController.text,
-        'parnterSharing': int.parse(_partnerSharingController.text),
         'userId': _userId,
+        'dates': widget.dates,
       };
 
       // Navigate to ETSPaymentScreen with the updated booking data
@@ -177,7 +152,7 @@ class _EtsPassengerDetailsScreenState extends State<EtsPassengerDetailsScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ETSPaymentScreen(bookingData: updatedBookingData),
+            builder: (context) => ETSPaymentScreen(bookingData: updatedBookingData, dates: widget.dates), // Pass dates here
           ),
         );
       }
@@ -217,7 +192,7 @@ class _EtsPassengerDetailsScreenState extends State<EtsPassengerDetailsScreen> {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                builder: (context) => EtsSelectVehicleScreen(bookingData: widget.bookingData),
+                builder: (context) => EtsSelectVehicleScreen(bookingData: widget.bookingData, dates: widget.dates), // Pass dates back if needed
               ),
             );
           },
@@ -405,8 +380,8 @@ class _EtsPassengerDetailsScreenState extends State<EtsPassengerDetailsScreen> {
             Expanded(
               child: _buildDetailItem(
                 Icons.calendar_today,
-                'Date',
-                widget.bookingData['date'] ?? '',
+                'Date(s)', // Changed label to indicate multiple dates
+                widget.dates.join(', '), // Display all selected dates
               ),
             ),
             Expanded(
@@ -528,7 +503,7 @@ class _EtsPassengerDetailsScreenState extends State<EtsPassengerDetailsScreen> {
         const SizedBox(height: 8),
         _buildFareRow('Platform Fee', '₹$platformFee'),
         const SizedBox(height: 8),
-        _buildFareRow('GST (18%)', '₹$gst'),
+        _buildFareRow('GST (5%)', '₹$gst'),
         const SizedBox(height: 8),
         const Divider(),
         _buildFareRow('Total Fare', '₹$totalFare', isTotal: true),
@@ -625,15 +600,6 @@ class _EtsPassengerDetailsScreenState extends State<EtsPassengerDetailsScreen> {
                 error: _errors['phone'] ?? '',
                 keyboardType: TextInputType.phone,
                 icon: Icons.phone_outlined,
-              ),
-              const SizedBox(height: 16),
-              _buildTextField(
-                controller: _partnerSharingController,
-                label: 'Partner Sharing',
-                error: _errors['partnerSharing'] ?? '',
-                keyboardType: TextInputType.number,
-                icon: Icons.group_outlined,
-                hint: 'Enter number of partners (1-4)',
               ),
             ],
           ),

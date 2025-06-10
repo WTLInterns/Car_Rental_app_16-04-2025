@@ -491,9 +491,9 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
                     ),
                     child: Text(
                       '$_tripDistance km',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: textColor,
+                        color: Colors.white,
                         fontSize: 12,
                       ),
                     ),
@@ -764,7 +764,7 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
+                        horizontal: 8,
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(

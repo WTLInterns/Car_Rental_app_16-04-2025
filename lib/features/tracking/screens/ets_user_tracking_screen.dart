@@ -7,11 +7,10 @@ import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 
 const String googleMapsApiKey = "AIzaSyCelDo4I5cPQ72TfCTQW-arhPZ7ALNcp8w";
-const String baseUrl = "http://192.168.1.42:8081";
-const String wsUrl = "ws://192.168.1.42:8081/ws-tracking";
+const String baseUrl = "https://ets.worldtriplink.com";
 
 class ETSUserTrackingScreen extends StatefulWidget {
-  final String? slotId;
+  final int? slotId;
   final String? pickupLocationText;
   final String? dropLocationText;
   final String? userId;
@@ -50,7 +49,6 @@ class _ETSUserTrackingScreenState extends State<ETSUserTrackingScreen> {
   bool _connected = false;
   bool _showOtpSection = false;
 
-  // Non-editable display values
   String _userId = "";
   String _slotId = "";
   String _pickupLocation = "";
@@ -62,7 +60,6 @@ class _ETSUserTrackingScreenState extends State<ETSUserTrackingScreen> {
 
   Timer? _locationUpdateTimer;
   Timer? _driverUpdateTimer;
-  dynamic _stompClient;
   StreamSubscription? _locationSubscription;
 
   @override
@@ -87,7 +84,7 @@ class _ETSUserTrackingScreenState extends State<ETSUserTrackingScreen> {
 
   void _initializeData() {
     _userId = widget.userId ?? "";
-    _slotId = widget.slotId ?? "";
+    _slotId = widget.slotId?.toString() ?? "";
     _pickupLocation = widget.pickupLocationText ?? "";
     _dropLocation = widget.dropLocationText ?? "";
     _pickupLatLng = widget.pickupCoordinates;
@@ -119,7 +116,7 @@ class _ETSUserTrackingScreenState extends State<ETSUserTrackingScreen> {
 
   void _handleDriverLocationUpdate(Map<String, dynamic> data) {
     if (!mounted) return;
-    
+
     setState(() {
       if (data['latitude'] != null && data['longitude'] != null) {
         _driverLatLng = LatLng(data['latitude'], data['longitude']);
@@ -127,8 +124,7 @@ class _ETSUserTrackingScreenState extends State<ETSUserTrackingScreen> {
       if (data['rideStatus'] != null) {
         _rideStatus = data['rideStatus'];
         _showOtpSection = _rideStatus == "ARRIVED";
-        
-        // Generate OTP when driver arrives
+
         if (_rideStatus == "ARRIVED" && _otpValue.isEmpty) {
           _generateOtp();
         }
@@ -161,7 +157,7 @@ class _ETSUserTrackingScreenState extends State<ETSUserTrackingScreen> {
 
     _locationUpdateTimer = Timer.periodic(
         const Duration(seconds: 10), (_) => _sendUserLocation());
-        
+
     _fetchDriverLocation();
     _driverUpdateTimer = Timer.periodic(
         const Duration(seconds: 5), (_) => _fetchDriverLocation());
@@ -208,7 +204,7 @@ class _ETSUserTrackingScreenState extends State<ETSUserTrackingScreen> {
           "dropLongitude": _dropLatLng?.longitude ?? 0,
         }),
       );
-      
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['driverLocation'] != null) {
@@ -219,15 +215,15 @@ class _ETSUserTrackingScreenState extends State<ETSUserTrackingScreen> {
       print('Error sending location: $e');
     }
   }
-  
+
   Future<void> _fetchDriverLocation() async {
     if (!_connected || _slotId.isEmpty) return;
-    
+
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/api/location/driver/$_slotId'),
       );
-      
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         _handleDriverLocationUpdate(data);
@@ -249,15 +245,15 @@ class _ETSUserTrackingScreenState extends State<ETSUserTrackingScreen> {
       }
     }
   }
-  
+
   Future<void> _fetchRideDetails() async {
     if (!_connected || _slotId.isEmpty || _userId.isEmpty) return;
-    
+
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/api/location/ride/$_slotId/$_userId'),
       );
-      
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (mounted) {
@@ -282,29 +278,29 @@ class _ETSUserTrackingScreenState extends State<ETSUserTrackingScreen> {
       _calculateApproximateValues();
     }
   }
-  
+
   void _calculateApproximateValues() {
     if (_driverLatLng != null && _pickupLatLng != null) {
       final distanceInMeters = Geolocator.distanceBetween(
         _driverLatLng!.latitude,
         _driverLatLng!.longitude,
         _pickupLatLng!.latitude,
-        _pickupLatLng!.longitude
+        _pickupLatLng!.longitude,
       );
-      
+
       if (mounted) {
         setState(() {
           _distanceToPickup = distanceInMeters / 1000;
           _etaToPickup = (distanceInMeters / 1000 / 30 * 60).round();
-          
+
           if (_pickupLatLng != null && _dropLatLng != null) {
             final totalDistanceInMeters = Geolocator.distanceBetween(
               _pickupLatLng!.latitude,
               _pickupLatLng!.longitude,
               _dropLatLng!.latitude,
-              _dropLatLng!.longitude
+              _dropLatLng!.longitude,
             );
-            
+
             _totalDistance = totalDistanceInMeters / 1000;
             _estimatedRideTime = (totalDistanceInMeters / 1000 / 40 * 60).round();
           }
@@ -312,7 +308,7 @@ class _ETSUserTrackingScreenState extends State<ETSUserTrackingScreen> {
       }
     }
   }
-  
+
   Future<void> _generateOtp() async {
     try {
       final res = await http.post(
@@ -347,15 +343,15 @@ class _ETSUserTrackingScreenState extends State<ETSUserTrackingScreen> {
 
   Future<void> _fitMapToShowAllMarkers() async {
     if (_mapController == null) return;
-    
+
     List<LatLng> points = [];
     if (_pickupLatLng != null) points.add(_pickupLatLng!);
     if (_dropLatLng != null) points.add(_dropLatLng!);
     if (_driverLatLng != null) points.add(_driverLatLng!);
     if (_userLatLng != null) points.add(_userLatLng!);
-    
+
     if (points.isEmpty) return;
-    
+
     if (points.length == 1) {
       _mapController!.animateCamera(
         CameraUpdate.newCameraPosition(
@@ -364,19 +360,19 @@ class _ETSUserTrackingScreenState extends State<ETSUserTrackingScreen> {
       );
       return;
     }
-    
+
     double minLat = points.first.latitude;
     double maxLat = points.first.latitude;
     double minLng = points.first.longitude;
     double maxLng = points.first.longitude;
-    
+
     for (LatLng point in points) {
       minLat = math.min(minLat, point.latitude);
       maxLat = math.max(maxLat, point.latitude);
       minLng = math.min(minLng, point.longitude);
       maxLng = math.max(maxLng, point.longitude);
     }
-    
+
     _mapController!.animateCamera(
       CameraUpdate.newLatLngBounds(
         LatLngBounds(
@@ -390,13 +386,13 @@ class _ETSUserTrackingScreenState extends State<ETSUserTrackingScreen> {
 
   Future<void> _drawRoute() async {
     if (_pickupLatLng == null || _dropLatLng == null) return;
-    
+
     try {
       final url =
           'http://router.project-osrm.org/route/v1/driving/${_pickupLatLng!.longitude},${_pickupLatLng!.latitude};${_dropLatLng!.longitude},${_dropLatLng!.latitude}?overview=full&geometries=polyline';
       final response = await http.get(Uri.parse(url));
       final data = jsonDecode(response.body);
-      
+
       if (data['routes'] != null && data['routes'].isNotEmpty) {
         final polyline = data['routes'][0]['geometry'];
         final points = _decodePolyline(polyline);
@@ -418,10 +414,10 @@ class _ETSUserTrackingScreenState extends State<ETSUserTrackingScreen> {
       _drawDirectLine();
     }
   }
-  
+
   void _drawDirectLine() {
     if (_pickupLatLng == null || _dropLatLng == null) return;
-    
+
     if (mounted) {
       setState(() {
         _routePolyline = Polyline(
@@ -431,14 +427,14 @@ class _ETSUserTrackingScreenState extends State<ETSUserTrackingScreen> {
           points: [_pickupLatLng!, _dropLatLng!],
         );
       });
-      
+
       final distanceInMeters = Geolocator.distanceBetween(
         _pickupLatLng!.latitude,
         _pickupLatLng!.longitude,
         _dropLatLng!.latitude,
-        _dropLatLng!.longitude
+        _dropLatLng!.longitude,
       );
-      
+
       setState(() {
         _totalDistance = distanceInMeters / 1000;
         _estimatedRideTime = (distanceInMeters / 1000 / 40 * 60).round();
@@ -600,18 +596,17 @@ class _ETSUserTrackingScreenState extends State<ETSUserTrackingScreen> {
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
-    final mapHeight = screenHeight * 0.75; // 75% for map (increased from 65%)
-    
+    final mapHeight = screenHeight * 0.75;
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // Map at the top
           Container(
             height: mapHeight,
             child: GoogleMap(
               initialCameraPosition: CameraPosition(
-                target: _pickupLatLng ?? const LatLng(28.6139, 77.2090), // Default to Delhi center
+                target: _pickupLatLng ?? const LatLng(28.6139, 77.2090),
                 zoom: _pickupLatLng == null ? 10 : 14,
               ),
               onMapCreated: (controller) {
@@ -673,7 +668,6 @@ class _ETSUserTrackingScreenState extends State<ETSUserTrackingScreen> {
             ),
           ),
 
-          // Status bar at the top
           Positioned(
             top: MediaQuery.of(context).padding.top + 10,
             left: 16,
@@ -709,7 +703,6 @@ class _ETSUserTrackingScreenState extends State<ETSUserTrackingScreen> {
             ),
           ),
 
-          // Compact bottom sheet with ride details
           Positioned(
             bottom: 0,
             left: 0,
@@ -732,7 +725,6 @@ class _ETSUserTrackingScreenState extends State<ETSUserTrackingScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Handle bar
                   Container(
                     margin: const EdgeInsets.only(top: 8),
                     height: 4,
@@ -742,12 +734,11 @@ class _ETSUserTrackingScreenState extends State<ETSUserTrackingScreen> {
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  
+
                   Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       children: [
-                        // Ride ID and User info
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -768,17 +759,15 @@ class _ETSUserTrackingScreenState extends State<ETSUserTrackingScreen> {
                             ),
                           ],
                         ),
-                        
+
                         const SizedBox(height: 12),
-                        
-                        // Locations
+
                         _buildLocationRow('From', _pickupLocation, Icons.location_on, Colors.green),
                         const SizedBox(height: 8),
                         _buildLocationRow('To', _dropLocation, Icons.flag, Colors.red),
-                        
+
                         const SizedBox(height: 16),
-                        
-                        // Ride metrics
+
                         if (_connected) ...[
                           _buildCompactInfoRow(
                             "Distance to Pickup",
@@ -794,8 +783,7 @@ class _ETSUserTrackingScreenState extends State<ETSUserTrackingScreen> {
                             "$_estimatedRideTime min",
                           ),
                         ],
-                        
-                        // OTP Section - Fixed to always show when conditions are met
+
                         if (_showOtpSection) ...[
                           const SizedBox(height: 16),
                           Container(
@@ -842,7 +830,7 @@ class _ETSUserTrackingScreenState extends State<ETSUserTrackingScreen> {
                             ),
                           ),
                         ],
-                        
+
                         const SizedBox(height: 8),
                       ],
                     ),

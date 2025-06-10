@@ -8,13 +8,12 @@ import 'package:flutter/foundation.dart';
 import 'dart:async'; // For TimeoutException
 import '../../../features/booking/screens/user_home_screen.dart';
   
-// Use lowerCamelCase for constants
-const String apiBaseUrl = 'https://api.worldtriplink.com/api';
 
 class ETSPaymentScreen extends StatefulWidget {
   final Map<String, dynamic> bookingData;
+  final List<String> dates; // Add dates here
 
-  const ETSPaymentScreen({super.key, required this.bookingData});
+  const ETSPaymentScreen({super.key, required this.bookingData, required this.dates}); // Update constructor
 
   @override
   State<ETSPaymentScreen> createState() => _PaymentScreenState();
@@ -121,7 +120,7 @@ class _PaymentScreenState extends State<ETSPaymentScreen> {
         'gst': widget.bookingData['gst'].toString(),
         'distance': widget.bookingData['distance'].toString(),
         'sittingExcepatation': widget.bookingData['sittingExcepatation'].toString(),
-        'dates': widget.bookingData['date'],
+        'dates': widget.dates.join(','), // Send dates as a comma-separated string or ensure API handles list
         'userId': _storedUserId,
         'shiftTime': widget.bookingData['shiftTime'],
         'parnterSharing': widget.bookingData['parnterSharing'].toString(),
@@ -619,6 +618,7 @@ class _PaymentScreenState extends State<ETSPaymentScreen> {
   }
 
   Widget _buildCompactTripDetails() {
+    // Use widget.dates directly
     return Column(
       children: [
         Row(
@@ -626,8 +626,8 @@ class _PaymentScreenState extends State<ETSPaymentScreen> {
             Expanded(
               child: _buildDetailItem(
                 Icons.calendar_today,
-                'Date',
-                widget.bookingData['date'] ?? '',
+                'Date(s)',
+                widget.dates.join(', '), // Display all selected dates
               ),
             ),
             const SizedBox(width: 12),
@@ -758,7 +758,7 @@ class _PaymentScreenState extends State<ETSPaymentScreen> {
         const SizedBox(height: 8),
         _buildFareRow('Platform Fee', '₹$platformFee'),
         const SizedBox(height: 8),
-        _buildFareRow('GST (18%)', '₹$gst'),
+        _buildFareRow('GST (5%)', '₹$gst'),
         const SizedBox(height: 8),
         const Divider(),
         _buildFareRow('Total Fare', '₹$totalFare', isTotal: true),
@@ -1059,7 +1059,7 @@ class _PaymentScreenState extends State<ETSPaymentScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ETSPaymentScreen(bookingData: paymentData),
+            builder: (context) => ETSPaymentScreen(bookingData: paymentData, dates: widget.dates), // Pass dates here
           ),
         );
       } else {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // Add this import for clipboard
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:http/http.dart' as http;
@@ -7,6 +8,8 @@ import '../../../features/tracking/screens/tracking_screen.dart';
 import '../../../features/booking/screens/user_home_screen.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import 'package:intl/intl.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'dart:io' show Platform;
 
 // Professional color palette - matching login screen
 const Color primaryColor =
@@ -119,41 +122,6 @@ class _TripsScreenState extends State<TripsScreen> {
   void initState() {
     super.initState();
     _loadUserData();
-    // Add sample trip data for testing
-    // _addSampleTrip();
-  }
-
-  void _addSampleTrip() {
-    _trips.add(
-      Trip(
-        bookingId: 'WTL123456',
-        fromLocation: 'Mumbai Airport, Terminal 2',
-        toLocation: 'Taj Hotel, Colaba, Mumbai',
-        startDate: '2023-11-15',
-        time: '14:30',
-        car: 'Toyota Innova',
-        amount: 1500.0,
-        status: 0,
-        // Upcoming
-        name: 'Rahul Sharma',
-        phone: '+91 9876543210',
-        distance: 25.5,
-        vendorDriver: {
-          'driverName': 'Rahul Sharma',
-          'contactNo': '+91 9876543210',
-          'altContactNo': '+91 9876543211',
-          'rating': 4.8,
-          'totalTrips': 256,
-        },
-        vendorCab: {
-          'carName': 'Toyota Innova',
-          'vehicleNo': 'MH 01 AB 1234',
-          'carType': 'SUV',
-          'carColor': 'White',
-        },
-        tripType: 'oneWay',
-      ),
-    );
   }
 
   Future<void> _loadUserData() async {
@@ -243,11 +211,254 @@ class _TripsScreenState extends State<TripsScreen> {
     }).toList();
   }
 
+  // Enhanced phone call functionality with multiple fallback methods
+  Future<void> makePhoneCall(String phoneNumber) async {
+    if (phoneNumber.isEmpty || phoneNumber == 'N/A') {
+      _showMessage('Phone number not available', isError: true);
+      return;
+    }
+
+    try {
+      // Clean and validate phone number
+      String cleanNumber = _cleanPhoneNumber(phoneNumber);
+      if (cleanNumber.isEmpty) {
+        _showMessage('Invalid phone number format', isError: true);
+        return;
+      }
+
+      print('Attempting to call: $cleanNumber');
+
+      // Show loading indicator
+      _showMessage('Opening dialer...', isError: false);
+
+      // Method 1: Try direct tel: URL with external application launch
+      bool success = await _tryDirectCall(cleanNumber);
+      
+      if (!success) {
+        // Method 2: Try with platform default launch mode
+        success = await _tryPlatformDefaultCall(cleanNumber);
+      }
+      
+      if (!success) {
+        // Method 3: Try with system launch mode
+        success = await _trySystemCall(cleanNumber);
+      }
+      
+      if (!success) {
+        // Method 4: Show manual dial option
+        _showManualDialOption(cleanNumber);
+      }
+
+    } catch (e) {
+      print('Error in makePhoneCall: $e');
+      _showMessage('Unable to open dialer. Please try again.', isError: true);
+    }
+  }
+
+  String _cleanPhoneNumber(String phoneNumber) {
+    // Remove all non-digit characters except '+'
+    String cleaned = phoneNumber.replaceAll(RegExp(r'[^\d+]'), '');
+    
+    // Handle Indian numbers
+    if (cleaned.startsWith('91') && cleaned.length == 12) {
+      cleaned = '+$cleaned';
+    } else if (cleaned.startsWith('0') && cleaned.length == 11) {
+      cleaned = '+91${cleaned.substring(1)}';
+    } else if (cleaned.length == 10 && !cleaned.startsWith('+')) {
+      cleaned = '+91$cleaned';
+    }
+    
+    // Validate format
+    if (cleaned.length < 10 || cleaned.length > 15) {
+      return '';
+    }
+    
+    return cleaned;
+  }
+
+  Future<bool> _tryDirectCall(String phoneNumber) async {
+    try {
+      final String telUrl = 'tel:$phoneNumber';
+      print('Trying direct call with URL: $telUrl');
+      
+      // Check if the URL can be launched
+      if (await canLaunchUrlString(telUrl)) {
+        bool launched = await launchUrlString(
+          telUrl,
+          mode: LaunchMode.externalApplication,
+        );
+        print('Direct call result: $launched');
+        return launched;
+      }
+      return false;
+    } catch (e) {
+      print('Direct call failed: $e');
+      return false;
+    }
+  }
+
+  Future<bool> _tryPlatformDefaultCall(String phoneNumber) async {
+    try {
+      final String telUrl = 'tel:$phoneNumber';
+      print('Trying platform default call with URL: $telUrl');
+      
+      bool launched = await launchUrlString(
+        telUrl,
+        mode: LaunchMode.platformDefault,
+      );
+      print('Platform default call result: $launched');
+      return launched;
+    } catch (e) {
+      print('Platform default call failed: $e');
+      return false;
+    }
+  }
+
+  Future<bool> _trySystemCall(String phoneNumber) async {
+    try {
+      final String telUrl = 'tel:$phoneNumber';
+      print('Trying system call with URL: $telUrl');
+      
+      bool launched = await launchUrlString(
+        telUrl,
+        mode: LaunchMode.inAppWebView,
+      );
+      print('System call result: $launched');
+      return launched;
+    } catch (e) {
+      print('System call failed: $e');
+      return false;
+    }
+  }
+
+  void _showManualDialOption(String phoneNumber) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Icon(Icons.phone, color: primaryColor),
+              const SizedBox(width: 8),
+              const Text('Call Driver'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Unable to open dialer automatically. Please manually dial:',
+                style: TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: lightAccentColor,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: primaryColor.withOpacity(0.3)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        phoneNumber,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: textColor,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        // Copy to clipboard
+                        _copyToClipboard(phoneNumber);
+                      },
+                      icon: Icon(Icons.copy, color: primaryColor),
+                      tooltip: 'Copy number',
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _tryAlternativeDialer(phoneNumber);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryColor,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Try Again'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _tryAlternativeDialer(String phoneNumber) async {
+    try {
+      // Try different URL schemes that some devices support
+      final List<String> schemes = [
+        'tel:$phoneNumber',
+        'phone:$phoneNumber',
+        'callto:$phoneNumber',
+      ];
+      
+      for (String scheme in schemes) {
+        try {
+          if (await canLaunchUrlString(scheme)) {
+            bool launched = await launchUrlString(scheme);
+            if (launched) {
+              _showMessage('Dialer opened successfully');
+              return;
+            }
+          }
+        } catch (e) {
+          continue;
+        }
+      }
+      
+      _showMessage('Please dial manually: $phoneNumber', isError: true);
+    } catch (e) {
+      _showMessage('Please dial manually: $phoneNumber', isError: true);
+    }
+  }
+
+  void _copyToClipboard(String text) {
+    Clipboard.setData(ClipboardData(text: text));
+    _showMessage('Number copied to clipboard');
+  }
+
+  void _showMessage(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? dangerColor : successColor,
+        duration: Duration(seconds: isError ? 4 : 2),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+    );
+  }
+
   // Attempt to extract coordinates from a location string (simplified approach)
   Map<String, double> _extractCoordinatesFromAddress(String address) {
-    // This is a very basic implementation that looks for coordinates in the address string
-    // In a real app, you would use the Geocoding API to convert addresses to coordinates
-
     // Default coordinates (Mumbai)
     double latitude = 19.0760;
     double longitude = 72.8777;
@@ -361,12 +572,7 @@ class _TripsScreenState extends State<TripsScreen> {
         ),
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error loading tracking screen: ${e.toString()}'),
-          backgroundColor: dangerColor,
-        ),
-      );
+      _showMessage('Error loading tracking screen: ${e.toString()}', isError: true);
     }
   }
 
@@ -386,91 +592,31 @@ class _TripsScreenState extends State<TripsScreen> {
   }
 
   void _handleModifyPress(Trip trip) {
-    // Implement modify functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Modify functionality coming soon')),
-    );
+    _showMessage('Modify functionality coming soon');
   }
 
   void _handleCancelPress(Trip trip) {
-    // Implement cancel functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Cancel functionality coming soon')),
-    );
+    _showMessage('Cancel functionality coming soon');
   }
 
   void _handleInvoicePress(Trip trip) {
-    // Implement invoice functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Invoice functionality coming soon')),
-    );
+    _showMessage('Invoice functionality coming soon');
   }
 
   void _handleRatePress(Trip trip) {
-    // Implement rate functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Rate functionality coming soon')),
-    );
+    _showMessage('Rate functionality coming soon');
   }
 
   void _handleRebookPress(Trip trip) {
-    // Implement rebook functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Rebook functionality coming soon')),
-    );
+    _showMessage('Rebook functionality coming soon');
   }
 
   void _handleDetailsPress(Trip trip) {
-    // Implement details functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Details functionality coming soon')),
-    );
+    _showMessage('Details functionality coming soon');
   }
 
   void _handleSupportPress(Trip trip) {
-    // Implement support functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Support functionality coming soon')),
-    );
-  }
-
-  Future<void> makePhoneCall(String phoneNumber) async {
-    if (phoneNumber.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Phone number not available'),
-          backgroundColor: dangerColor,
-        ),
-      );
-      return;
-    }
-
-    // Sanitize phone number - remove spaces and special characters except '+'
-    final sanitizedNumber = phoneNumber.replaceAll(RegExp(r'[^\d+]'), '');
-    final String telUrl = 'tel:$sanitizedNumber';
-
-    try {
-      // Use the more reliable launchUrlString
-      if (await canLaunchUrlString(telUrl)) {
-        await launchUrlString(telUrl);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Could not launch phone dialer'),
-            backgroundColor: dangerColor,
-          ),
-        );
-      }
-    } catch (e) {
-      print('Error launching phone dialer: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-              'Error launching phone dialer. Please try manually dialing $sanitizedNumber'),
-          backgroundColor: dangerColor,
-        ),
-      );
-    }
+    _showMessage('Support functionality coming soon');
   }
 
   Widget _buildStatusContainer(String status, Color color) {
@@ -859,15 +1005,10 @@ class _TripsScreenState extends State<TripsScreen> {
                       ),
                       InkWell(
                         onTap: () {
-                          if (trip.phone.isNotEmpty) {
+                          if (trip.phone.isNotEmpty && trip.phone != 'N/A') {
                             makePhoneCall(trip.phone);
                           } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Phone number not available'),
-                                backgroundColor: dangerColor,
-                              ),
-                            );
+                            _showMessage('Phone number not available', isError: true);
                           }
                         },
                         child: Container(
@@ -944,15 +1085,10 @@ class _TripsScreenState extends State<TripsScreen> {
                           'Call',
                           primaryColor,
                           () {
-                            if (trip.phone.isNotEmpty) {
+                            if (trip.phone.isNotEmpty && trip.phone != 'N/A') {
                               makePhoneCall(trip.phone);
                             } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Phone number not available'),
-                                  backgroundColor: dangerColor,
-                                ),
-                              );
+                              _showMessage('Phone number not available', isError: true);
                             }
                           },
                         ),

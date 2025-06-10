@@ -1269,10 +1269,10 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> with SingleTickerPr
         final bookingData = {
           'pickup': data['pickUpLocation'],
           'destination': data['dropLocation'],
-          'date': formattedDates[0],
+          'dates': formattedDates, // Pass the list of dates
           'time': data['time'],
           'bookingType': _isOneWay ? 'oneWay' : 'roundTrip',
-          'returnDate': formattedDates.length > 1 ? formattedDates[1] : '',
+          // 'returnDate' can be derived from 'dates' if needed, or handled by API
           'distance': data['distace']?.toString() ?? '0',
           'sourceCity': data['sourceCity'],
           'destinationCity': data['destinationCity'],
@@ -1293,7 +1293,7 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> with SingleTickerPr
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => EtsSelectVehicleScreen(bookingData: bookingData),
+              builder: (context) => EtsSelectVehicleScreen(bookingData: bookingData, dates: bookingData['dates'] as List<String>),
             ),
           );
         });

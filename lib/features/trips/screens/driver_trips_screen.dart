@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // Add this import for clipboard
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -6,6 +7,8 @@ import 'dart:math';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'dart:io' show Platform;
 // Add this import at the top of the file
 import '../../../features/profile/screens/driver_profile_screen.dart';
 import '../../../features/tracking/screens/driver_tracking_screen.dart';
@@ -188,6 +191,20 @@ class _DriverTripsScreenState extends State<DriverTripsScreen> with SingleTicker
     );
   }
 
+  void _showMessage(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? errorColor : successColor,
+        duration: Duration(seconds: isError ? 4 : 2),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+    );
+  }
+
   void handleNavigateToTracking(String bookingId) {
     final booking = tripInfo.firstWhere(
       (trip) => trip['bookingId'] == bookingId || trip['bookid'] == bookingId,
@@ -249,27 +266,236 @@ class _DriverTripsScreenState extends State<DriverTripsScreen> with SingleTicker
     );
   }
 
+  // Enhanced phone call functionality with multiple fallback methods
   Future<void> makePhoneCall(String phoneNumber) async {
-    if (phoneNumber.isEmpty) {
-      _showErrorSnackBar('Phone number not available');
+    if (phoneNumber.isEmpty || phoneNumber == 'N/A') {
+      _showMessage('Phone number not available', isError: true);
       return;
     }
-    
-    // Sanitize phone number - remove spaces and special characters except '+'
-    final sanitizedNumber = phoneNumber.replaceAll(RegExp(r'[^\d+]'), '');
-    final String telUrl = 'tel:$sanitizedNumber';
-    
+
     try {
-      // Use the more reliable launchUrlString
-      if (await canLaunchUrlString(telUrl)) {
-        await launchUrlString(telUrl);
-      } else {
-        _showErrorSnackBar('Could not launch phone dialer');
+      // Clean and validate phone number
+      String cleanNumber = _cleanPhoneNumber(phoneNumber);
+      if (cleanNumber.isEmpty) {
+        _showMessage('Invalid phone number format', isError: true);
+        return;
       }
+
+      print('Attempting to call: $cleanNumber');
+
+      // Show loading indicator
+      _showMessage('Opening dialer...', isError: false);
+
+      // Method 1: Try direct tel: URL with external application launch
+      bool success = await _tryDirectCall(cleanNumber);
+      
+      if (!success) {
+        // Method 2: Try with platform default launch mode
+        success = await _tryPlatformDefaultCall(cleanNumber);
+      }
+      
+      if (!success) {
+        // Method 3: Try with system launch mode
+        success = await _trySystemCall(cleanNumber);
+      }
+      
+      if (!success) {
+        // Method 4: Show manual dial option
+        _showManualDialOption(cleanNumber);
+      }
+
     } catch (e) {
-      debugPrint('Error launching phone dialer: $e');
-      _showErrorSnackBar('Error launching phone dialer. Please try manually dialing $sanitizedNumber');
+      print('Error in makePhoneCall: $e');
+      _showMessage('Unable to open dialer. Please try again.', isError: true);
     }
+  }
+
+  String _cleanPhoneNumber(String phoneNumber) {
+    // Remove all non-digit characters except '+'
+    String cleaned = phoneNumber.replaceAll(RegExp(r'[^\d+]'), '');
+    
+    // Handle Indian numbers
+    if (cleaned.startsWith('91') && cleaned.length == 12) {
+      cleaned = '+$cleaned';
+    } else if (cleaned.startsWith('0') && cleaned.length == 11) {
+      cleaned = '+91${cleaned.substring(1)}';
+    } else if (cleaned.length == 10 && !cleaned.startsWith('+')) {
+      cleaned = '+91$cleaned';
+    }
+    
+    // Validate format
+    if (cleaned.length < 10 || cleaned.length > 15) {
+      return '';
+    }
+    
+    return cleaned;
+  }
+
+  Future<bool> _tryDirectCall(String phoneNumber) async {
+    try {
+      final String telUrl = 'tel:$phoneNumber';
+      print('Trying direct call with URL: $telUrl');
+      
+      // Check if the URL can be launched
+      if (await canLaunchUrlString(telUrl)) {
+        bool launched = await launchUrlString(
+          telUrl,
+          mode: LaunchMode.externalApplication,
+        );
+        print('Direct call result: $launched');
+        return launched;
+      }
+      return false;
+    } catch (e) {
+      print('Direct call failed: $e');
+      return false;
+    }
+  }
+
+  Future<bool> _tryPlatformDefaultCall(String phoneNumber) async {
+    try {
+      final String telUrl = 'tel:$phoneNumber';
+      print('Trying platform default call with URL: $telUrl');
+      
+      bool launched = await launchUrlString(
+        telUrl,
+        mode: LaunchMode.platformDefault,
+      );
+      print('Platform default call result: $launched');
+      return launched;
+    } catch (e) {
+      print('Platform default call failed: $e');
+      return false;
+    }
+  }
+
+  Future<bool> _trySystemCall(String phoneNumber) async {
+    try {
+      final String telUrl = 'tel:$phoneNumber';
+      print('Trying system call with URL: $telUrl');
+      
+      bool launched = await launchUrlString(
+        telUrl,
+        mode: LaunchMode.inAppWebView,
+      );
+      print('System call result: $launched');
+      return launched;
+    } catch (e) {
+      print('System call failed: $e');
+      return false;
+    }
+  }
+
+  void _showManualDialOption(String phoneNumber) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Icon(Icons.phone, color: primaryColor),
+              const SizedBox(width: 8),
+              const Text('Call Passenger'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Unable to open dialer automatically. Please manually dial:',
+                style: TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: primaryColor.withOpacity(0.3)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        phoneNumber,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: textColor,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        // Copy to clipboard
+                        _copyToClipboard(phoneNumber);
+                      },
+                      icon: Icon(Icons.copy, color: primaryColor),
+                      tooltip: 'Copy number',
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _tryAlternativeDialer(phoneNumber);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryColor,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Try Again'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _tryAlternativeDialer(String phoneNumber) async {
+    try {
+      // Try different URL schemes that some devices support
+      final List<String> schemes = [
+        'tel:$phoneNumber',
+        'phone:$phoneNumber',
+        'callto:$phoneNumber',
+      ];
+      
+      for (String scheme in schemes) {
+        try {
+          if (await canLaunchUrlString(scheme)) {
+            bool launched = await launchUrlString(scheme);
+            if (launched) {
+              _showMessage('Dialer opened successfully');
+              return;
+            }
+          }
+        } catch (e) {
+          continue;
+        }
+      }
+      
+      _showMessage('Please dial manually: $phoneNumber', isError: true);
+    } catch (e) {
+      _showMessage('Please dial manually: $phoneNumber', isError: true);
+    }
+  }
+
+  void _copyToClipboard(String text) {
+    Clipboard.setData(ClipboardData(text: text));
+    _showMessage('Number copied to clipboard');
   }
 
   @override
@@ -674,7 +900,7 @@ class _DriverTripsScreenState extends State<DriverTripsScreen> with SingleTicker
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: textColor,
-                      ),
+                        ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 8),
@@ -878,10 +1104,10 @@ class _DriverTripsScreenState extends State<DriverTripsScreen> with SingleTicker
                       ),
                       InkWell(
                         onTap: () {
-                          if (trip['phone'] != null && trip['phone'].toString().isNotEmpty) {
+                          if (trip['phone'] != null && trip['phone'].toString().isNotEmpty && trip['phone'] != 'N/A') {
                             makePhoneCall(trip['phone'].toString());
                           } else {
-                            _showErrorSnackBar('Phone number not available');
+                            _showMessage('Phone number not available', isError: true);
                           }
                         },
                         child: Container(
@@ -1056,10 +1282,10 @@ class _DriverTripsScreenState extends State<DriverTripsScreen> with SingleTicker
                           'Call',
                           primaryColor,
                           () {
-                            if (trip['phone'] != null && trip['phone'].toString().isNotEmpty) {
+                            if (trip['phone'] != null && trip['phone'].toString().isNotEmpty && trip['phone'] != 'N/A') {
                               makePhoneCall(trip['phone'].toString());
                             } else {
-                              _showErrorSnackBar('Phone number not available');
+                              _showMessage('Phone number not available', isError: true);
                             }
                           },
                         ),
@@ -1143,4 +1369,3 @@ class _DriverTripsScreenState extends State<DriverTripsScreen> with SingleTicker
     );
   }
 }
-                          

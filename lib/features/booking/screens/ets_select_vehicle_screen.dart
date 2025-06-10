@@ -9,8 +9,9 @@ const String apiBaseUrl = '';
 
 class EtsSelectVehicleScreen extends StatefulWidget {
   final Map<String, dynamic> bookingData;
+  final List<String> dates; // Add dates here
 
-  const EtsSelectVehicleScreen({super.key, required this.bookingData});
+  const EtsSelectVehicleScreen({super.key, required this.bookingData, required this.dates}); // Update constructor
 
   @override
   State<EtsSelectVehicleScreen> createState() => _EtsSelectVehicleScreenState();
@@ -249,15 +250,16 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
       'seats': vehicle.seats,
       'imageUrl': vehicle.imageUrl,
       'sittingExcepatation': sittingExpectation.toString(),
+      'dates': widget.dates, // Pass the dates along
     };
-
+    
     debugPrint('Vehicle selection data: $bookingDetails');
 
     // Navigate to passenger details screen
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => EtsPassengerDetailsScreen(bookingData: bookingDetails),
+        builder: (context) => EtsPassengerDetailsScreen(bookingData: bookingDetails, dates: widget.dates),
       ),
     );
   }
@@ -278,10 +280,7 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
             // Navigate back to EtsBookingScreen
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const EtsBookingScreen()),
-            );
+            Navigator.pop(context); // Simply pop to go back
           },
         ),
       ),
@@ -443,7 +442,7 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    widget.bookingData['date'] ?? 'Date',
+                    widget.dates.join(', '), // Display multiple dates
                     style: TextStyle(color: lightTextColor, fontSize: 12),
                   ),
                   Text(
@@ -1024,3 +1023,4 @@ class Vehicle {
     required this.imageUrl,
   });
 }
+

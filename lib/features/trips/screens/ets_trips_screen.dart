@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../../features/booking/screens/ets_booking_screen.dart';
@@ -8,12 +7,12 @@ import '../../../features/tracking/screens/ets_user_tracking_screen.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 // Professional color palette - matching login screen
-const Color primaryColor = Color(0xFF4A90E2);      // Blue (updated to match home screen)
+const Color primaryColor = Color(0xFF4A90E2);      // Blue
 const Color secondaryColor = Color(0xFF4A90E2);    // Blue
 const Color accentColor = Color(0xFFFFCC00);       // Yellow/gold accent
 
 // Background colors
-const Color backgroundColor = Colors.white;   // White background (updated)
+const Color backgroundColor = Colors.white;   // White background
 const Color cardColor = Colors.white;              // White card background
 const Color surfaceColor = Color(0xFFF0F7FF);      // Light blue surface color
 
@@ -29,6 +28,160 @@ const Color dangerColor = Color(0xFFF44336);       // Red for error/danger state
 
 // Accent shade
 const Color lightAccentColor = Color(0xFFF0F7FF);  // Light blue for subtle highlights
+
+class CarRentalBooking {
+  final int id;
+  final String pickUpLocation;
+  final String bookId;
+  final String dropLocation;
+  final String time;
+  final String returnTime;
+  final String cabType;
+  final int? vendorId;
+  final int vendorDriverId;
+  final int? vendor;
+  final String baseAmount;
+  final String finalAmount;
+  final String? serviceCharge;
+  final String gst;
+  final String distance;
+  final int sittingExpectation;
+  final int partnerSharing;
+  final int? shiftTime;
+  final List<String> dateOfList;
+  final String bookingType;
+  final int? status;
+  final int? slotId;
+  final dynamic carRentaluser;
+  final int carRentalUserId;
+  final List<ScheduledDate> scheduledDates;
+  final dynamic user;
+
+  CarRentalBooking({
+    required this.id,
+    required this.pickUpLocation,
+    required this.bookId,
+    required this.dropLocation,
+    required this.time,
+    required this.returnTime,
+    required this.cabType,
+    this.vendorId,
+    required this.vendorDriverId,
+    this.vendor,
+    required this.baseAmount,
+    required this.finalAmount,
+    this.serviceCharge,
+    required this.gst,
+    required this.distance,
+    required this.sittingExpectation,
+    required this.partnerSharing,
+    this.shiftTime,
+    required this.dateOfList,
+    required this.bookingType,
+    this.status,
+    this.slotId,
+    this.carRentaluser,
+    required this.carRentalUserId,
+    required this.scheduledDates,
+    this.user,
+  });
+
+  factory CarRentalBooking.fromJson(Map<String, dynamic> json) {
+    return CarRentalBooking(
+      id: json['id'] ?? 0,
+      pickUpLocation: json['pickUpLocation'] ?? '',
+      bookId: json['bookId'] ?? '',
+      dropLocation: json['dropLocation'] ?? '',
+      time: json['time'] ?? '',
+      returnTime: json['returnTime'] ?? '',
+      cabType: json['cabType'] ?? '',
+      vendorId: json['vendorId'],
+      vendorDriverId: json['vendorDriverId'] ?? 0,
+      vendor: json['vendor'],
+      baseAmount: json['baseAmount']?.toString() ?? '0',
+      finalAmount: json['finalAmount']?.toString() ?? '0',
+      serviceCharge: json['serviceCharge']?.toString(),
+      gst: json['gst']?.toString() ?? '0',
+      distance: json['distance']?.toString() ?? '0',
+      sittingExpectation: json['sittingExcepatation'] ?? 0,
+      partnerSharing: json['partnerSharing'] ?? 0,
+      shiftTime: json['shiftTime'],
+      dateOfList: List<String>.from(json['dateOfList'] ?? []),
+      bookingType: json['bookingType'] ?? 'regular',
+      status: json['status'],
+      slotId: json['slotId'],
+      carRentaluser: json['carRentaluser'],
+      carRentalUserId: json['carRentalUserId'] ?? 0,
+      scheduledDates: (json['scheduledDates'] as List<dynamic>?)
+          ?.map((e) => ScheduledDate.fromJson(e as Map<String, dynamic>))
+          .toList() ?? [],
+      user: json['user'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'pickUpLocation': pickUpLocation,
+      'bookId': bookId,
+      'dropLocation': dropLocation,
+      'time': time,
+      'returnTime': returnTime,
+      'cabType': cabType,
+      'vendorId': vendorId,
+      'vendorDriverId': vendorDriverId,
+      'vendor': vendor,
+      'baseAmount': baseAmount,
+      'finalAmount': finalAmount,
+      'serviceCharge': serviceCharge,
+      'gst': gst,
+      'distance': distance,
+      'sittingExpectation': sittingExpectation,
+      'partnerSharing': partnerSharing,
+      'shiftTime': shiftTime,
+      'dateOfList': dateOfList,
+      'bookingType': bookingType,
+      'status': status,
+      'slotId': slotId,
+      'carRentaluser': carRentaluser,
+      'carRentalUserId': carRentalUserId,
+      'scheduledDates': scheduledDates.map((e) => e.toJson()).toList(),
+      'user': user,
+    };
+  }
+}
+
+class ScheduledDate {
+  final int id;
+  final String date;
+  final String status;
+  final int? slotId;
+
+  ScheduledDate({
+    required this.id,
+    required this.date,
+    required this.status,
+    this.slotId,
+  });
+
+  factory ScheduledDate.fromJson(Map<String, dynamic> json) {
+    return ScheduledDate(
+      id: json['id'] ?? 0,
+      date: json['date'] ?? '',
+      status: json['status'] ?? 'pending',
+      slotId: json['slotId'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'date': date,
+      'status': status,
+      'slotId': slotId,
+    };
+  }
+}
 
 class ETSTrip {
   final String bookingId;
@@ -46,6 +199,9 @@ class ETSTrip {
   final bool isCorporateBooking;
   final List<Map<String, dynamic>>? shiftDates;
   final String? corporateName;
+  final LatLng? pickupCoordinates;
+  final LatLng? dropCoordinates;
+  final int? slotId;
 
   ETSTrip({
     required this.bookingId,
@@ -63,16 +219,18 @@ class ETSTrip {
     this.isCorporateBooking = false,
     this.shiftDates,
     this.corporateName,
+    this.pickupCoordinates,
+    this.dropCoordinates,
+    this.slotId,
   });
 
   factory ETSTrip.fromJson(Map<String, dynamic> json) {
-    // Convert status string to int
     int statusCode = 0;
     if (json['status'] != null) {
       if (json['status'] is int) {
         statusCode = json['status'];
       } else if (json['status'] is String) {
-        switch(json['status'].toString().toUpperCase()) {
+        switch (json['status'].toString().toUpperCase()) {
           case 'CONFIRMED':
             statusCode = 0;
             break;
@@ -90,8 +248,7 @@ class ETSTrip {
         }
       }
     }
-    
-    // Parse scheduled dates if available
+
     List<Map<String, dynamic>>? shiftDates;
     if (json['scheduledDates'] != null) {
       shiftDates = List<Map<String, dynamic>>.from(
@@ -100,23 +257,43 @@ class ETSTrip {
           'time': '',
           'shift': date['status'] ?? 'PENDING',
           'employees': 0,
-          'destinations': []
+          'destinations': [],
+          'slotId': date['slotId'],
         })
       );
     }
-    
+
+    LatLng? pickupCoordinates;
+    LatLng? dropCoordinates;
+    if (json['pickupCoordinates'] != null &&
+        json['pickupCoordinates']['latitude'] != null &&
+        json['pickupCoordinates']['longitude'] != null) {
+      pickupCoordinates = LatLng(
+        json['pickupCoordinates']['latitude'].toDouble(),
+        json['pickupCoordinates']['longitude'].toDouble(),
+      );
+    }
+    if (json['dropCoordinates'] != null &&
+        json['dropCoordinates']['latitude'] != null &&
+        json['dropCoordinates']['longitude'] != null) {
+      dropCoordinates = LatLng(
+        json['dropCoordinates']['latitude'].toDouble(),
+        json['dropCoordinates']['longitude'].toDouble(),
+      );
+    }
+
     return ETSTrip(
       bookingId: json['bookId'] ?? json['bookingId'] ?? 'N/A',
       fromLocation: json['pickUpLocation'] ?? json['fromLocation'] ?? json['userPickup'] ?? 'Unknown location',
       toLocation: json['dropLocation'] ?? json['toLocation'] ?? json['userDrop'] ?? 'Unknown location',
-      startDate: json['scheduledDates'] != null && json['scheduledDates'].isNotEmpty 
-          ? json['scheduledDates'][0]['date'] 
+      startDate: json['scheduledDates'] != null && json['scheduledDates'].isNotEmpty
+          ? json['scheduledDates'][0]['date']
           : json['startDate'] ?? json['date'] ?? 'N/A',
       time: json['time'] ?? json['returnTime'] ?? 'N/A',
       car: (json['cabType'] ?? json['car'] ?? json['vehicleType'] ?? 'cab').toString(),
       amount: json['finalAmount'] is num
           ? (json['finalAmount'] as num).toDouble()
-          : double.tryParse(json['finalAmount']?.toString() ?? '') ?? 
+          : double.tryParse(json['finalAmount']?.toString() ?? '') ??
               (json['amount'] is num
                   ? (json['amount'] as num).toDouble()
                   : double.tryParse(json['amount']?.toString() ?? '') ?? 0.0),
@@ -130,6 +307,9 @@ class ETSTrip {
       isCorporateBooking: json['isCorporateBooking'] ?? false,
       shiftDates: shiftDates,
       corporateName: json['corporateName'],
+      pickupCoordinates: pickupCoordinates,
+      dropCoordinates: dropCoordinates,
+      slotId: json['slotId'],
     );
   }
 }
@@ -153,38 +333,65 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
     _loadUserData();
   }
 
+  Future<LatLng?> _geocodeAddress(String address) async {
+    try {
+      const String apiKey = 'AIzaSyCelDo4I5cPQ72TfCTQW-arhPZ7ALNcp8w';
+      final String encodedAddress = Uri.encodeComponent(address);
+      final String url = 'https://maps.googleapis.com/maps/api/geocode/json?address=$encodedAddress&key=$apiKey';
+
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['status'] == 'OK' && data['results'].isNotEmpty) {
+          final location = data['results'][0]['geometry']['location'];
+          return LatLng(
+            location['lat'].toDouble(),
+            location['lng'].toDouble(),
+          );
+        } else {
+          print('Geocoding failed: ${data['status']}');
+          return null;
+        }
+      } else {
+        print('Geocoding API error: HTTP ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      print('Error geocoding address: $e');
+      return null;
+    }
+  }
+
   Future<void> _fetchTrips() async {
     setState(() {
       _isLoading = true;
     });
-    
+
     try {
-      // Enable real API call and remove dummy data
       final response = await http.get(Uri.parse('https://ets.worldtriplink.com/schedule/byUserId/$_userId'));
-      
+
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
+        print('API Response: ${response.body}');
         setState(() {
           _trips = data.map((tripJson) => ETSTrip.fromJson(tripJson)).toList();
           _isLoading = false;
         });
       } else {
-        // Handle API error
         setState(() {
           _isLoading = false;
         });
-        
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load trips: \\${response.statusCode}')),
+          SnackBar(content: Text('Failed to load trips: ${response.statusCode}')),
         );
       }
     } catch (e) {
       setState(() {
         _isLoading = false;
       });
-      
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: \\${e.toString()}')),
+        SnackBar(content: Text('Error: ${e.toString()}')),
       );
     }
   }
@@ -192,11 +399,8 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
   Future<void> _loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _userId =
-          prefs.getInt('userId')?.toString() ?? prefs.getString('userId') ?? '123';
+      _userId = prefs.getInt('userId')?.toString() ?? prefs.getString('userId') ?? '123';
     });
-    
-    // Fetch trips after user ID is loaded
     await _fetchTrips();
   }
 
@@ -229,25 +433,48 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
         return 'Pending';
     }
   }
-  
-  // Method to refresh trips
+
   Future<void> _refreshTrips() async {
     await _fetchTrips();
   }
 
-  void _handleDetailsPress(ETSTrip trip) {
+  void _handleDetailsPress(ETSTrip trip) async {
+    LatLng pickupCoords = trip.pickupCoordinates ?? const LatLng(18.5090, 73.8310);
+    LatLng dropCoords = trip.dropCoordinates ?? const LatLng(18.9402, 72.8347);
+
+    if (trip.pickupCoordinates == null) {
+      final geocodedPickup = await _geocodeAddress(trip.fromLocation);
+      if (geocodedPickup != null) {
+        pickupCoords = geocodedPickup;
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Using fallback pickup coordinates')),
+        );
+      }
+    }
+    if (trip.dropCoordinates == null) {
+      final geocodedDrop = await _geocodeAddress(trip.toLocation);
+      if (geocodedDrop != null) {
+        dropCoords = geocodedDrop;
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Using fallback drop coordinates')),
+        );
+      }
+    }
+
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => ETSUserTrackingScreen(
-        slotId: trip.bookingId, // bookingId is used as slotId
-        pickupLocationText: trip.fromLocation,
-        dropLocationText: trip.toLocation,
-        userId: _userId,
-        // Example coordinates - in a real app, these would come from the ETSTrip model if available
-        // For now, using the hardcoded examples as before. If trip object has actual coordinates, use them.
-        pickupCoordinates: LatLng(18.5090, 73.8310), 
-        dropCoordinates: LatLng(18.9402, 72.8347),   
-      )),
+      MaterialPageRoute(
+        builder: (context) => ETSUserTrackingScreen(
+          slotId: trip.slotId,
+          pickupLocationText: trip.fromLocation,
+          dropLocationText: trip.toLocation,
+          userId: _userId,
+          pickupCoordinates: pickupCoords,
+          dropCoordinates: dropCoords,
+        ),
+      ),
     );
   }
 
@@ -274,7 +501,7 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
         ),
       );
     }
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -301,7 +528,7 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
     return GestureDetector(
       onTap: onPressed,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10,horizontal: 40),
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 40),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(8),
@@ -373,7 +600,6 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
       ),
       body: Column(
         children: [
-          // Tab navigation
           Container(
             color: Colors.white,
             child: Padding(
@@ -393,31 +619,30 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
               onRefresh: _refreshTrips,
               color: primaryColor,
               child: _isLoading
-                ? Center(
-                    child: CircularProgressIndicator(color: primaryColor),
-                  )
-                : filteredTrips.isEmpty
-                  ? Stack(
-                      children: [
-                        _buildNoTrips(),
-                        // This ListView is needed for RefreshIndicator to work with an empty list
-                        ListView()
-                      ],
+                  ? Center(
+                      child: CircularProgressIndicator(color: primaryColor),
                     )
-                  : ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: filteredTrips.length,
-                      itemBuilder: (ctx, index) {
-                        final trip = filteredTrips[index];
-                        return _buildTripCard(trip);
-                      },
-                    ),
+                  : filteredTrips.isEmpty
+                      ? Stack(
+                          children: [
+                            _buildNoTrips(),
+                            ListView(),
+                          ],
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: filteredTrips.length,
+                          itemBuilder: (ctx, index) {
+                            final trip = filteredTrips[index];
+                            return _buildTripCard(trip);
+                          },
+                        ),
             ),
           ),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 1, // Since we're on the Trips tab
+        currentIndex: 1,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
@@ -430,7 +655,6 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
         ],
         onTap: (index) {
           if (index == 0) {
-            // Navigate back to ETS Booking Screen
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => const EtsBookingScreen()),
@@ -468,12 +692,12 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
   }
 
   Widget _buildNoTrips() {
-    final tabText = _activeTab == 0 
-        ? 'upcoming' 
-        : _activeTab == 1 
-            ? 'completed' 
+    final tabText = _activeTab == 0
+        ? 'upcoming'
+        : _activeTab == 1
+            ? 'completed'
             : 'cancelled';
-            
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -507,30 +731,27 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
 
   Widget _buildTripCard(ETSTrip trip) {
     final statusText = _getTripStatus(trip.status);
-    final statusColor = trip.status == 0 
-        ? warningColor 
-        : trip.status == 2 
-            ? successColor 
+    final statusColor = trip.status == 0
+        ? warningColor
+        : trip.status == 2
+            ? successColor
             : dangerColor;
-    
-    // For corporate bookings with multiple dates
+
     if (trip.isCorporateBooking && trip.shiftDates != null) {
       return _buildCorporateTripCard(trip, statusText, statusColor);
     }
-    
-    // Regular trip card (existing code)
+
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Column(
         children: [
-          // Header with booking ID and status
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: const BoxDecoration(
               color: surfaceColor,
-              borderRadius: const BorderRadius.only(
+              borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(12),
                 topRight: Radius.circular(12),
               ),
@@ -541,6 +762,7 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
                 Text(
                   'Booking ID: ${trip.bookingId}',
                   style: const TextStyle(
+                    fontSize: 13,
                     fontWeight: FontWeight.bold,
                     color: textColor,
                   ),
@@ -549,13 +771,11 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
               ],
             ),
           ),
-          // Trip details
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Locations
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -596,7 +816,6 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                // Trip info
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -626,18 +845,17 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                // Action buttons
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    if (trip.status == 0) // Upcoming trip
+                    if (trip.status == 0)
                       _buildActionButton(
                         Icons.cancel_outlined,
                         'Cancel',
                         dangerColor,
                         () => _handleCancelPress(trip),
                       ),
-                    if (trip.status == 0 && trip.status == 3) // Space between buttons
+                    if (trip.status == 0 || trip.status == 3)
                       const SizedBox(width: 12),
                     _buildActionButton(
                       Icons.info_outline,
@@ -645,9 +863,9 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
                       primaryColor,
                       () => _handleDetailsPress(trip),
                     ),
-                    if (trip.status == 2 || trip.status == 3) // Completed or cancelled trip
+                    if (trip.status == 2 || trip.status == 3)
                       const SizedBox(width: 12),
-                    if (trip.status == 2 || trip.status == 3) // Completed or cancelled trip
+                    if (trip.status == 2 || trip.status == 3)
                       Expanded(
                         child: _buildActionButton(
                           Icons.refresh,
@@ -673,7 +891,6 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Column(
         children: [
-          // Header with booking ID and status
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
@@ -721,7 +938,7 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
                         ],
                       ),
                       const SizedBox(height: 10),
-                      if (trip.corporateName != null) 
+                      if (trip.corporateName != null)
                         Padding(
                           padding: const EdgeInsets.only(top: 4),
                           child: Text(
@@ -739,14 +956,11 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
               ],
             ),
           ),
-          
-          // Trip details
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Locations
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -786,10 +1000,7 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
                     ),
                   ],
                 ),
-                
                 const SizedBox(height: 16),
-                
-                // Shift dates panel
                 const Text(
                   'Scheduled Shifts',
                   style: TextStyle(
@@ -798,10 +1009,7 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
                     color: textColor,
                   ),
                 ),
-                
                 const SizedBox(height: 8),
-                
-                // List of shift dates
                 Container(
                   decoration: BoxDecoration(
                     border: Border.all(color: Colors.grey[300]!),
@@ -864,13 +1072,10 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
                     },
                   ),
                 ),
-                
                 const SizedBox(height: 16),
-                
-                // Action buttons
                 Row(
                   children: [
-                    if (trip.status == 0) // Upcoming trip
+                    if (trip.status == 0)
                       Expanded(
                         child: _buildActionButton(
                           Icons.cancel_outlined,
