@@ -10,7 +10,8 @@ class EtsSelectVehicleScreen extends StatefulWidget {
   final Map<String, dynamic> bookingData;
   final List<String> dates;
 
-  const EtsSelectVehicleScreen({super.key, required this.bookingData, required this.dates});
+  const EtsSelectVehicleScreen(
+      {super.key, required this.bookingData, required this.dates});
 
   @override
   State<EtsSelectVehicleScreen> createState() => _EtsSelectVehicleScreenState();
@@ -21,6 +22,7 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
   bool _isLoading = true;
   String _tripDistance = '0';
   Map<String, dynamic>? _tripInfo;
+  String? selectedDate;
 
   // Color scheme for consistent styling - matching the app's professional style
   final Color primaryColor = const Color(0xFF3F51B5);
@@ -87,7 +89,8 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
           'pickUpLocation': widget.bookingData['pickup'],
           'dropLocation': widget.bookingData['destination'],
           'time': widget.bookingData['time'],
-          'returnTime': widget.bookingData['returnTime'] ?? widget.bookingData['time'],
+          'returnTime':
+              widget.bookingData['returnTime'] ?? widget.bookingData['time'],
           'shiftTime': widget.bookingData['shiftTime'],
           'distance': widget.bookingData['distance'],
           'hatchback': widget.bookingData['hatchback']?.toString() ?? '0',
@@ -146,7 +149,8 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
           available: true,
           modelType: 'hatchback',
           seats: '4',
-          imageUrl: _vehicleImages['hatchback'] ?? 'assets/images/hatchback.png',
+          imageUrl:
+              _vehicleImages['hatchback'] ?? 'assets/images/hatchback.png',
         ),
       ];
     }
@@ -248,7 +252,8 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => EtsPassengerDetailsScreen(bookingData: bookingDetails, dates: widget.dates),
+        builder: (context) => EtsPassengerDetailsScreen(
+            bookingData: bookingDetails, dates: widget.dates),
       ),
     );
   }
@@ -274,32 +279,31 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
       ),
       body: _isLoading
           ? Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Finding the best vehicles for you...',
-              style: TextStyle(
-                color: textColor,
-                fontWeight: FontWeight.w500,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Finding the best vehicles for you...',
+                    style: TextStyle(
+                      color: textColor,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
+            )
+          : Column(
+              children: [
+                _buildTripSummary(),
+                Expanded(
+                  child: _buildVehicleList(),
+                ),
+              ],
             ),
-          ],
-        ),
-      )
-          : ListView(
-        children: [
-          _buildTripSummary(),
-          SizedBox(
-            height: MediaQuery.of(context).size.height - 250,
-            child: _buildVehicleList(),
-          ),
-        ],
-      ),
       bottomNavigationBar: _isLoading ? null : _buildCategoryNavBar(),
     );
   }
@@ -414,7 +418,8 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: lightAccentColor,
                       borderRadius: BorderRadius.circular(12),
@@ -428,17 +433,40 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: widget.dates.map((date) => Text(
-                      date,
-                      style: TextStyle(color: lightTextColor, fontSize: 12),
-                    )).toList(),
+                  DropdownButton<String>(
+                    value: selectedDate,
+                    hint: Text(
+                      "Dates",
+                      style: TextStyle(
+                        color: lightTextColor,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    dropdownColor: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    icon: const Icon(Icons.arrow_drop_down),
+                    underline: Container(height: 1, color: Colors.grey),
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        selectedDate = newValue;
+                      });
+                    },
+                    items: widget.dates
+                        .map<DropdownMenuItem<String>>((String date) {
+                      return DropdownMenuItem<String>(
+                        value: date,
+                        child: Text(
+                          date,
+                          style: TextStyle(color: lightTextColor, fontSize: 12),
+                        ),
+                      );
+                    }).toList(),
                   ),
+                  const SizedBox(height: 4),
                   Text(
                     widget.bookingData['time'] ?? 'Time',
-                    style: TextStyle(color: lightTextColor, fontSize: 12),
+                    style: TextStyle(color: lightTextColor, fontSize: 14),
                   ),
                 ],
               ),
@@ -452,11 +480,7 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
-              'Trip Type: ${widget.bookingData['bookingType'] == 'oneWay'
-                  ? 'One Way'
-                  : widget.bookingData['bookingType'] == 'roundTrip'
-                  ? 'Round Trip'
-                  : 'Rental'}',
+              'Trip Type: ${widget.bookingData['bookingType'] == 'oneWay' ? 'One Way' : widget.bookingData['bookingType'] == 'roundTrip' ? 'Round Trip' : 'Rental'}',
               style: TextStyle(
                 fontWeight: FontWeight.w500,
                 color: primaryColor,
@@ -580,7 +604,6 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
 
   Widget _buildVehicleCard(Vehicle vehicle) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -766,24 +789,24 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
               children: vehicle.features
                   .map(
                     (feature) => Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.blue[50],
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Text(
-                    feature,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: primaryColor,
-                      fontWeight: FontWeight.w500,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.blue[50],
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Text(
+                        feature,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: primaryColor,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              )
+                  )
                   .toList(),
             ),
             const SizedBox(height: 16),
@@ -844,55 +867,53 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
         vehicle.type,
         style: TextStyle(fontWeight: FontWeight.bold, color: textColor),
       ),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 200,
-                height: 120,
-                decoration: BoxDecoration(
-                  color: Colors.blue[50],
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                padding: const EdgeInsets.all(16),
-                child: Image.asset(vehicle.imageUrl, fit: BoxFit.contain),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 200,
+              height: 130,
+              decoration: BoxDecoration(
+                color: Colors.blue[50],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              padding: const EdgeInsets.all(16),
+              child: Image.asset(vehicle.imageUrl, fit: BoxFit.contain),
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildDetailRow('Capacity', '${vehicle.seats} Seats'),
+          _buildDetailRow('Luggage', vehicle.capacity),
+          _buildDetailRow(
+            'Price',
+            '₹${vehicle.price} (₹${vehicle.pricePerKm}/km)',
+          ),
+          _buildDetailRow(
+            'Rating',
+            '${vehicle.rating} (${vehicle.rides} rides)',
+          ),
+          _buildDetailRow('Arrival Time', vehicle.arrivalTime),
+          const SizedBox(height: 16),
+          Text(
+            'Features',
+            style: TextStyle(fontWeight: FontWeight.bold, color: textColor),
+          ),
+          const SizedBox(height: 8),
+          ...vehicle.features.map(
+            (feature) => Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Row(
+                children: [
+                  Icon(Icons.check_circle, color: primaryColor, size: 16),
+                  const SizedBox(width: 8),
+                  Text(feature),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-            _buildDetailRow('Capacity', '${vehicle.seats} Seats'),
-            _buildDetailRow('Luggage', vehicle.capacity),
-            _buildDetailRow(
-              'Price',
-              '₹${vehicle.price} (₹${vehicle.pricePerKm}/km)',
-            ),
-            _buildDetailRow(
-              'Rating',
-              '${vehicle.rating} (${vehicle.rides} rides)',
-            ),
-            _buildDetailRow('Arrival Time', vehicle.arrivalTime),
-            const SizedBox(height: 16),
-            Text(
-              'Features',
-              style: TextStyle(fontWeight: FontWeight.bold, color: textColor),
-            ),
-            const SizedBox(height: 8),
-            ...vehicle.features.map(
-                  (feature) => Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Row(
-                  children: [
-                    Icon(Icons.check_circle, color: primaryColor, size: 16),
-                    const SizedBox(width: 8),
-                    Text(feature),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
       actions: [
         TextButton(

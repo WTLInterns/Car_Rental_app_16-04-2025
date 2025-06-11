@@ -1,33 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
 import 'dart:convert';
 import '../../../features/booking/screens/ets_booking_screen.dart';
 import '../../../features/tracking/screens/ets_user_tracking_screen.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 // Professional color palette - matching login screen
-const Color primaryColor = Color(0xFF4A90E2);      // Blue
-const Color secondaryColor = Color(0xFF4A90E2);    // Blue
-const Color accentColor = Color(0xFFFFCC00);       // Yellow/gold accent
+const Color primaryColor = Color(0xFF4A90E2); // Blue
+const Color secondaryColor = Color(0xFF4A90E2); // Blue
+const Color accentColor = Color(0xFFFFCC00); // Yellow/gold accent
 
 // Background colors
-const Color backgroundColor = Colors.white;   // White background
-const Color cardColor = Colors.white;              // White card background
-const Color surfaceColor = Color(0xFFF0F7FF);      // Light blue surface color
+const Color backgroundColor = Colors.white; // White background
+const Color cardColor = Colors.white; // White card background
+const Color surfaceColor = Color(0xFFF0F7FF); // Light blue surface color
 
 // Text colors
-const Color textColor = Color(0xFF333333);         // Dark text
-const Color lightTextColor = Color(0xFF666666);    // Medium gray text
-const Color mutedTextColor = Color(0xFFA0A0A0);    // Light gray text
+const Color textColor = Color(0xFF333333); // Dark text
+const Color lightTextColor = Color(0xFF666666); // Medium gray text
+const Color mutedTextColor = Color(0xFFA0A0A0); // Light gray text
 
 // Status colors
-const Color successColor = Color(0xFF4CAF50);      // Green for success states
-const Color warningColor = Color(0xFFFF9800);      // Orange for warning states
-const Color dangerColor = Color(0xFFF44336);       // Red for error/danger states
+const Color successColor = Color(0xFF4CAF50); // Green for success states
+const Color warningColor = Color(0xFFFF9800); // Orange for warning states
+const Color dangerColor = Color(0xFFF44336); // Red for error/danger states
 
 // Accent shade
-const Color lightAccentColor = Color(0xFFF0F7FF);  // Light blue for subtle highlights
+const Color lightAccentColor =
+    Color(0xFFF0F7FF); // Light blue for subtle highlights
 
 class CarRentalBooking {
   final int id;
@@ -113,8 +115,9 @@ class CarRentalBooking {
       carRentaluser: json['carRentaluser'],
       carRentalUserId: json['carRentalUserId'] ?? 0,
       scheduledDates: (json['scheduledDates'] as List<dynamic>?)
-          ?.map((e) => ScheduledDate.fromJson(e as Map<String, dynamic>))
-          .toList() ?? [],
+              ?.map((e) => ScheduledDate.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
       user: json['user'],
     );
   }
@@ -251,16 +254,15 @@ class ETSTrip {
 
     List<Map<String, dynamic>>? shiftDates;
     if (json['scheduledDates'] != null) {
-      shiftDates = List<Map<String, dynamic>>.from(
-        json['scheduledDates'].map((date) => {
-          'date': date['date'] ?? '',
-          'time': '',
-          'shift': date['status'] ?? 'PENDING',
-          'employees': 0,
-          'destinations': [],
-          'slotId': date['slotId'],
-        })
-      );
+      shiftDates =
+          List<Map<String, dynamic>>.from(json['scheduledDates'].map((date) => {
+                'date': date['date'] ?? '',
+                'time': '',
+                'shift': date['status'] ?? 'PENDING',
+                'employees': 0,
+                'destinations': [],
+                'slotId': date['slotId'],
+              }));
     }
 
     LatLng? pickupCoordinates;
@@ -284,13 +286,21 @@ class ETSTrip {
 
     return ETSTrip(
       bookingId: json['bookId'] ?? json['bookingId'] ?? 'N/A',
-      fromLocation: json['pickUpLocation'] ?? json['fromLocation'] ?? json['userPickup'] ?? 'Unknown location',
-      toLocation: json['dropLocation'] ?? json['toLocation'] ?? json['userDrop'] ?? 'Unknown location',
-      startDate: json['scheduledDates'] != null && json['scheduledDates'].isNotEmpty
-          ? json['scheduledDates'][0]['date']
-          : json['startDate'] ?? json['date'] ?? 'N/A',
+      fromLocation: json['pickUpLocation'] ??
+          json['fromLocation'] ??
+          json['userPickup'] ??
+          'Unknown location',
+      toLocation: json['dropLocation'] ??
+          json['toLocation'] ??
+          json['userDrop'] ??
+          'Unknown location',
+      startDate:
+          json['scheduledDates'] != null && json['scheduledDates'].isNotEmpty
+              ? json['scheduledDates'][0]['date']
+              : json['startDate'] ?? json['date'] ?? 'N/A',
       time: json['time'] ?? json['returnTime'] ?? 'N/A',
-      car: (json['cabType'] ?? json['car'] ?? json['vehicleType'] ?? 'cab').toString(),
+      car: (json['cabType'] ?? json['car'] ?? json['vehicleType'] ?? 'cab')
+          .toString(),
       amount: json['finalAmount'] is num
           ? (json['finalAmount'] as num).toDouble()
           : double.tryParse(json['finalAmount']?.toString() ?? '') ??
@@ -337,7 +347,8 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
     try {
       const String apiKey = 'AIzaSyCelDo4I5cPQ72TfCTQW-arhPZ7ALNcp8w';
       final String encodedAddress = Uri.encodeComponent(address);
-      final String url = 'https://maps.googleapis.com/maps/api/geocode/json?address=$encodedAddress&key=$apiKey';
+      final String url =
+          'https://maps.googleapis.com/maps/api/geocode/json?address=$encodedAddress&key=$apiKey';
 
       final response = await http.get(Uri.parse(url));
 
@@ -369,7 +380,8 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
     });
 
     try {
-      final response = await http.get(Uri.parse('https://ets.worldtriplink.com/schedule/byUserId/$_userId'));
+      final response = await http.get(Uri.parse(
+          'https://ets.worldtriplink.com/schedule/byUserId/$_userId'));
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
@@ -383,7 +395,8 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
           _isLoading = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load trips: ${response.statusCode}')),
+          SnackBar(
+              content: Text('Failed to load trips: ${response.statusCode}')),
         );
       }
     } catch (e) {
@@ -399,7 +412,9 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
   Future<void> _loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _userId = prefs.getInt('userId')?.toString() ?? prefs.getString('userId') ?? '123';
+      _userId = prefs.getInt('userId')?.toString() ??
+          prefs.getString('userId') ??
+          '123';
     });
     await _fetchTrips();
   }
@@ -439,7 +454,8 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
   }
 
   void _handleDetailsPress(ETSTrip trip) async {
-    LatLng pickupCoords = trip.pickupCoordinates ?? const LatLng(18.5090, 73.8310);
+    LatLng pickupCoords =
+        trip.pickupCoordinates ?? const LatLng(18.5090, 73.8310);
     LatLng dropCoords = trip.dropCoordinates ?? const LatLng(18.9402, 72.8347);
 
     if (trip.pickupCoordinates == null) {
@@ -592,7 +608,8 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
               shape: BoxShape.circle,
             ),
             child: IconButton(
-              icon: const Icon(Icons.notifications_outlined, color: Colors.white, size: 20),
+              icon: const Icon(Icons.notifications_outlined,
+                  color: Colors.white, size: 20),
               onPressed: () {},
             ),
           ),
@@ -787,7 +804,8 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
                           height: 30,
                           color: Colors.grey[300],
                         ),
-                        Icon(Icons.location_on, size: 14, color: Colors.red[400]),
+                        Icon(Icons.location_on,
+                            size: 14, color: Colors.red[400]),
                       ],
                     ),
                     const SizedBox(width: 12),
@@ -810,9 +828,46 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
                               fontWeight: FontWeight.w500,
                             ),
                           ),
+                          const Divider(),
+                          const Text(
+                            'DriverName : Jsa',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'ContactNo : 95272430621',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                width: 50,
+                                height: 50,
+                                decoration: BoxDecoration(shape: BoxShape.circle),
+                                child: IconButton(
+                                  icon: const Icon(Icons.call, color: Colors.green),
+                                  onPressed: () async {
+                                    final Uri callUri = Uri(scheme: 'tel', path: '95272430621');
+                                    if (await canLaunchUrl(callUri)) {
+                                      await launchUrl(callUri);
+                                    } else {
+                                      throw 'Could not launch $callUri';
+                                    }
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
                         ],
                       ),
-                    ),
+                    )
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -884,7 +939,8 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
     );
   }
 
-  Widget _buildCorporateTripCard(ETSTrip trip, String statusText, Color statusColor) {
+  Widget _buildCorporateTripCard(
+      ETSTrip trip, String statusText, Color statusColor) {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 2,
@@ -910,7 +966,8 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
                       Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
                               color: secondaryColor.withOpacity(0.2),
                               borderRadius: BorderRadius.circular(6),
@@ -966,7 +1023,8 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
                   children: [
                     Column(
                       children: [
-                        const Icon(Icons.business, size: 14, color: primaryColor),
+                        const Icon(Icons.business,
+                            size: 14, color: primaryColor),
                         Container(
                           width: 1,
                           height: 30,
@@ -1019,7 +1077,8 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
                     physics: const NeverScrollableScrollPhysics(),
                     shrinkWrap: true,
                     itemCount: trip.shiftDates!.length,
-                    separatorBuilder: (context, index) => Divider(color: Colors.grey[300]),
+                    separatorBuilder: (context, index) =>
+                        Divider(color: Colors.grey[300]),
                     itemBuilder: (context, index) {
                       final shift = trip.shiftDates![index];
                       return Padding(
@@ -1084,8 +1143,7 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
                           () => _handleCancelPress(trip),
                         ),
                       ),
-                    if (trip.status == 0)
-                      const SizedBox(width: 12),
+                    if (trip.status == 0) const SizedBox(width: 12),
                     Expanded(
                       child: _buildActionButton(
                         Icons.info_outline,

@@ -1023,10 +1023,10 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> with SingleTickerPr
                   const SizedBox(width: 12),
                   Text(
                     _selectedTime == null
-                        ? 'Select Time'
+                        ? DateFormat('h:mm a').format(DateTime.now())
                         : _formatTimeDisplay(_selectedTime!),
                     style: TextStyle(
-                      color: _selectedTime == null ? Colors.grey[400] : Colors.grey[800],
+                      color: _selectedTime == null ? Colors.grey[600] : Colors.grey[800],
                       fontSize: 14,
                     ),
                   ),

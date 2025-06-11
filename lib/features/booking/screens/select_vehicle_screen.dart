@@ -923,8 +923,8 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
           children: [
             Center(
               child: Container(
-                width: 220,
-                height: 130,
+                width: 230,
+                height: 160,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -966,24 +966,6 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
             ),
             const SizedBox(height: 14),
             const Divider(height: 1),
-            const SizedBox(height: 14),
-            Text(
-              'Fare Breakdown',
-              style: TextStyle(fontWeight: FontWeight.bold, color: textColor),
-            ),
-            const SizedBox(height: 8),
-            _buildFareRow('Base Fare', '₹${vehicle.price}'),
-            _buildFareRow(
-              'Platform Fee (10%)',
-              '₹${(vehicle.price * 0.10).round()}',
-            ),
-            _buildFareRow('GST (5%)', '₹${(vehicle.price * 0.05).round()}'),
-            const Divider(),
-            _buildFareRow(
-              'Total Fare',
-              '₹${vehicle.price + (vehicle.price * 0.05).round() + (vehicle.price * 0.10).round()}',
-              isBold: true,
-            ),
           ],
         ),
       ),
