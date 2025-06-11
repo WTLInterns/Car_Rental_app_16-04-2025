@@ -4,7 +4,6 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:location/location.dart';
 import 'package:flutter/services.dart';
-import 'package:animated_text_kit/animated_text_kit.dart';
 import '../../../features/booking/screens/ets_select_vehicle_screen.dart';
 import '../../../features/trips/screens/ets_trips_screen.dart';
 
@@ -1263,7 +1262,7 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> with SingleTickerPr
         if (!mounted) return;
         
         // Show success message with distance
-        _showSuccessDialog(context, data);
+        // _showSuccessDialog(context, data);
         
         // Prepare booking data with API response
         final bookingData = {
@@ -1313,90 +1312,90 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> with SingleTickerPr
     }
   }
 
-  void _showSuccessDialog(BuildContext context, Map<String, dynamic> data) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withAlpha(16),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.check_circle,
-                    color: Colors.green,
-                    size: 48,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  'Route Found!',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  'We found available vehicles for your trip.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.directions,
-                        color: Color(0xFF4CAF50),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Distance: ${data['distace']} km',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'You will be redirected to select your vehicle.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
+  // void _showSuccessDialog(BuildContext context, Map<String, dynamic> data) {
+  //   showDialog(
+  //     context: context,
+  //     barrierDismissible: false,
+  //     builder: (BuildContext context) {
+  //       return Dialog(
+  //         shape: RoundedRectangleBorder(
+  //           borderRadius: BorderRadius.circular(16),
+  //         ),
+  //         child: Padding(
+  //           padding: const EdgeInsets.all(20),
+  //           child: Column(
+  //             mainAxisSize: MainAxisSize.min,
+  //             children: [
+  //               Container(
+  //                 padding: const EdgeInsets.all(16),
+  //                 decoration: BoxDecoration(
+  //                   color: Colors.green.withAlpha(16),
+  //                   shape: BoxShape.circle,
+  //                 ),
+  //                 child: const Icon(
+  //                   Icons.check_circle,
+  //                   color: Colors.green,
+  //                   size: 48,
+  //                 ),
+  //               ),
+  //               const SizedBox(height: 20),
+  //               const Text(
+  //                 'Route Found!',
+  //                 style: TextStyle(
+  //                   fontSize: 20,
+  //                   fontWeight: FontWeight.bold,
+  //                 ),
+  //               ),
+  //               const SizedBox(height: 10),
+  //               Text(
+  //                 'We found available vehicles for your trip.',
+  //                 textAlign: TextAlign.center,
+  //                 style: TextStyle(
+  //                   fontSize: 14,
+  //                   color: Colors.grey[600],
+  //                 ),
+  //               ),
+  //               const SizedBox(height: 20),
+  //               Container(
+  //                 padding: const EdgeInsets.all(16),
+  //                 decoration: BoxDecoration(
+  //                   color: Colors.grey[100],
+  //                   borderRadius: BorderRadius.circular(12),
+  //                 ),
+  //                 child: Row(
+  //                   mainAxisAlignment: MainAxisAlignment.center,
+  //                   children: [
+  //                     const Icon(
+  //                       Icons.directions,
+  //                       color: Color(0xFF4CAF50),
+  //                     ),
+  //                     const SizedBox(width: 8),
+  //                     Text(
+  //                       'Distance: ${data['distace']} km',
+  //                       style: const TextStyle(
+  //                         fontSize: 16,
+  //                         fontWeight: FontWeight.bold,
+  //                       ),
+  //                     ),
+  //                   ],
+  //                 ),
+  //               ),
+  //               const SizedBox(height: 16),
+  //               const Text(
+  //                 'You will be redirected to select your vehicle.',
+  //                 textAlign: TextAlign.center,
+  //                 style: TextStyle(
+  //                   fontSize: 12,
+  //                   fontStyle: FontStyle.italic,
+  //                 ),
+  //               ),
+  //             ],
+  //           ),
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
 
   void _showErrorDialog(BuildContext context, String title, String message) {
     showDialog(

@@ -3,15 +3,14 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import '../../../features/booking/screens/ets_passenger_details_screen.dart';
-import '../../../features/booking/screens/ets_booking_screen.dart';
 
 const String apiBaseUrl = '';
 
 class EtsSelectVehicleScreen extends StatefulWidget {
   final Map<String, dynamic> bookingData;
-  final List<String> dates; // Add dates here
+  final List<String> dates;
 
-  const EtsSelectVehicleScreen({super.key, required this.bookingData, required this.dates}); // Update constructor
+  const EtsSelectVehicleScreen({super.key, required this.bookingData, required this.dates});
 
   @override
   State<EtsSelectVehicleScreen> createState() => _EtsSelectVehicleScreenState();
@@ -24,16 +23,16 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
   Map<String, dynamic>? _tripInfo;
 
   // Color scheme for consistent styling - matching the app's professional style
-  final Color primaryColor = const Color(0xFF3057E3);      // Royal blue from the image
-  final Color secondaryColor = const Color(0xFF3057E3);    // Same blue for consistency
-  final Color accentColor = const Color(0xFFFFCC00);       // Yellow/gold accent
-  final Color backgroundColor = const Color(0xFFF3F5F9);   // Light gray background
-  final Color cardColor = Colors.white;                    // White card background
-  final Color surfaceColor = Colors.white;                 // White for inputs/surfaces
-  final Color textColor = const Color(0xFF333333);         // Dark text
-  final Color lightTextColor = const Color(0xFF666666);    // Medium gray text
-  final Color mutedTextColor = const Color(0xFFAAAAAA);    // Light gray text
-  final Color lightAccentColor = const Color(0xFFF0F7FF);  // Light blue background
+  final Color primaryColor = const Color(0xFF3F51B5);
+  final Color secondaryColor = const Color(0xFF3057E3);
+  final Color accentColor = const Color(0xFFFFCC00);
+  final Color backgroundColor = const Color(0xFFF3F5F9);
+  final Color cardColor = Colors.white;
+  final Color surfaceColor = Colors.white;
+  final Color textColor = const Color(0xFF333333);
+  final Color lightTextColor = const Color(0xFF666666);
+  final Color mutedTextColor = const Color(0xFFAAAAAA);
+  final Color lightAccentColor = const Color(0xFFF0F7FF);
 
   // Vehicle data organized by category
   Map<String, List<Vehicle>> _vehicleData = {
@@ -120,16 +119,13 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
   }
 
   void _processVehicleData(Map<String, dynamic> data) {
-    // Reset availability
     final newNoVehiclesAvailable = Map<String, bool>.from(_noVehiclesAvailable);
     final newVehicleData = <String, List<Vehicle>>{};
 
-    // Initialize empty lists for each category
     for (var category in _vehicleData.keys) {
       newVehicleData[category] = [];
     }
 
-    // HatchBack vehicles
     if (data['hatchbackRate'] != null) {
       newNoVehiclesAvailable['HatchBack'] = false;
       newVehicleData['HatchBack'] = [
@@ -155,7 +151,6 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
       ];
     }
 
-    // Sedan vehicles
     if (data['sedanRate'] != null) {
       newNoVehiclesAvailable['Sedan'] = false;
       newVehicleData['Sedan'] = [
@@ -181,7 +176,6 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
       ];
     }
 
-    // SUV vehicles
     if (data['suvRate'] != null) {
       newNoVehiclesAvailable['SUV'] = false;
       newVehicleData['SUV'] = [
@@ -212,7 +206,6 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
       _vehicleData = newVehicleData;
       _noVehiclesAvailable = newNoVehiclesAvailable;
 
-      // Set first available category as selected
       for (var category in _vehicleData.keys) {
         if (!newNoVehiclesAvailable[category]!) {
           _selectedCategory = category;
@@ -223,18 +216,15 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
   }
 
   void _handleVehicleSelect(Vehicle vehicle) {
-    // Calculate fare components
     final distance = double.tryParse(_tripDistance) ?? 0;
     final baseFare = vehicle.price;
-    final platformFee = (baseFare * 0.05).round(); // 5% platform fee
-    final gst = (baseFare * 0.18).round(); // 18% GST
+    final platformFee = (baseFare * 0.05).round();
+    final gst = (baseFare * 0.18).round();
     final totalFare = baseFare + platformFee + gst;
 
-    // Calculate sitting expectation (available seats minus driver)
     final totalSeats = int.tryParse(vehicle.seats) ?? 0;
-    final sittingExpectation = totalSeats - 1; // Subtract driver
+    final sittingExpectation = totalSeats - 1;
 
-    // Prepare data for passenger details screen
     final bookingDetails = {
       ...widget.bookingData,
       'vehicleType': vehicle.type,
@@ -250,12 +240,11 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
       'seats': vehicle.seats,
       'imageUrl': vehicle.imageUrl,
       'sittingExcepatation': sittingExpectation.toString(),
-      'dates': widget.dates, // Pass the dates along
+      'dates': widget.dates,
     };
-    
+
     debugPrint('Vehicle selection data: $bookingDetails');
 
-    // Navigate to passenger details screen
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -279,36 +268,38 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
-            // Navigate back to EtsBookingScreen
-            Navigator.pop(context); // Simply pop to go back
+            Navigator.pop(context);
           },
         ),
       ),
       body: _isLoading
           ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Finding the best vehicles for you...',
-                    style: TextStyle(
-                      color: textColor,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            )
-          : Column(
-              children: [
-                _buildTripSummary(),
-                Expanded(child: _buildVehicleList()),
-              ],
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
             ),
+            const SizedBox(height: 16),
+            Text(
+              'Finding the best vehicles for you...',
+              style: TextStyle(
+                color: textColor,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      )
+          : ListView(
+        children: [
+          _buildTripSummary(),
+          SizedBox(
+            height: MediaQuery.of(context).size.height - 250,
+            child: _buildVehicleList(),
+          ),
+        ],
+      ),
       bottomNavigationBar: _isLoading ? null : _buildCategoryNavBar(),
     );
   }
@@ -423,10 +414,7 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: lightAccentColor,
                       borderRadius: BorderRadius.circular(12),
@@ -441,9 +429,12 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    widget.dates.join(', '), // Display multiple dates
-                    style: TextStyle(color: lightTextColor, fontSize: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: widget.dates.map((date) => Text(
+                      date,
+                      style: TextStyle(color: lightTextColor, fontSize: 12),
+                    )).toList(),
                   ),
                   Text(
                     widget.bookingData['time'] ?? 'Time',
@@ -509,10 +500,9 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
     final isAvailable = !_noVehiclesAvailable[category]!;
 
     return InkWell(
-      onTap:
-          isAvailable
-              ? () => setState(() => _selectedCategory = category)
-              : null,
+      onTap: isAvailable
+          ? () => setState(() => _selectedCategory = category)
+          : null,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
@@ -529,10 +519,9 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
           children: [
             Icon(
               _categoryIcons[category] ?? MaterialCommunityIcons.car,
-              color:
-                  isAvailable
-                      ? (isSelected ? primaryColor : lightTextColor)
-                      : Colors.grey.shade300,
+              color: isAvailable
+                  ? (isSelected ? primaryColor : lightTextColor)
+                  : Colors.grey.shade300,
               size: 24,
             ),
             const SizedBox(height: 4),
@@ -541,10 +530,9 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color:
-                    isAvailable
-                        ? (isSelected ? textColor : lightTextColor)
-                        : Colors.grey.shade400,
+                color: isAvailable
+                    ? (isSelected ? textColor : lightTextColor)
+                    : Colors.grey.shade400,
               ),
             ),
           ],
@@ -583,6 +571,8 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
+      physics: const NeverScrollableScrollPhysics(),
+      shrinkWrap: true,
       itemCount: vehicles.length,
       itemBuilder: (context, index) => _buildVehicleCard(vehicles[index]),
     );
@@ -610,7 +600,6 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Vehicle image
                 SizedBox(
                   width: 90,
                   height: 65,
@@ -625,18 +614,17 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
                       child: Image.asset(
                         vehicle.imageUrl,
                         fit: BoxFit.contain,
-                        errorBuilder:
-                            (context, error, stackTrace) => Icon(
-                              _categoryIcons[_selectedCategory] ??
-                                  MaterialCommunityIcons.car,
-                              size: 32,
-                              color: primaryColor,
-                            ),
+                        errorBuilder: (context, error, stackTrace) => Icon(
+                          _categoryIcons[_selectedCategory] ??
+                              MaterialCommunityIcons.car,
+                          size: 32,
+                          color: primaryColor,
+                        ),
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -657,7 +645,7 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
                             size: 16,
                             color: lightTextColor,
                           ),
-                          const SizedBox(width: 4),
+                          const SizedBox(width: 2),
                           Text(
                             '${vehicle.seats} Seats',
                             style: TextStyle(
@@ -665,7 +653,7 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
                               fontSize: 13,
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: 6),
                           Icon(
                             MaterialCommunityIcons.bag_suitcase,
                             size: 16,
@@ -712,7 +700,7 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
+                        horizontal: 6,
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
@@ -722,7 +710,7 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
                       child: Text(
                         '₹${vehicle.price}',
                         style: const TextStyle(
-                          fontSize: 14,
+                          fontSize: 13,
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
                         ),
@@ -775,29 +763,28 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children:
-                  vehicle.features
-                      .map(
-                        (feature) => Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.blue[50],
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Text(
-                            feature,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: primaryColor,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      )
-                      .toList(),
+              children: vehicle.features
+                  .map(
+                    (feature) => Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.blue[50],
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Text(
+                    feature,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: primaryColor,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              )
+                  .toList(),
             ),
             const SizedBox(height: 16),
             Container(
@@ -829,7 +816,6 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
             Center(
               child: TextButton.icon(
                 onPressed: () {
-                  // Show vehicle details dialog
                   showDialog(
                     context: context,
                     builder: (context) => _buildVehicleDetailsDialog(vehicle),
@@ -894,7 +880,7 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
             ),
             const SizedBox(height: 8),
             ...vehicle.features.map(
-              (feature) => Padding(
+                  (feature) => Padding(
                 padding: const EdgeInsets.only(bottom: 4),
                 child: Row(
                   children: [
@@ -904,24 +890,6 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
                   ],
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Fare Breakdown',
-              style: TextStyle(fontWeight: FontWeight.bold, color: textColor),
-            ),
-            const SizedBox(height: 8),
-            _buildFareRow('Base Fare', '₹${vehicle.price}'),
-            _buildFareRow(
-              'Platform Fee (5%)',
-              '₹${(vehicle.price * 0.05).round()}',
-            ),
-            _buildFareRow('GST (18%)', '₹${(vehicle.price * 0.18).round()}'),
-            const Divider(),
-            _buildFareRow(
-              'Total Fare',
-              '₹${vehicle.price + (vehicle.price * 0.05).round() + (vehicle.price * 0.18).round()}',
-              isBold: true,
             ),
           ],
         ),
@@ -1023,4 +991,3 @@ class Vehicle {
     required this.imageUrl,
   });
 }
-

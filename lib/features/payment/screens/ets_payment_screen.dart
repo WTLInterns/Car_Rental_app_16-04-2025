@@ -143,7 +143,7 @@ class _PaymentScreenState extends State<ETSPaymentScreen> {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         debugPrint('Booking response: $data');
-        
+
         if (data['status'] == 'success') {
           // Check if widget is still mounted before showing SnackBar
           if (!mounted) return;
@@ -435,11 +435,11 @@ class _PaymentScreenState extends State<ETSPaymentScreen> {
                                     const SizedBox(height: 16),
                                     // Payment Methods
                                     SizedBox(
-                                      height: 320, // Fixed height for payment methods
+                                      height: 180, // Fixed height for payment methods
                                       child: _buildPaymentMethods(),
                                     ),
                                     // Add extra space at bottom to prevent footer overlap
-                                    const SizedBox(height: 80),
+                                    const SizedBox(height: 20),
                                   ],
                                 ),
                               );

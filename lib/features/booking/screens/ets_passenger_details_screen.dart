@@ -27,7 +27,7 @@ class _EtsPassengerDetailsScreenState extends State<EtsPassengerDetailsScreen> {
   bool _isLoading = true;
 
   // Color scheme for consistent styling - matching the app's professional style
-  final Color primaryColor = const Color(0xFF3057E3);      // Royal blue from the image
+  final Color primaryColor = const Color(0xFF3F51B5);      // Royal blue from the image
   final Color secondaryColor = const Color(0xFF3057E3);    // Same blue for consistency
   final Color accentColor = const Color(0xFFFFCC00);       // Yellow/gold accent
   final Color backgroundColor = const Color(0xFFF3F5F9);   // Light gray background
@@ -310,7 +310,7 @@ class _EtsPassengerDetailsScreenState extends State<EtsPassengerDetailsScreen> {
             ),
           ],
         ),
-        
+
         // Connection line
         Padding(
           padding: const EdgeInsets.only(left: 14),
@@ -324,7 +324,7 @@ class _EtsPassengerDetailsScreenState extends State<EtsPassengerDetailsScreen> {
             ],
           ),
         ),
-        
+
         // Drop location
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
