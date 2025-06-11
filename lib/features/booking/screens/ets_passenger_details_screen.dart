@@ -49,6 +49,7 @@ class _EtsPassengerDetailsScreenState extends State<EtsPassengerDetailsScreen> {
   void initState() {
     super.initState();
     _fetchAndFillUserProfile();
+    _fetchInvoice();
   }
 
   Future<void> _fetchAndFillUserProfile() async {
@@ -78,6 +79,41 @@ class _EtsPassengerDetailsScreenState extends State<EtsPassengerDetailsScreen> {
       debugPrint('Error fetching user profile: $e');
     } finally {
       setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _fetchInvoice() async {
+    try {
+      // Use dynamic base fare and cab type from booking data
+      final baseFare = widget.bookingData['baseFare'] ?? '2416';
+      final cabType = widget.bookingData['modelType']?.toUpperCase() ?? 'SUV';
+      final response = await http.post(Uri.parse('https://ets.worldtriplink.com/schedule/invoice?baseFare=$baseFare&cabType=$cabType'));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          widget.bookingData['totalAmount'] = data['totalAmount'].toString();
+          widget.bookingData['totalFare'] = data['totalAmount'].toString();
+          widget.bookingData['baseFare'] = data['baseFare'].toString();
+          widget.bookingData['serviceCharge'] = data['serviceCharge'].toString();
+          widget.bookingData['platformFee'] = data['serviceCharge'].toString();
+          widget.bookingData['gst'] = data['gst'].toString();
+          widget.bookingData['finalAmount'] = data['totalAmount'].toString();
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to fetch invoice details: ${response.statusCode}'),
+            backgroundColor: Colors.red.shade700,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error fetching invoice: $e'),
+          backgroundColor: Colors.red.shade700,
+        ),
+      );
     }
   }
 
@@ -171,6 +207,12 @@ class _EtsPassengerDetailsScreenState extends State<EtsPassengerDetailsScreen> {
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  // Helper to format currency values with two decimal points
+  String _formatAmount(dynamic value) {
+    final amount = double.tryParse(value?.toString() ?? '0') ?? 0;
+    return amount.toStringAsFixed(2);
   }
 
   @override
@@ -476,10 +518,10 @@ class _EtsPassengerDetailsScreenState extends State<EtsPassengerDetailsScreen> {
   }
 
   Widget _buildFareDetails() {
-    final baseFare = int.tryParse(widget.bookingData['baseFare'] ?? '0') ?? 0;
-    final platformFee = widget.bookingData['platformFee'] ?? 0;
-    final gst = widget.bookingData['gst'] ?? 0;
-    final totalFare = widget.bookingData['totalFare'] ?? 0;
+    final baseFare = _formatAmount(widget.bookingData['baseFare']);
+    final serviceCharge = _formatAmount(widget.bookingData['serviceCharge'] ?? widget.bookingData['platformFee']);
+    final gst = _formatAmount(widget.bookingData['gst']);
+    final totalFare = _formatAmount(widget.bookingData['totalAmount'] ?? widget.bookingData['totalFare']);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -501,7 +543,7 @@ class _EtsPassengerDetailsScreenState extends State<EtsPassengerDetailsScreen> {
         const SizedBox(height: 12),
         _buildFareRow('Base Fare', '₹$baseFare'),
         const SizedBox(height: 8),
-        _buildFareRow('Platform Fee', '₹$platformFee'),
+        _buildFareRow('Service Charge', '₹$serviceCharge'),
         const SizedBox(height: 8),
         _buildFareRow('GST (5%)', '₹$gst'),
         const SizedBox(height: 8),

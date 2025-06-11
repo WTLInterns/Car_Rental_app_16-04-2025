@@ -30,17 +30,17 @@ class _PaymentScreenState extends State<ETSPaymentScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
 
-  // Professional color palette
-  final Color primaryColor = const Color(0xFF3057E3);      // Royal blue from the image
-  final Color secondaryColor = const Color(0xFF3057E3);    // Same blue for consistency
-  final Color accentColor = const Color(0xFFFFCC00);       // Yellow/gold accent
-  final Color backgroundColor = const Color(0xFFF3F5F9);   // Light gray background
-  final Color cardColor = Colors.white;                    // White card background
-  final Color surfaceColor = Colors.white;                 // White for inputs/surfaces
-  final Color textColor = const Color(0xFF333333);         // Dark text
-  final Color lightTextColor = const Color(0xFF666666);    // Medium gray text
-  final Color mutedTextColor = const Color(0xFFAAAAAA);    // Light gray text
-  final Color lightAccentColor = const Color(0xFFF0F7FF);  // Light blue background
+  // Color scheme from ets_booking_screen.dart
+  final Color primaryColor = const Color(0xFF3F51B5);
+  final Color secondaryColor = const Color(0xFF3057E3);
+  final Color accentColor = const Color(0xFFFFCC00);
+  final Color backgroundColor = const Color(0xFFF3F5F9);
+  final Color cardColor = Colors.white;
+  final Color surfaceColor = Colors.white;
+  final Color textColor = const Color(0xFF333333);
+  final Color lightTextColor = const Color(0xFF666666);
+  final Color mutedTextColor = const Color(0xFFAAAAAA);
+  final Color lightAccentColor = const Color(0xFFF0F7FF);
   final Color successColor = const Color(0xFF4CAF50);      // Green for success messages
   final Color errorColor = const Color(0xFFE53935);        // Red for error messages
 
@@ -112,18 +112,18 @@ class _PaymentScreenState extends State<ETSPaymentScreen> {
         'pickUpLocation': widget.bookingData['pickup'],
         'dropLocation': widget.bookingData['destination'],
         'time': widget.bookingData['time'],
-        'returnTime': widget.bookingData['returnTime'],
-        'cabType': widget.bookingData['vehicleType'],
-        'finalAmount': widget.bookingData['finalAmount'].toString(),
-        'baseAmount': widget.bookingData['baseAmount'].toString(),
+        'returnTime': widget.bookingData['returnTime'] ?? widget.bookingData['time'],
+        'cabType': widget.bookingData['modelType'] ?? 'SUV',
+        'finalAmount': widget.bookingData['totalAmount'] ?? widget.bookingData['totalFare'].toString(),
+        'baseAmount': widget.bookingData['baseFare'].toString(),
         'serviceCharge': widget.bookingData['serviceCharge'].toString(),
         'gst': widget.bookingData['gst'].toString(),
         'distance': widget.bookingData['distance'].toString(),
         'sittingExcepatation': widget.bookingData['sittingExcepatation'].toString(),
-        'dates': widget.dates.join(','), // Send dates as a comma-separated string or ensure API handles list
+        'dates': widget.dates.join(','),
         'userId': _storedUserId,
-        'shiftTime': widget.bookingData['shiftTime'],
-        'parnterSharing': widget.bookingData['parnterSharing'].toString(),
+        'shiftTime': widget.bookingData['shiftTime'] ?? '12:00',
+        'parnterSharing': widget.bookingData['parnterSharing']?.toString() ?? '2',
       };
 
       debugPrint('Sending booking data: $requestData');
@@ -156,16 +156,13 @@ class _PaymentScreenState extends State<ETSPaymentScreen> {
             ),
           );
 
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (context) => const UserHomeScreen()),
-            (route) => false,
-          );
+          // Show confirmation dialog with booking ID
+          _showBookingConfirmation(data['bookingId'].toString());
         } else {
           throw Exception(data['message'] ?? 'Booking failed');
         }
       } else {
-        throw Exception('Failed to confirm booking');
+        throw Exception('Failed to confirm booking: ${response.statusCode}');
       }
     } catch (e) {
       // Check if widget is still mounted before showing SnackBar
@@ -723,11 +720,12 @@ class _PaymentScreenState extends State<ETSPaymentScreen> {
   }
 
   Widget _buildFareDetails() {
-    final baseFare =
-        int.tryParse(widget.bookingData['baseFare']?.toString() ?? '0') ?? 0;
-    final platformFee = widget.bookingData['platformFee'] ?? 0;
-    final gst = widget.bookingData['gst'] ?? 0;
-    final totalFare = widget.bookingData['totalFare'] ?? 0;
+    String _fmt(dynamic v) => (double.tryParse(v?.toString() ?? '0') ?? 0).toStringAsFixed(2);
+
+    final baseFare = _fmt(widget.bookingData['baseFare']);
+    final serviceCharge = _fmt(widget.bookingData['serviceCharge'] ?? widget.bookingData['platformFee']);
+    final gst = _fmt(widget.bookingData['gst']);
+    final totalFare = _fmt(widget.bookingData['totalAmount'] ?? widget.bookingData['totalFare']);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -756,7 +754,7 @@ class _PaymentScreenState extends State<ETSPaymentScreen> {
         const SizedBox(height: 12),
         _buildFareRow('Base Fare', '₹$baseFare'),
         const SizedBox(height: 8),
-        _buildFareRow('Platform Fee', '₹$platformFee'),
+        _buildFareRow('Service Charge', '₹$serviceCharge'),
         const SizedBox(height: 8),
         _buildFareRow('GST (5%)', '₹$gst'),
         const SizedBox(height: 8),
@@ -918,7 +916,7 @@ class _PaymentScreenState extends State<ETSPaymentScreen> {
   }
 
   Widget _buildPaymentFooter() {
-    final totalFare = widget.bookingData['totalFare'] ?? 0;
+    final totalFare = (double.tryParse((widget.bookingData['totalAmount'] ?? widget.bookingData['totalFare']).toString()) ?? 0).toStringAsFixed(2);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -986,106 +984,5 @@ class _PaymentScreenState extends State<ETSPaymentScreen> {
         ),
       ),
     );
-  }
-
-  void _handleProceedToPayment() async {
-    if (!_validateForm()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Please fill all required fields correctly'),
-          backgroundColor: Colors.red.shade700,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
-    }
-
-    try {
-      // Show loading indicator
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
-        },
-      );
-
-      // Get invoice details
-      final baseUrl = 'https://ets.worldtriplink.com';
-      final response = await http.post(
-        Uri.parse('$baseUrl/schedule/invoice'),
-        body: {
-          'baseFare': widget.bookingData['baseFare'].toString(),
-          'cabType': widget.bookingData['vehicleType'],
-        },
-      );
-
-      // Check if widget is still mounted
-      if (!mounted) return;
-
-      // Close loading dialog
-      Navigator.pop(context);
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        
-        // Convert all price values to integers
-        final baseFare = int.parse(data['baseFare'].toString());
-        final serviceCharge = int.parse(data['serviceCharge'].toString());
-        final gst = int.parse(data['gst'].toString());
-        final totalAmount = int.parse(data['totalAmount'].toString());
-        
-        // Prepare data for payment screen
-        final paymentData = {
-          ...widget.bookingData,
-          'passengerName': '${_firstNameController.text} ${_lastNameController.text}',
-          'passengerEmail': _emailController.text,
-          'passengerPhone': _phoneController.text,
-          'userId': _storedUserId,
-          'baseFare': baseFare,
-          'serviceCharge': serviceCharge,
-          'gst': gst,
-          'totalFare': totalAmount,
-          'finalAmount': totalAmount,
-          'baseAmount': baseFare,
-        };
-
-        // Check if widget is still mounted
-        if (!mounted) return;
-
-        // Navigate to payment screen
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ETSPaymentScreen(bookingData: paymentData, dates: widget.dates), // Pass dates here
-          ),
-        );
-      } else {
-        throw Exception('Failed to get invoice details');
-      }
-    } catch (e) {
-      // Check if widget is still mounted
-      if (!mounted) return;
-
-      // Close loading dialog if it's still showing
-      if (Navigator.canPop(context)) {
-        Navigator.pop(context);
-      }
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: Colors.red.shade700,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
-  }
-
-  bool _validateForm() {
-    // Implement your validation logic here
-    return true; // Placeholder, actual implementation needed
   }
 }

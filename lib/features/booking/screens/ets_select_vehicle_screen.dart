@@ -4,8 +4,6 @@ import 'dart:convert';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import '../../../features/booking/screens/ets_passenger_details_screen.dart';
 
-const String apiBaseUrl = '';
-
 class EtsSelectVehicleScreen extends StatefulWidget {
   final Map<String, dynamic> bookingData;
   final List<String> dates;
@@ -21,6 +19,7 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
   bool _isLoading = true;
   String _tripDistance = '0';
   Map<String, dynamic>? _tripInfo;
+  String? selectedDate;
 
   // Color scheme for consistent styling - matching the app's professional style
   final Color primaryColor = const Color(0xFF3F51B5);
@@ -144,7 +143,7 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
           rides: 198,
           arrivalTime: '3 mins',
           available: true,
-          modelType: 'hatchback',
+          modelType: 'Hatchback',
           seats: '4',
           imageUrl: _vehicleImages['hatchback'] ?? 'assets/images/hatchback.png',
         ),
@@ -169,9 +168,36 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
           rides: 220,
           arrivalTime: '5 mins',
           available: true,
-          modelType: 'sedan',
+          modelType: 'Sedan',
           seats: '4',
           imageUrl: _vehicleImages['sedan'] ?? 'assets/images/sedan.png',
+        ),
+      ];
+    }
+
+    // Add SedanPremium category
+    if (data['sedanRate'] != null) {
+      newNoVehiclesAvailable['SedanPremium'] = false;
+      newVehicleData['SedanPremium'] = [
+        Vehicle(
+          type: 'Honda City',
+          price: (data['sedanFare'] * 1.2)?.round() ?? 0,
+          pricePerKm: (data['sedanRate'] * 1.2)?.round() ?? 0,
+          capacity: '3 bags',
+          features: [
+            'Petrol',
+            'USB Charging',
+            'Air Conditioning',
+            'Premium Audio',
+            'Leather Seats',
+          ],
+          rating: 5,
+          rides: 180,
+          arrivalTime: '7 mins',
+          available: true,
+          modelType: 'SedanPremium',
+          seats: '4',
+          imageUrl: _vehicleImages['sedanpremium'] ?? 'assets/images/sedan_premium.png',
         ),
       ];
     }
@@ -195,9 +221,37 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
           rides: 250,
           arrivalTime: '10 mins',
           available: true,
-          modelType: 'suv',
+          modelType: 'SUV',
           seats: '7',
           imageUrl: _vehicleImages['suv'] ?? 'assets/images/suv.png',
+        ),
+      ];
+    }
+
+    // Add SUVPlus category
+    if (data['suvRate'] != null) {
+      newNoVehiclesAvailable['SUVPlus'] = false;
+      newVehicleData['SUVPlus'] = [
+        Vehicle(
+          type: 'Toyota Fortuner',
+          price: (data['suvFare'] * 1.3)?.round() ?? 0,
+          pricePerKm: (data['suvRate'] * 1.3)?.round() ?? 0,
+          capacity: '6 bags',
+          features: [
+            'Diesel',
+            'USB Charging',
+            'Air Conditioning',
+            'Premium Audio',
+            'Leather Seats',
+            'Spacious',
+          ],
+          rating: 5,
+          rides: 150,
+          arrivalTime: '12 mins',
+          available: true,
+          modelType: 'SUVPlus',
+          seats: '7',
+          imageUrl: _vehicleImages['suvplus'] ?? 'assets/images/suv_plus.png',
         ),
       ];
     }
@@ -206,6 +260,7 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
       _vehicleData = newVehicleData;
       _noVehiclesAvailable = newNoVehiclesAvailable;
 
+      // Select first available category
       for (var category in _vehicleData.keys) {
         if (!newNoVehiclesAvailable[category]!) {
           _selectedCategory = category;
@@ -410,11 +465,12 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
                 ),
               ),
               const SizedBox(width: 16),
-              Column(
+            Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: lightAccentColor,
                       borderRadius: BorderRadius.circular(12),
@@ -428,17 +484,40 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: widget.dates.map((date) => Text(
-                      date,
-                      style: TextStyle(color: lightTextColor, fontSize: 12),
-                    )).toList(),
+                  DropdownButton<String>(
+                    value: selectedDate,
+                    hint: Text(
+                      "Dates",
+                      style: TextStyle(
+                        color: lightTextColor,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    dropdownColor: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    icon: const Icon(Icons.arrow_drop_down),
+                    underline: Container(height: 1, color: Colors.grey),
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        selectedDate = newValue;
+                      });
+                    },
+                    items: widget.dates
+                        .map<DropdownMenuItem<String>>((String date) {
+                      return DropdownMenuItem<String>(
+                        value: date,
+                        child: Text(
+                          date,
+                          style: TextStyle(color: lightTextColor, fontSize: 12),
+                        ),
+                      );
+                    }).toList(),
                   ),
+                  const SizedBox(height: 4),
                   Text(
                     widget.bookingData['time'] ?? 'Time',
-                    style: TextStyle(color: lightTextColor, fontSize: 12),
+                    style: TextStyle(color: lightTextColor, fontSize: 14),
                   ),
                 ],
               ),
