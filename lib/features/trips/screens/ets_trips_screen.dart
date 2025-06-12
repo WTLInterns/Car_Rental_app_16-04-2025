@@ -847,21 +847,16 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              Container(
-                                width: 50,
-                                height: 50,
-                                decoration: BoxDecoration(shape: BoxShape.circle),
-                                child: IconButton(
-                                  icon: const Icon(Icons.call, color: Colors.green),
-                                  onPressed: () async {
-                                    final Uri callUri = Uri(scheme: 'tel', path: '95272430621');
-                                    if (await canLaunchUrl(callUri)) {
-                                      await launchUrl(callUri);
-                                    } else {
-                                      throw 'Could not launch $callUri';
-                                    }
-                                  },
-                                ),
+                              IconButton(
+                                icon: const Icon(Icons.call, color: Colors.green),
+                                onPressed: () async {
+                                  final Uri callUri = Uri(scheme: 'tel', path: '95272430621');
+                                  if (await canLaunchUrl(callUri)) {
+                                    await launchUrl(callUri);
+                                  } else {
+                                    throw 'Could not launch $callUri';
+                                  }
+                                },
                               ),
                             ],
                           ),
