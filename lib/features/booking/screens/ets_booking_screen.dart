@@ -63,6 +63,9 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> with SingleTickerPr
 
     _animationController.forward();
 
+    // Set default pickup time to current time
+    _selectedTime = TimeOfDay.now();
+
     _pickupController.addListener(() {
       setState(() {});
     });
@@ -998,7 +1001,7 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> with SingleTickerPr
           ),
           const SizedBox(height: 6),
           GestureDetector(
-            onTap: () => _selectTime(context),
+            onTap: null, // Disabled manual time selection; default current time is used
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               decoration: BoxDecoration(
