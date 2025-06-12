@@ -37,6 +37,7 @@ class MyApp extends StatelessWidget {
       child: Consumer<AuthBloc>(
         builder: (context, authBloc, _) {
           return MaterialApp(
+            debugShowCheckedModeBanner: false,
             title: 'World Trip Link',
             theme: AppTheme.lightTheme,
             initialRoute: AppConstants.routeSplash,

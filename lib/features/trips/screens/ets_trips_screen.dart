@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
@@ -8,7 +9,7 @@ import '../../../features/tracking/screens/ets_user_tracking_screen.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 // Professional color palette - matching login screen
-const Color primaryColor = Color(0xFF4A90E2); // Blue
+const Color primaryColor = Color(0xFF3F51B5); // Blue
 const Color secondaryColor = Color(0xFF4A90E2); // Blue
 const Color accentColor = Color(0xFFFFCC00); // Yellow/gold accent
 
@@ -58,6 +59,7 @@ class CarRentalBooking {
   final int carRentalUserId;
   final List<ScheduledDate> scheduledDates;
   final dynamic user;
+  final Map<String, dynamic>? vendorDriver; // Added to store driver info
 
   CarRentalBooking({
     required this.id,
@@ -86,6 +88,7 @@ class CarRentalBooking {
     required this.carRentalUserId,
     required this.scheduledDates,
     this.user,
+    this.vendorDriver,
   });
 
   factory CarRentalBooking.fromJson(Map<String, dynamic> json) {
@@ -119,6 +122,7 @@ class CarRentalBooking {
               .toList() ??
           [],
       user: json['user'],
+      vendorDriver: json['vendorDriver'],
     );
   }
 
@@ -150,6 +154,7 @@ class CarRentalBooking {
       'carRentalUserId': carRentalUserId,
       'scheduledDates': scheduledDates.map((e) => e.toJson()).toList(),
       'user': user,
+      'vendorDriver': vendorDriver,
     };
   }
 }
@@ -205,6 +210,7 @@ class ETSTrip {
   final LatLng? pickupCoordinates;
   final LatLng? dropCoordinates;
   final int? slotId;
+  final Map<String, dynamic>? vendorDriver;
 
   ETSTrip({
     required this.bookingId,
@@ -225,6 +231,7 @@ class ETSTrip {
     this.pickupCoordinates,
     this.dropCoordinates,
     this.slotId,
+    this.vendorDriver,
   });
 
   factory ETSTrip.fromJson(Map<String, dynamic> json) {
@@ -308,8 +315,8 @@ class ETSTrip {
                   ? (json['amount'] as num).toDouble()
                   : double.tryParse(json['amount']?.toString() ?? '') ?? 0.0),
       status: statusCode,
-      name: json['driverName'] ?? 'Assigned Driver',
-      phone: json['driverContact'] ?? 'Contact Support',
+      name: json['vendorDriver']?['driverName'] ?? 'Wait',
+      phone: json['vendorDriver']?['contactNo'] ?? 'And Refresh',
       distance: json['distance'] is num
           ? (json['distance'] as num).toDouble()
           : double.tryParse(json['distance']?.toString() ?? '') ?? 0.0,
@@ -320,6 +327,7 @@ class ETSTrip {
       pickupCoordinates: pickupCoordinates,
       dropCoordinates: dropCoordinates,
       slotId: json['slotId'],
+      vendorDriver: json['vendorDriver'],
     );
   }
 }
@@ -386,6 +394,7 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         print('API Response: ${response.body}');
+        print(_userId);
         setState(() {
           _trips = data.map((tripJson) => ETSTrip.fromJson(tripJson)).toList();
           _isLoading = false;
@@ -420,7 +429,8 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
   }
 
   List<ETSTrip> _filterTrips() {
-    return _trips.where((trip) {
+// Filter trips based on the active tab
+    List<ETSTrip> filtered = _trips.where((trip) {
       switch (_activeTab) {
         case 0: // Upcoming
           return trip.status == 0;
@@ -432,6 +442,25 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
           return false;
       }
     }).toList();
+
+// Sort filtered trips by startDate in descending order (latest first)
+    filtered.sort((a, b) {
+// Handle null or empty dates
+      if (a.startDate.isEmpty && b.startDate.isEmpty) return 0;
+      if (a.startDate.isEmpty) return 1; // Move empty dates to the end
+      if (b.startDate.isEmpty) return -1;
+
+      try {
+        final DateTime dateA = DateFormat('yyyy-MM-dd').parse(a.startDate);
+        final DateTime dateB = DateFormat('yyyy-MM-dd').parse(b.startDate);
+        return dateB.compareTo(dateA); // Descending order
+      } catch (e) {
+        print('Error parsing date: $e');
+        return 0; // If parsing fails, maintain original order
+      }
+    });
+
+    return filtered;
   }
 
   String _getTripStatus(int status) {
@@ -478,6 +507,10 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
         );
       }
     }
+
+    print('vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv');
+    print(trip.slotId);
+    print('vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv');
 
     Navigator.push(
       context,
@@ -536,11 +569,7 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
   }
 
   Widget _buildActionButton(
-    IconData icon,
-    String text,
-    Color color,
-    VoidCallback onPressed,
-  ) {
+      IconData icon, String text, Color color, VoidCallback onPressed) {
     return GestureDetector(
       onTap: onPressed,
       child: Container(
@@ -567,6 +596,145 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildInfoItem(IconData icon, String label, dynamic value) {
+    if (value is String) {
+      return Column(
+        children: [
+          Icon(icon, size: 16, color: primaryColor),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: textColor,
+            ),
+          ),
+        ],
+      );
+    } else if (value is List<Map<String, dynamic>>?) {
+      bool _isDropdownVisible = false;
+      String? _selectedDate;
+
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return Column(
+            children: [
+              Icon(icon, size: 16, color: primaryColor),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                ),
+              ),
+              const SizedBox(height: 4),
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _isDropdownVisible = !_isDropdownVisible;
+                  });
+                },
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey[400]!),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _selectedDate != null
+                            ? DateFormat('MMMM d, yyyy')
+                                .format(DateTime.parse(_selectedDate!))
+                            : 'Dates',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: textColor,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Icon(
+                        _isDropdownVisible
+                            ? Icons.arrow_drop_up
+                            : Icons.arrow_drop_down,
+                        color: textColor,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              if (_isDropdownVisible)
+                Container(
+                  width: 150,
+                  margin: const EdgeInsets.only(top: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border.all(color: Colors.grey[400]!),
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.2),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: value != null && value.isNotEmpty
+                        ? value.map<Widget>((dateObj) {
+                            final date = dateObj['date'] as String;
+                            return ListTile(
+                              title: Text(
+                                DateFormat('MMMM d, yyyy')
+                                    .format(DateTime.parse(date)),
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: textColor,
+                                ),
+                              ),
+                              onTap: () {
+                                setState(() {
+                                  _selectedDate = date;
+                                  _isDropdownVisible = false;
+                                });
+                              },
+                            );
+                          }).toList()
+                        : [
+                            const ListTile(
+                              title: Text(
+                                'No dates available',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: textColor,
+                                ),
+                              ),
+                            ),
+                          ],
+                  ),
+                ),
+            ],
+          );
+        },
+      );
+    } else {
+      return const SizedBox.shrink();
+    }
   }
 
   @override
@@ -758,6 +926,9 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
       return _buildCorporateTripCard(trip, statusText, statusColor);
     }
 
+    final driverName = trip.vendorDriver?['driverName'] ?? 'Wait';
+    final contactNo = trip.vendorDriver?['contactNo'] ?? 'And Refresh';
+
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 2,
@@ -829,9 +1000,9 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
                             ),
                           ),
                           const Divider(),
-                          const Text(
-                            'DriverName : Jsa',
-                            style: TextStyle(
+                          Text(
+                            'DriverName: $driverName',
+                            style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                             ),
@@ -839,18 +1010,20 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text(
-                                'ContactNo : 95272430621',
-                                style: TextStyle(
+                              Text(
+                                'ContactNo: $contactNo',
+                                style: const TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
                               const SizedBox(width: 8),
                               IconButton(
-                                icon: const Icon(Icons.call, color: Colors.green),
+                                icon:
+                                    const Icon(Icons.call, color: Colors.green),
                                 onPressed: () async {
-                                  final Uri callUri = Uri(scheme: 'tel', path: '95272430621');
+                                  final Uri callUri =
+                                      Uri(scheme: 'tel', path: contactNo);
                                   if (await canLaunchUrl(callUri)) {
                                     await launchUrl(callUri);
                                   } else {
@@ -879,7 +1052,7 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
                       _buildInfoItem(
                         Icons.calendar_today,
                         'Date',
-                        trip.startDate,
+                        trip.shiftDates,
                       ),
                       _buildInfoItem(
                         Icons.access_time,
@@ -1071,7 +1244,7 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
                   child: ListView.separated(
                     physics: const NeverScrollableScrollPhysics(),
                     shrinkWrap: true,
-                    itemCount: trip.shiftDates!.length,
+                    itemCount: trip.shiftDates?.length ?? 0,
                     separatorBuilder: (context, index) =>
                         Divider(color: Colors.grey[300]),
                     itemBuilder: (context, index) {
@@ -1154,31 +1327,6 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildInfoItem(IconData icon, String label, String value) {
-    return Column(
-      children: [
-        Icon(icon, size: 16, color: primaryColor),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[600],
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: textColor,
-          ),
-        ),
-      ],
     );
   }
 }

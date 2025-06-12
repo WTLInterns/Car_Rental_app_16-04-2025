@@ -610,7 +610,7 @@ class _DriverTripsScreenState extends State<DriverTripsScreen> with SingleTicker
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Driver ID: ${driver!['userId'] ?? 'N/A'}',
+                            'Driver ID: $_userId',
                             style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w500,

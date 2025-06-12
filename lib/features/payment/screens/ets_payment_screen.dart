@@ -191,7 +191,7 @@ class _PaymentScreenState extends State<ETSPaymentScreen> {
               children: [
                 Icon(Icons.check_circle, color: successColor, size: 28),
                 const SizedBox(width: 12),
-                const Text('Booking Confirmed'),
+                const Text('Booking Confirmed',style: TextStyle(fontSize: 20),),
               ],
             ),
             content: Column(

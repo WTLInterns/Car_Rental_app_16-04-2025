@@ -50,7 +50,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
 
   Future<void> _handleRegistration() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     // Validate gender selection
     if (_gender.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -58,13 +58,13 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       );
       return;
     }
-    
+
     setState(() => _isLoading = true);
-    
+
     try {
       // Create auth repository instance
       final authRepository = AuthRepository();
-      
+
       // Prepare registration data
       final Map<String, dynamic> registrationData = {
         'userName': _firstNameController.text,
@@ -74,14 +74,14 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         'password': _passwordController.text,
         'gender': _gender.toLowerCase(),
       };
-      
+
       // Call registration endpoint
       final response = await authRepository.register(registrationData);
-      
+
       setState(() => _isLoading = false);
-      
+
       if (!mounted) return;
-      
+
       // Show success dialog
       showDialog(
         context: context,
@@ -92,7 +92,8 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
             TextButton(
               onPressed: () {
                 Navigator.of(ctx).pop();
-                Navigator.pushReplacementNamed(context, AppConstants.routeLogin);
+                Navigator.pushReplacementNamed(
+                    context, AppConstants.routeLogin);
               },
               child: const Text('OK'),
             )
@@ -101,10 +102,13 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       );
     } catch (e) {
       setState(() => _isLoading = false);
-      
+
       // Show error message
+      print('Registration failed: ${e.toString()}');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Registration failed: ${e.toString()}')),
+        const SnackBar(
+            content: Center(child: Text('Mobile number already exists')),
+            backgroundColor: Colors.redAccent),
       );
     }
   }
@@ -129,13 +133,15 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                 children: [
                   AppBar(
                     leading: IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Color(AppConfig.lightTextColorHex)),
-                      onPressed: () => Navigator.pushReplacementNamed(context, AppConstants.routeLogin),
+                      icon: const Icon(Icons.arrow_back,
+                          color: Color(AppConfig.lightTextColorHex)),
+                      onPressed: () => Navigator.pushReplacementNamed(
+                          context, AppConstants.routeLogin),
                     ),
-                    title: const Text(
-                      'Create Account',
-                      style: TextStyle(color: Color(AppConfig.textColorHex), fontSize: 20)
-                    ),
+                    title: const Text('Create Account',
+                        style: TextStyle(
+                            color: Color(AppConfig.textColorHex),
+                            fontSize: 20)),
                     backgroundColor: Colors.transparent,
                     elevation: 0,
                   ),
@@ -150,28 +156,22 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                       borderRadius: BorderRadius.circular(50),
                     ),
                     child: const Center(
-                      child: Text(
-                        'WTL',
-                        style: TextStyle(color: Colors.white, fontSize: 24)
-                      ),
+                      child: Text('WTL',
+                          style: TextStyle(color: Colors.white, fontSize: 24)),
                     ),
                   ),
                   const SizedBox(height: 20),
 
                   // Header
-                  const Text(
-                    'Create Account',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Color(AppConfig.textColorHex)
-                    )
-                  ),
+                  const Text('Create Account',
+                      style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Color(AppConfig.textColorHex))),
                   const SizedBox(height: 8),
-                  const Text(
-                    'Join us and start your journey',
-                    style: TextStyle(color: Color(AppConfig.lightTextColorHex))
-                  ),
+                  const Text('Join us and start your journey',
+                      style:
+                          TextStyle(color: Color(AppConfig.lightTextColorHex))),
                   const SizedBox(height: 30),
 
                   // Name Fields
@@ -181,7 +181,8 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                         child: AppTextField(
                           label: 'First Name',
                           controller: _firstNameController,
-                          validator: (value) => value!.isEmpty ? 'Please enter first name' : null,
+                          validator: (value) =>
+                              value!.isEmpty ? 'Please enter first name' : null,
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -189,7 +190,8 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                         child: AppTextField(
                           label: 'Last Name',
                           controller: _lastNameController,
-                          validator: (value) => value!.isEmpty ? 'Please enter last name' : null,
+                          validator: (value) =>
+                              value!.isEmpty ? 'Please enter last name' : null,
                         ),
                       ),
                     ],
@@ -207,7 +209,8 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                       if (value == null || value.isEmpty) {
                         return 'Please enter email';
                       }
-                      final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                      final emailRegex =
+                          RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
                       if (!emailRegex.hasMatch(value)) {
                         return 'Please enter a valid email';
                       }
@@ -227,7 +230,8 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                       FilteringTextInputFormatter.digitsOnly,
                       LengthLimitingTextInputFormatter(10),
                     ],
-                    validator: (value) => value!.length != 10 ? 'Invalid phone number' : null,
+                    validator: (value) =>
+                        value!.length != 10 ? 'Invalid phone number' : null,
                   ),
                   const SizedBox(height: 20),
 
@@ -335,19 +339,21 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     type: AppButtonType.primary,
                     size: AppButtonSize.large,
                   ),
-                  
+
                   const SizedBox(height: 20),
-                  
+
                   // Login Link
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const Text(
                         'Already have an account? ',
-                        style: TextStyle(color: Color(AppConfig.lightTextColorHex)),
+                        style: TextStyle(
+                            color: Color(AppConfig.lightTextColorHex)),
                       ),
                       TextButton(
-                        onPressed: () => Navigator.pushReplacementNamed(context, AppConstants.routeLogin),
+                        onPressed: () => Navigator.pushReplacementNamed(
+                            context, AppConstants.routeLogin),
                         child: const Text(
                           'Login',
                           style: TextStyle(
@@ -384,16 +390,14 @@ class _GenderButton extends StatelessWidget {
     return ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
-        backgroundColor: isSelected 
-            ? const Color(AppConfig.secondaryColorHex) 
+        backgroundColor: isSelected
+            ? const Color(AppConfig.secondaryColorHex)
             : Colors.white,
-        foregroundColor: isSelected 
-            ? Colors.white 
+        foregroundColor: isSelected
+            ? Colors.white
             : const Color(AppConfig.lightTextColorHex),
         side: BorderSide(
-          color: isSelected 
-              ? Colors.transparent 
-              : const Color(0xFFCCCCCC),
+          color: isSelected ? Colors.transparent : const Color(0xFFCCCCCC),
         ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
@@ -403,4 +407,4 @@ class _GenderButton extends StatelessWidget {
       child: Text(label),
     );
   }
-} 
+}

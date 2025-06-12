@@ -313,7 +313,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => const LoginScreen()),
-              (route) => false,
+          (route) => false,
         );
       }
       return;
@@ -384,7 +384,8 @@ class _ProfileScreenState extends State<ProfileScreen>
 
     try {
       final response = await http.put(
-        Uri.parse('https://api.worldtriplink.com/auth/update-profile/${_userId}'),
+        Uri.parse(
+            'https://api.worldtriplink.com/auth/update-profile/${_userId}'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode(updatedUser.toJson()),
       );
@@ -406,7 +407,8 @@ class _ProfileScreenState extends State<ProfileScreen>
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to update profile: ${response.body}')),
+            SnackBar(
+                content: Text('Failed to update profile: ${response.body}')),
           );
         }
         setState(() => _isLoading = false);
@@ -424,11 +426,11 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   void _showEditProfileDialog() {
     final TextEditingController nameController =
-    TextEditingController(text: _userName);
+        TextEditingController(text: _userName);
     final TextEditingController emailController =
-    TextEditingController(text: _userEmail);
-    final TextEditingController phoneController =
-    TextEditingController(text: _userPhone);
+        TextEditingController(text: _userEmail);
+    // final TextEditingController phoneController =
+    // TextEditingController(text: _userPhone);
 
     showDialog(
       context: context,
@@ -493,32 +495,32 @@ class _ProfileScreenState extends State<ProfileScreen>
                 ),
               ),
               const SizedBox(height: 16),
-              TextField(
-                controller: phoneController,
-                decoration: InputDecoration(
-                  labelText: 'Phone',
-                  prefixIcon: const Icon(
-                    MaterialCommunityIcons.phone_outline,
-                    color: Colors.blueAccent,
-                  ),
-                  filled: true,
-                  fillColor: Colors.blueAccent.withOpacity(0.1),
-                  contentPadding: const EdgeInsets.symmetric(
-                      vertical: 16.0, horizontal: 12.0),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.0),
-                    borderSide: BorderSide.none,
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.0),
-                    borderSide: const BorderSide(
-                      color: Colors.blueAccent,
-                      width: 2.0,
-                    ),
-                  ),
-                ),
-                keyboardType: TextInputType.phone,
-              ),
+              // TextField(
+              //   controller: phoneController,
+              //   decoration: InputDecoration(
+              //     labelText: 'Phone',
+              //     prefixIcon: const Icon(
+              //       MaterialCommunityIcons.phone_outline,
+              //       color: Colors.blueAccent,
+              //     ),
+              //     filled: true,
+              //     fillColor: Colors.blueAccent.withOpacity(0.1),
+              //     contentPadding: const EdgeInsets.symmetric(
+              //         vertical: 16.0, horizontal: 12.0),
+              //     border: OutlineInputBorder(
+              //       borderRadius: BorderRadius.circular(12.0),
+              //       borderSide: BorderSide.none,
+              //     ),
+              //     focusedBorder: OutlineInputBorder(
+              //       borderRadius: BorderRadius.circular(12.0),
+              //       borderSide: const BorderSide(
+              //         color: Colors.blueAccent,
+              //         width: 2.0,
+              //       ),
+              //     ),
+              //   ),
+              //   keyboardType: TextInputType.phone,
+              // ),
             ],
           ),
         ),
@@ -526,7 +528,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child:
-            const Text("Cancel", style: TextStyle(color: lightTextColor)),
+                const Text("Cancel", style: TextStyle(color: lightTextColor)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -540,7 +542,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               final updatedUser = (_userProfile ?? User()).copyWith(
                 username: nameController.text,
                 email: emailController.text,
-                phone: phoneController.text,
+                // phone: phoneController.text,
               );
 
               Navigator.pop(ctx);
@@ -559,14 +561,14 @@ class _ProfileScreenState extends State<ProfileScreen>
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title:
-        const Text("Logout", style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text("Logout", style: TextStyle(fontWeight: FontWeight.bold)),
         content:
-        const Text("Are you sure you want to logout from your account?"),
+            const Text("Are you sure you want to logout from your account?"),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child:
-            const Text("Cancel", style: TextStyle(color: lightTextColor)),
+                const Text("Cancel", style: TextStyle(color: lightTextColor)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -591,7 +593,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 Navigator.pushAndRemoveUntil(
                   ctx,
                   MaterialPageRoute(builder: (context) => const LoginScreen()),
-                      (route) => false,
+                  (route) => false,
                 );
               }
             },
@@ -606,10 +608,10 @@ class _ProfileScreenState extends State<ProfileScreen>
   Widget build(BuildContext context) {
     final initials = _userName.isNotEmpty
         ? _userName
-        .split(' ')
-        .map((n) => n.isNotEmpty ? n[0] : '')
-        .take(2)
-        .join()
+            .split(' ')
+            .map((n) => n.isNotEmpty ? n[0] : '')
+            .take(2)
+            .join()
         : 'U';
 
     return Scaffold(
@@ -638,7 +640,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               Navigator.pushAndRemoveUntil(
                 context,
                 MaterialPageRoute(builder: (context) => const UserHomeScreen()),
-                    (route) => false,
+                (route) => false,
               );
             },
           ),
@@ -661,267 +663,271 @@ class _ProfileScreenState extends State<ProfileScreen>
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: accentColor))
           : FadeTransition(
-        opacity: _fadeAnimation,
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              // Profile Info Section
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                    vertical: 40, horizontal: 24),
-                decoration: BoxDecoration(
-                  color: cardColor,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
+              opacity: _fadeAnimation,
+              child: SingleChildScrollView(
                 child: Column(
                   children: [
-                    Stack(
-                      alignment: Alignment.bottomRight,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                                color: accentColor.withOpacity(0.3),
-                                width: 3),
+                    // Profile Info Section
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 40, horizontal: 24),
+                      decoration: BoxDecoration(
+                        color: cardColor,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
                           ),
-                          child: _imageFile != null
-                              ? CircleAvatar(
-                            radius: 50,
-                            backgroundColor: Colors.grey[200],
-                            backgroundImage: FileImage(_imageFile!),
-                          )
-                              : CircleAvatar(
-                            radius: 50,
-                            backgroundColor: accentColor,
-                            child: Text(
-                              initials.toUpperCase(),
-                              style: const TextStyle(
-                                fontSize: 36,
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          Stack(
+                            alignment: Alignment.bottomRight,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                      color: accentColor.withOpacity(0.3),
+                                      width: 3),
+                                ),
+                                child: _imageFile != null
+                                    ? CircleAvatar(
+                                        radius: 50,
+                                        backgroundColor: Colors.grey[200],
+                                        backgroundImage: FileImage(_imageFile!),
+                                      )
+                                    : CircleAvatar(
+                                        radius: 50,
+                                        backgroundColor: accentColor,
+                                        child: Text(
+                                          initials.toUpperCase(),
+                                          style: const TextStyle(
+                                            fontSize: 36,
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
                               ),
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          bottom: 0,
-                          right: 5,
-                          child: GestureDetector(
-                            onTap: _showImagePicker,
-                            child: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF00D4AA),
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Colors.white,
-                                  width: 3,
+                              Positioned(
+                                bottom: 0,
+                                right: 5,
+                                child: GestureDetector(
+                                  onTap: _showImagePicker,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF00D4AA),
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: Colors.white,
+                                        width: 3,
+                                      ),
+                                    ),
+                                    child: const Icon(
+                                      Icons.camera_alt,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
+                                  ),
                                 ),
                               ),
-                              child: const Icon(
-                                Icons.camera_alt,
-                                color: Colors.white,
-                                size: 20,
-                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                            _userName,
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: textColor,
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    Text(
-                      _userName,
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: textColor,
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(MaterialCommunityIcons.email_outline,
+                                  size: 16, color: lightTextColor),
+                              const SizedBox(width: 6),
+                              Text(
+                                _userEmail,
+                                style: const TextStyle(
+                                    color: lightTextColor, fontSize: 14),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(MaterialCommunityIcons.phone_outline,
+                                  size: 16, color: lightTextColor),
+                              const SizedBox(width: 6),
+                              Text(
+                                _userPhone,
+                                style: const TextStyle(
+                                    color: lightTextColor, fontSize: 14),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+
+                    // Stats Section
+                    Container(
+                      margin: const EdgeInsets.only(top: 16),
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 20, horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: cardColor,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          _buildStatItem(
+                              '2',
+                              'Upcoming',
+                              MaterialCommunityIcons.calendar_clock,
+                              accentColor),
+                          _buildDivider(),
+                          _buildStatItem(
+                              '4',
+                              'Completed',
+                              MaterialCommunityIcons.check_circle_outline,
+                              Colors.green),
+                          _buildDivider(),
+                          _buildStatItem(
+                              '5',
+                              'Canceled',
+                              MaterialCommunityIcons.close_circle_outline,
+                              Colors.red[300]!),
+                        ],
+                      ),
+                    ),
+
+                    // Account Settings
+                    _buildSection(
+                      title: 'Account Settings',
+                      icon: MaterialCommunityIcons.account_cog_outline,
                       children: [
-                        const Icon(MaterialCommunityIcons.email_outline,
-                            size: 16, color: lightTextColor),
-                        const SizedBox(width: 6),
-                        Text(
-                          _userEmail,
-                          style: const TextStyle(
-                              color: lightTextColor, fontSize: 14),
+                        _buildMenuItem(
+                          icon: MaterialCommunityIcons.account_outline,
+                          color: accentColor,
+                          title: 'Personal Information',
+                          description: 'Update your personal details',
+                          onTap: _showEditProfileDialog,
+                        ),
+                        _buildMenuItem(
+                          icon: MaterialCommunityIcons.account_outline,
+                          color: accentColor,
+                          title: 'Services',
+                          description:
+                              'Experience premium travel with our diverse range of services',
+                          onTap: () {
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ServicesScreen(),
+                                ));
+                          },
+                        ),
+                        _buildMenuItem(
+                          icon: MaterialCommunityIcons.account_outline,
+                          color: accentColor,
+                          title: 'Contact Us',
+                          description: "We'd love to hear from you",
+                          onTap: () {
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ContactScreen(),
+                                ));
+                          },
+                        ),
+                        _buildMenuItem(
+                          icon: MaterialCommunityIcons.account_outline,
+                          color: accentColor,
+                          title: 'About WTL',
+                          description:
+                              'Revolutionizing travel with innovation and excellence',
+                          onTap: () {
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => AboutScreen(),
+                                ));
+                          },
                         ),
                       ],
                     ),
-                    const SizedBox(height: 6),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(MaterialCommunityIcons.phone_outline,
-                            size: 16, color: lightTextColor),
-                        const SizedBox(width: 6),
-                        Text(
-                          _userPhone,
-                          style: const TextStyle(
-                              color: lightTextColor, fontSize: 14),
+
+                    // Logout Button
+                    Container(
+                      margin: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        color: cardColor,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: ListTile(
+                        leading: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: Colors.red[50],
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Icon(MaterialCommunityIcons.logout,
+                              color: Colors.red[400], size: 20),
                         ),
-                      ],
+                        title: const Text('Logout',
+                            style: TextStyle(
+                                color: Colors.red,
+                                fontWeight: FontWeight.w500)),
+                        subtitle: const Text('Sign out from your account',
+                            style: TextStyle(color: Colors.grey, fontSize: 12)),
+                        trailing:
+                            const Icon(Icons.chevron_right, color: Colors.grey),
+                        onTap: () => _showLogoutConfirmation(context),
+                      ),
                     ),
-                    const SizedBox(height: 16),
-                  ],
-                ),
-              ),
 
-              // Stats Section
-              Container(
-                margin: const EdgeInsets.only(top: 16),
-                padding: const EdgeInsets.symmetric(
-                    vertical: 20, horizontal: 16),
-                decoration: BoxDecoration(
-                  color: cardColor,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    _buildStatItem(
-                        '2',
-                        'Upcoming',
-                        MaterialCommunityIcons.calendar_clock,
-                        accentColor),
-                    _buildDivider(),
-                    _buildStatItem(
-                        '4',
-                        'Completed',
-                        MaterialCommunityIcons.check_circle_outline,
-                        Colors.green),
-                    _buildDivider(),
-                    _buildStatItem(
-                        '5',
-                        'Canceled',
-                        MaterialCommunityIcons.close_circle_outline,
-                        Colors.red[300]!),
-                  ],
-                ),
-              ),
-
-              // Account Settings
-              _buildSection(
-                title: 'Account Settings',
-                icon: MaterialCommunityIcons.account_cog_outline,
-                children: [
-                  _buildMenuItem(
-                    icon: MaterialCommunityIcons.account_outline,
-                    color: accentColor,
-                    title: 'Personal Information',
-                    description: 'Update your personal details',
-                    onTap: _showEditProfileDialog,
-                  ),
-                  _buildMenuItem(
-                    icon: MaterialCommunityIcons.account_outline,
-                    color: accentColor,
-                    title: 'Services',
-                    description:
-                    'Experience premium travel with our diverse range of services',
-                    onTap: (){
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => ServicesScreen(),));
-                    },
-                  ),
-                  _buildMenuItem(
-                    icon: MaterialCommunityIcons.account_outline,
-                    color: accentColor,
-                    title: 'Contact Us',
-                    description: "We'd love to hear from you",
-                    onTap: () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ContactScreen(),
-                          ));
-                    },
-                  ),
-                  _buildMenuItem(
-                    icon: MaterialCommunityIcons.account_outline,
-                    color: accentColor,
-                    title: 'About WTL',
-                    description:
-                    'Revolutionizing travel with innovation and excellence',
-                    onTap: () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => AboutScreen(),
-                          ));
-                    },
-                  ),
-                ],
-              ),
-
-              // Logout Button
-              Container(
-                margin: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  color: cardColor,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
+                    // Version Info
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: 24, top: 8),
+                      child: Column(
+                        children: [
+                          Text('Version 1.0.0',
+                              style: TextStyle(
+                                  color: mutedTextColor, fontSize: 12)),
+                        ],
+                      ),
                     ),
                   ],
                 ),
-                child: ListTile(
-                  leading: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: Colors.red[50],
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Icon(MaterialCommunityIcons.logout,
-                        color: Colors.red[400], size: 20),
-                  ),
-                  title: const Text('Logout',
-                      style: TextStyle(
-                          color: Colors.red,
-                          fontWeight: FontWeight.w500)),
-                  subtitle: const Text('Sign out from your account',
-                      style: TextStyle(color: Colors.grey, fontSize: 12)),
-                  trailing:
-                  const Icon(Icons.chevron_right, color: Colors.grey),
-                  onTap: () => _showLogoutConfirmation(context),
-                ),
               ),
-
-              // Version Info
-             const Padding(
-                padding: EdgeInsets.only(bottom: 24, top: 8),
-                child: Column(
-                  children: [
-                    Text('Version 1.0.0',
-                        style: TextStyle(
-                            color: mutedTextColor, fontSize: 12)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+            ),
     );
   }
 
@@ -953,8 +959,8 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   Widget _buildSection(
       {required String title,
-        required List<Widget> children,
-        required IconData icon}) {
+      required List<Widget> children,
+      required IconData icon}) {
     return Container(
       margin: const EdgeInsets.only(top: 16, left: 16, right: 16),
       decoration: BoxDecoration(
@@ -1021,7 +1027,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           subtitle: Text(description,
               style: const TextStyle(color: lightTextColor, fontSize: 12)),
           trailing:
-          const Icon(Icons.chevron_right, color: Colors.grey, size: 20),
+              const Icon(Icons.chevron_right, color: Colors.grey, size: 20),
           onTap: onTap,
         ),
         Divider(height: 1, indent: 70, color: Colors.grey[200]),

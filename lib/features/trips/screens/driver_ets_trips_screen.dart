@@ -1,28 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import 'dart:math';
+import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher_string.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../features/profile/screens/driver_profile_screen.dart';
 import '../../../features/tracking/screens/ets_tracking_screen.dart';
 import '../../../features/trips/screens/driver_trips_screen.dart';
+
 // Updated color palette to match the app's professional style
-const Color primaryColor = Color(0xFF3057E3);      // Royal blue
-const Color secondaryColor = Color(0xFF3057E3);    // Same blue for consistency
-const Color accentColor = Color(0xFFFFCC00);       // Yellow/gold accent
-const Color backgroundColor = Color(0xFFF3F5F9);   // Light gray background
-const Color cardColor = Colors.white;              // White card background
-const Color textColor = Color(0xFF333333);         // Dark text
-const Color lightTextColor = Color(0xFF666666);    // Medium gray text
-const Color mutedTextColor = Color(0xFF666666);    // Muted text
-const Color successColor = Color(0xFF4CAF50);      // Green for success
-const Color errorColor = Color(0xFFE53935);        // Red for errors
-const Color warningColor = Color(0xFFFF9800);      // Orange for warnings
+const Color primaryColor = Color(0xFF3057E3); // Royal blue
+const Color secondaryColor = Color(0xFF3057E3); // Same blue for consistency
+const Color accentColor = Color(0xFF00796B); // Professional teal
+const Color backgroundColor = Color(0xFFF3F5F9); // Light gray background
+const Color cardColor = Colors.white; // White card background
+const Color textColor = Color(0xFF333333); // Dark text
+const Color lightTextColor = Color(0xFF666666); // Medium gray text
+const Color mutedTextColor = Color(0xFF666666); // Muted text
+const Color successColor = Color(0xFF4CAF50); // Green for success
+const Color errorColor = Color(0xFFE53935); // Red for errors
+const Color warningColor = Color(0xFFFF9800); // Orange for warnings
 
 class DummyETSTrip {
   final String bookingId;
+  final String totalBookings;
   final List<String> passengerNames;
   final List<String> passengerPhones;
   final List<String> pickups;
@@ -36,21 +38,22 @@ class DummyETSTrip {
   final String date;
   final String time;
   final int passengerCount;
-  
-  // Added fields needed for tracking navigation
   final String? etsId;
   final String? slotId;
   final String? pickupLocation;
   final String? dropLocation;
 
-  // Getters to simplify access for single-passenger trips
   double? get pickupLatitude => pickupLats.isNotEmpty ? pickupLats[0] : null;
+
   double? get pickupLongitude => pickupLngs.isNotEmpty ? pickupLngs[0] : null;
+
   double? get dropLatitude => destLats.isNotEmpty ? destLats[0] : null;
+
   double? get dropLongitude => destLngs.isNotEmpty ? destLngs[0] : null;
 
   DummyETSTrip({
     required this.bookingId,
+    required this.totalBookings,
     required this.passengerNames,
     required this.passengerPhones,
     required this.pickups,
@@ -78,20 +81,17 @@ class DriverETSTripsScreen extends StatefulWidget {
   State<DriverETSTripsScreen> createState() => _DriverETSTripsScreenState();
 }
 
-class _DriverETSTripsScreenState extends State<DriverETSTripsScreen> with SingleTickerProviderStateMixin {
+class _DriverETSTripsScreenState extends State<DriverETSTripsScreen>
+    with SingleTickerProviderStateMixin {
   String activeTab = 'upcoming';
   Map<String, dynamic>? driver;
   String _userId = '';
-  String driverId = ''; // Added driver ID for tracking
   bool isLoading = true;
   bool isRefreshing = false;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
-  int _selectedIndex = 1; 
+  int _selectedIndex = 1;
   bool isDriverActive = true;
-  bool isList = true;
-
-  // Generate dummy ETS trips
   List<DummyETSTrip> _dummyETSTrips = [];
 
   @override
@@ -105,108 +105,8 @@ class _DriverETSTripsScreenState extends State<DriverETSTripsScreen> with Single
       parent: _animationController,
       curve: Curves.easeIn,
     );
-    _generateDummyETSTrips();
-    getDriverData();
-  }
-
-  void _generateDummyETSTrips() {
-    final random = Random();
-    
-    // Create several dummy ETS trips
-    _dummyETSTrips = [
-      DummyETSTrip(
-        bookingId: 'ETS001',
-        passengerNames: ['John Smith', 'Maria Garcia', 'David Lee'],
-        passengerPhones: ['+91 9871234560', '+91 9871234561', '+91 9871234562'],
-        pickups: ['Hinjewadi Phase 1', 'Baner Road', 'Aundh'],
-        destinations: ['Magarpatta City', 'Koregaon Park', 'Kalyani Nagar'],
-        pickupLats: [18.5912 + random.nextDouble() * 0.01, 18.5597 + random.nextDouble() * 0.01, 18.5679 + random.nextDouble() * 0.01],
-        pickupLngs: [73.7380 + random.nextDouble() * 0.01, 73.7997 + random.nextDouble() * 0.01, 73.8143 + random.nextDouble() * 0.01],
-        destLats: [18.5158 + random.nextDouble() * 0.01, 18.5362 + random.nextDouble() * 0.01, 18.5471 + random.nextDouble() * 0.01],
-        destLngs: [73.9272 + random.nextDouble() * 0.01, 73.8978 + random.nextDouble() * 0.01, 73.9062 + random.nextDouble() * 0.01],
-        status: 'upcoming',
-        fare: '₹750',
-        date: '2024-04-18',
-        time: '09:30',
-        passengerCount: 3,
-      ),
-      DummyETSTrip(
-        bookingId: 'ETS002',
-        passengerNames: ['Sarah Johnson', 'Michael Brown', 'Linda Davis', 'Robert Wilson'],
-        passengerPhones: ['+91 9871234563', '+91 9871234564', '+91 9871234565', '+91 9871234566'],
-        pickups: ['Viman Nagar', 'Kharadi', 'Hadapsar', 'Magarpatta'],
-        destinations: ['Shivajinagar', 'FC Road', 'JM Road', 'Deccan'],
-        pickupLats: [18.5679 + random.nextDouble() * 0.01, 18.5509 + random.nextDouble() * 0.01, 18.5089 + random.nextDouble() * 0.01, 18.5158 + random.nextDouble() * 0.01],
-        pickupLngs: [73.9143 + random.nextDouble() * 0.01, 73.9437 + random.nextDouble() * 0.01, 73.9260 + random.nextDouble() * 0.01, 73.9272 + random.nextDouble() * 0.01],
-        destLats: [18.5314 + random.nextDouble() * 0.01, 18.5236 + random.nextDouble() * 0.01, 18.5226 + random.nextDouble() * 0.01, 18.5182 + random.nextDouble() * 0.01],
-        destLngs: [73.8446 + random.nextDouble() * 0.01, 73.8415 + random.nextDouble() * 0.01, 73.8470 + random.nextDouble() * 0.01, 73.8385 + random.nextDouble() * 0.01],
-        status: 'upcoming',
-        fare: '₹950',
-        date: '2024-04-19',
-        time: '10:00',
-        passengerCount: 4,
-      ),
-      DummyETSTrip(
-        bookingId: 'ETS003',
-        passengerNames: ['Emily Wilson', 'James Taylor'],
-        passengerPhones: ['+91 9871234567', '+91 9871234568'],
-        pickups: ['Wakad', 'Pimple Saudagar'],
-        destinations: ['Camp', 'Kondhwa'],
-        pickupLats: [18.5907 + random.nextDouble() * 0.01, 18.5895 + random.nextDouble() * 0.01],
-        pickupLngs: [73.7652 + random.nextDouble() * 0.01, 73.8222 + random.nextDouble() * 0.01],
-        destLats: [18.5162 + random.nextDouble() * 0.01, 18.4706 + random.nextDouble() * 0.01],
-        destLngs: [73.8735 + random.nextDouble() * 0.01, 73.8903 + random.nextDouble() * 0.01],
-        status: 'completed',
-        fare: '₹550',
-        date: '2024-04-15',
-        time: '16:30',
-        passengerCount: 2,
-      ),
-      DummyETSTrip(
-        bookingId: 'ETS004',
-        passengerNames: ['Jennifer Moore', 'Thomas Anderson', 'Jessica Allen'],
-        passengerPhones: ['+91 9871234569', '+91 9871234570', '+91 9871234571'],
-        pickups: ['Baner', 'Balewadi', 'Sus Road'],
-        destinations: ['Koregaon Park', 'Kalyani Nagar', 'Viman Nagar'],
-        pickupLats: [18.5597 + random.nextDouble() * 0.01, 18.5741 + random.nextDouble() * 0.01, 18.5832 + random.nextDouble() * 0.01],
-        pickupLngs: [73.7997 + random.nextDouble() * 0.01, 73.7870 + random.nextDouble() * 0.01, 73.7975 + random.nextDouble() * 0.01],
-        destLats: [18.5362 + random.nextDouble() * 0.01, 18.5471 + random.nextDouble() * 0.01, 18.5679 + random.nextDouble() * 0.01],
-        destLngs: [73.8978 + random.nextDouble() * 0.01, 73.9062 + random.nextDouble() * 0.01, 73.9143 + random.nextDouble() * 0.01],
-        status: 'cancelled',
-        fare: '₹650',
-        date: '2024-04-16',
-        time: '11:15',
-        passengerCount: 3,
-      ),
-    ];
-  }
-
-  void _onItemTapped(int index) {
-    if (index == _selectedIndex) return;
-
-    setState(() {
-      _selectedIndex = index;
-    });
-
-    switch (index) {
-      case 0:
-        // Navigate to regular Trips
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const DriverTripsScreen()),
-        );
-        break;
-      case 1:
-        // Current page is ETS trips, no navigation needed
-        break;
-      case 2:
-        // Navigate to Profile
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const DriverProfileScreen()),
-        );
-        break;
-    }
+    // Fetch driver data and trips sequentially
+    _initializeData();
   }
 
   @override
@@ -215,13 +115,25 @@ class _DriverETSTripsScreenState extends State<DriverETSTripsScreen> with Single
     super.dispose();
   }
 
+  Future<void> _initializeData() async {
+    await getDriverData();
+    if (_userId.isNotEmpty) {
+      await fetchETSTrips();
+    } else {
+      setState(() {
+        isLoading = false;
+      });
+      _showErrorSnackBar('Invalid user ID. Please log in again.');
+    }
+    _animationController.forward();
+  }
+
   Future<void> getDriverData() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final userDataString = prefs.getString('userData');
       debugPrint('Fetched userData from SharedPreferences: $userDataString');
-      
-      // First try to get userId from userData
+
       String userId = '';
       if (userDataString != null) {
         final userData = json.decode(userDataString);
@@ -230,31 +142,134 @@ class _DriverETSTripsScreenState extends State<DriverETSTripsScreen> with Single
           userId = userData['userId']?.toString() ?? '';
         });
       }
-      
-      // If userId is still empty, try other sources
+
       if (userId.isEmpty) {
         userId = prefs.getInt('userId')?.toString() ?? '';
       }
-      
+
       setState(() {
         _userId = userId;
       });
-      
+
       debugPrint('Driver ID after all checks: $_userId');
-      
+
       if (_userId.isEmpty) {
         debugPrint('No valid userId found in any storage location');
-        // Navigate back to login if no valid user data is found
         Navigator.pushReplacementNamed(context, '/login');
       }
     } catch (error) {
       debugPrint('Error fetching driver data: $error');
       _showErrorSnackBar('Could not load driver data. Please try again.');
+    }
+  }
+
+  Future<void> fetchETSTrips() async {
+    if (_userId.isEmpty) {
+      debugPrint('Cannot fetch trips: userId is empty');
+      setState(() {
+        isLoading = false;
+        isRefreshing = false;
+      });
+      _showErrorSnackBar('User ID not found. Please log in again.');
+      return;
+    }
+
+    try {
+      setState(() {
+        isLoading = true;
+      });
+
+      final uri = Uri.parse(
+          'https://ets.worldtriplink.com/schedule/driver/$_userId/slots');
+      debugPrint('Fetching ETS trips from: $uri');
+
+      final response = await http.get(uri, headers: {
+        'Content-Type': 'application/json',
+        // Add authentication headers if required, e.g.:
+        // 'Authorization': 'Bearer ${yourToken}',
+      });
+
+      debugPrint('API response status: ${response.statusCode}');
+      debugPrint('API response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final List<dynamic>? slots = data['slots'];
+        List<DummyETSTrip> trips = [];
+
+        if (slots == null || slots.isEmpty) {
+          debugPrint('No slots found in API response');
+          setState(() {
+            _dummyETSTrips = trips;
+          });
+          return;
+        }
+
+        for (var slot in slots) {
+          final bookings = slot['bookings'] as List<dynamic>? ?? [];
+          for (var booking in bookings) {
+            final userName = booking['userName']?.toString() ?? 'Unknown';
+            final phone = booking['phone']?.toString() ?? 'N/A';
+            final pickupLocation =
+                booking['pickupLocation']?.toString() ?? 'Unknown Location';
+            final dropLocation =
+                booking['dropLocation']?.toString() ?? 'Unknown Location';
+            final pickupTime = booking['pickupTime']?.toString() ?? 'N/A';
+            final bookingStatus =
+                booking['status']?.toString().toLowerCase() ?? 'unknown';
+            final bookingId = booking['bookingId']?.toString() ?? '0';
+            final totalBookings = slot['totalBookings']?.toString() ?? '0';
+            final slotDate = slot['date']?.toString() ?? 'N/A';
+            final slotId = slot['slotId']?.toString();
+
+            String uiStatus = 'upcoming';
+            if (bookingStatus == 'pending') {
+              uiStatus = 'upcoming';
+            } else if (bookingStatus == 'completed') {
+              uiStatus = 'completed';
+            } else if (bookingStatus == 'cancelled') {
+              uiStatus = 'cancelled';
+            }
+
+            trips.add(DummyETSTrip(
+              bookingId: bookingId,
+              totalBookings: totalBookings,
+              passengerNames: [userName],
+              passengerPhones: [phone],
+              pickups: [pickupLocation],
+              destinations: [dropLocation],
+              pickupLats: [0.0],
+              pickupLngs: [0.0],
+              destLats: [0.0],
+              destLngs: [0.0],
+              status: uiStatus,
+              fare: 'N/A',
+              date: slotDate,
+              time: pickupTime,
+              passengerCount: 1,
+              slotId: slotId,
+              pickupLocation: pickupLocation,
+              dropLocation: dropLocation,
+            ));
+          }
+        }
+
+        setState(() {
+          _dummyETSTrips = trips;
+        });
+      } else {
+        debugPrint('API request failed with status: ${response.statusCode}');
+        _showErrorSnackBar(
+            'Failed to fetch ETS trips. Status: ${response.statusCode}');
+      }
+    } catch (error) {
+      debugPrint('Error fetching ETS trips: $error');
+      _showErrorSnackBar('Could not fetch ETS trips. Please try again.');
     } finally {
       setState(() {
         isLoading = false;
+        isRefreshing = false;
       });
-      _animationController.forward();
     }
   }
 
@@ -268,26 +283,24 @@ class _DriverETSTripsScreenState extends State<DriverETSTripsScreen> with Single
         action: SnackBarAction(
           label: 'Retry',
           textColor: Colors.white,
-          onPressed: () => getDriverData(),
+          onPressed: () => _initializeData(),
         ),
       ),
     );
   }
 
   void handleNavigateToETSTracking(DummyETSTrip trip) {
-    // Extract coordinates from trip data
-    // For demo purposes, generating coordinates around Bangalore if not available
     final pickupLat = trip.pickupLatitude ?? 12.9716;
     final pickupLng = trip.pickupLongitude ?? 77.5946;
     final dropLat = trip.dropLatitude ?? 13.0827;
     final dropLng = trip.dropLongitude ?? 77.5851;
-    
+
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ETSDriverTrackingScreen(
+          driverId: _userId,
           etsId: trip.etsId,
-          driverId: driverId,
           slotId: trip.slotId,
           fromLocation: trip.pickupLocation,
           toLocation: trip.dropLocation,
@@ -299,17 +312,15 @@ class _DriverETSTripsScreenState extends State<DriverETSTripsScreen> with Single
   }
 
   Future<void> makePhoneCall(String phoneNumber) async {
-    if (phoneNumber.isEmpty) {
+    if (phoneNumber.isEmpty || phoneNumber == 'N/A') {
       _showErrorSnackBar('Phone number not available');
       return;
     }
-    
-    // Sanitize phone number - remove spaces and special characters except '+'
+
     final sanitizedNumber = phoneNumber.replaceAll(RegExp(r'[^\d+]'), '');
     final String telUrl = 'tel:$sanitizedNumber';
-    
+
     try {
-      // Use the more reliable launchUrlString
       if (await canLaunchUrlString(telUrl)) {
         await launchUrlString(telUrl);
       } else {
@@ -317,7 +328,33 @@ class _DriverETSTripsScreenState extends State<DriverETSTripsScreen> with Single
       }
     } catch (e) {
       debugPrint('Error launching phone dialer: $e');
-      _showErrorSnackBar('Error launching phone dialer. Please try manually dialing $sanitizedNumber');
+      _showErrorSnackBar(
+          'Error launching phone dialer. Please try manually dialing $sanitizedNumber');
+    }
+  }
+
+  void _onItemTapped(int index) {
+    if (index == _selectedIndex) return;
+
+    setState(() {
+      _selectedIndex = index;
+    });
+
+    switch (index) {
+      case 0:
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const DriverTripsScreen()),
+        );
+        break;
+      case 1:
+        break;
+      case 2:
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const DriverProfileScreen()),
+        );
+        break;
     }
   }
 
@@ -327,7 +364,6 @@ class _DriverETSTripsScreenState extends State<DriverETSTripsScreen> with Single
       backgroundColor: backgroundColor,
       body: Column(
         children: [
-          // App Bar
           Container(
             decoration: BoxDecoration(
               color: primaryColor,
@@ -349,7 +385,8 @@ class _DriverETSTripsScreenState extends State<DriverETSTripsScreen> with Single
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.arrow_back, size: 24, color: Colors.white),
+                  icon: const Icon(Icons.arrow_back,
+                      size: 24, color: Colors.white),
                   onPressed: () {
                     Navigator.pushNamed(context, '/driver-trips');
                   },
@@ -368,16 +405,20 @@ class _DriverETSTripsScreenState extends State<DriverETSTripsScreen> with Single
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(MaterialCommunityIcons.refresh, size: 24, color: Colors.white),
-                  onPressed: () => setState(() { isRefreshing = false; }),
+                  icon: const Icon(MaterialCommunityIcons.refresh,
+                      size: 24, color: Colors.white),
+                  onPressed: () {
+                    setState(() {
+                      isRefreshing = true;
+                    });
+                    _initializeData();
+                  },
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                 ),
               ],
             ),
           ),
-          
-          // Driver Status Card
           if (driver != null && !isLoading)
             Container(
               margin: const EdgeInsets.all(16),
@@ -402,8 +443,12 @@ class _DriverETSTripsScreenState extends State<DriverETSTripsScreen> with Single
                         radius: 30,
                         backgroundColor: secondaryColor.withOpacity(0.1),
                         child: Text(
-                          driver!['name'] != null && driver!['name'].toString().isNotEmpty
-                              ? driver!['name'].toString().substring(0, 1).toUpperCase()
+                          driver!['name'] != null &&
+                              driver!['name'].toString().isNotEmpty
+                              ? driver!['name']
+                              .toString()
+                              .substring(0, 1)
+                              .toUpperCase()
                               : 'D',
                           style: TextStyle(
                             fontSize: 24,
@@ -417,7 +462,7 @@ class _DriverETSTripsScreenState extends State<DriverETSTripsScreen> with Single
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            driver!['name'] ?? 'Driver',
+                            driver!['name']?.toString() ?? 'Driver',
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -426,7 +471,7 @@ class _DriverETSTripsScreenState extends State<DriverETSTripsScreen> with Single
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Driver ID: ${driver!['userId'] ?? 'N/A'}',
+                            'Driver ID: $_userId',
                             style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
@@ -437,19 +482,25 @@ class _DriverETSTripsScreenState extends State<DriverETSTripsScreen> with Single
                           Row(
                             children: [
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: isDriverActive ? successColor.withOpacity(0.1) : mutedTextColor.withOpacity(0.1),
+                                  color: isDriverActive
+                                      ? successColor.withOpacity(0.1)
+                                      : mutedTextColor.withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Row(
                                   children: [
                                     Icon(
-                                      isDriverActive 
-                                          ? MaterialCommunityIcons.check_circle 
-                                          : MaterialCommunityIcons.clock_outline,
-                                      size: 12, 
-                                      color: isDriverActive ? successColor : mutedTextColor
+                                      isDriverActive
+                                          ? MaterialCommunityIcons.check_circle
+                                          : MaterialCommunityIcons
+                                          .clock_outline,
+                                      size: 12,
+                                      color: isDriverActive
+                                          ? successColor
+                                          : mutedTextColor,
                                     ),
                                     const SizedBox(width: 4),
                                     Text(
@@ -457,7 +508,9 @@ class _DriverETSTripsScreenState extends State<DriverETSTripsScreen> with Single
                                       style: TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w500,
-                                        color: isDriverActive ? successColor : mutedTextColor,
+                                        color: isDriverActive
+                                            ? successColor
+                                            : mutedTextColor,
                                       ),
                                     ),
                                   ],
@@ -469,30 +522,28 @@ class _DriverETSTripsScreenState extends State<DriverETSTripsScreen> with Single
                       ),
                     ],
                   ),
-                  // Toggle switch for online/offline status
                   Switch(
                     value: isDriverActive,
                     onChanged: (value) {
                       setState(() {
                         isDriverActive = value;
                       });
-                      // In a real app, you would update the server with the driver's status
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('You are now ${isDriverActive ? 'online' : 'offline'}'),
-                          backgroundColor: isDriverActive ? successColor : mutedTextColor,
+                          content: Text(
+                              'You are now ${isDriverActive ? 'online' : 'offline'}'),
+                          backgroundColor:
+                          isDriverActive ? successColor : mutedTextColor,
                           behavior: SnackBarBehavior.floating,
                         ),
                       );
                     },
                     activeColor: successColor,
-                    activeTrackColor: successColor.withOpacity(0.5),
+                    inactiveTrackColor: mutedTextColor.withOpacity(0.5),
                   ),
                 ],
               ),
             ),
-          
-          // Tabs
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
@@ -501,7 +552,7 @@ class _DriverETSTripsScreenState extends State<DriverETSTripsScreen> with Single
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
+                  blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
               ],
@@ -514,68 +565,70 @@ class _DriverETSTripsScreenState extends State<DriverETSTripsScreen> with Single
               ],
             ),
           ),
-          
-          // Trip List
           Expanded(
             child: isLoading
-                ? const Center(child: CircularProgressIndicator(color: secondaryColor))
+                ? const Center(
+                child: CircularProgressIndicator(color: secondaryColor))
                 : isRefreshing
-                    ? Stack(
+                ? Stack(
+              children: [
+                _buildTrip(),
+                Positioned(
+                  top: 16,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: cardColor,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          _buildTripList(),
-                          Positioned(
-                            top: 16,
-                            left: 0,
-                            right: 0,
-                            child: Center(
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                decoration: BoxDecoration(
-                                  color: cardColor,
-                                  borderRadius: BorderRadius.circular(20),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.1),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    SizedBox(
-                                      width: 16,
-                                      height: 16,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(secondaryColor),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    const Text(
-                                      'Refreshing...',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
-                                        color: lightTextColor,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                          SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor:
+                              AlwaysStoppedAnimation<Color>(
+                                  secondaryColor),
+                            ),
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            'Refreshing...',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: lightTextColor,
                             ),
                           ),
                         ],
-                      )
-                    : FadeTransition(
-                        opacity: _fadeAnimation,
-                        child: _buildTripList(),
                       ),
+                    ),
+                  ),
+                ),
+              ],
+            )
+                : FadeTransition(
+              opacity: _fadeAnimation,
+              child: _buildTrip(),
+            ),
           ),
         ],
       ),
-     bottomNavigationBar: BottomNavigationBar(
+      bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(MaterialCommunityIcons.car_multiple),
@@ -599,10 +652,10 @@ class _DriverETSTripsScreenState extends State<DriverETSTripsScreen> with Single
       ),
     );
   }
-  
+
   Widget _buildTab(String tabId, String label) {
     final isActive = activeTab == tabId;
-    
+
     return Expanded(
       child: InkWell(
         onTap: () => setState(() => activeTab = tabId),
@@ -618,8 +671,8 @@ class _DriverETSTripsScreenState extends State<DriverETSTripsScreen> with Single
                 tabId == 'upcoming'
                     ? MaterialCommunityIcons.calendar_clock
                     : tabId == 'completed'
-                        ? MaterialCommunityIcons.check_circle
-                        : MaterialCommunityIcons.close_circle,
+                    ? MaterialCommunityIcons.check_circle
+                    : MaterialCommunityIcons.close_circle,
                 size: 18,
                 color: isActive ? secondaryColor : mutedTextColor,
               ),
@@ -640,32 +693,27 @@ class _DriverETSTripsScreenState extends State<DriverETSTripsScreen> with Single
     );
   }
 
-  Widget _buildTripList() {
+  Widget _buildTrip() {
     List<DummyETSTrip> filteredTrips = [];
-    
+
     if (activeTab == 'upcoming') {
-      filteredTrips = _dummyETSTrips.where((trip) => trip.status == 'upcoming').toList();
+      filteredTrips =
+          _dummyETSTrips.where((trip) => trip.status == 'upcoming').toList();
     } else if (activeTab == 'completed') {
-      filteredTrips = _dummyETSTrips.where((trip) => trip.status == 'completed').toList();
+      filteredTrips =
+          _dummyETSTrips.where((trip) => trip.status == 'completed').toList();
     } else if (activeTab == 'cancelled') {
-      filteredTrips = _dummyETSTrips.where((trip) => trip.status == 'cancelled').toList();
+      filteredTrips =
+          _dummyETSTrips.where((trip) => trip.status == 'cancelled').toList();
     }
-    
-    if (filteredTrips.isEmpty) {
+
+    if (filteredTrips.isEmpty && !isLoading) {
       return _buildEmptyState();
     }
-    
+
     return RefreshIndicator(
       color: secondaryColor,
-      onRefresh: () async {
-        setState(() {
-          isRefreshing = true;
-        });
-        await Future.delayed(const Duration(milliseconds: 1000));
-        setState(() {
-          isRefreshing = false;
-        });
-      },
+      onRefresh: _initializeData,
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: filteredTrips.length,
@@ -681,32 +729,26 @@ class _DriverETSTripsScreenState extends State<DriverETSTripsScreen> with Single
     IconData iconData;
     String message;
     String submessage;
-    
+
     if (activeTab == 'upcoming') {
       iconData = MaterialCommunityIcons.calendar_blank;
       message = 'No upcoming ETS trips';
-      submessage = 'You have no upcoming ETS trips scheduled';
+      submessage = _userId.isEmpty
+          ? 'Please log in to view your trips.'
+          : 'You have no upcoming ETS trips scheduled.';
     } else if (activeTab == 'completed') {
       iconData = MaterialCommunityIcons.check_circle_outline;
       message = 'No completed ETS trips';
-      submessage = 'You haven\'t completed any ETS trips yet';
+      submessage = 'You haven\'t completed any ETS trips yet.';
     } else {
       iconData = MaterialCommunityIcons.close_circle_outline;
       message = 'No cancelled ETS trips';
-      submessage = 'You don\'t have any cancelled ETS trips';
+      submessage = 'You don\'t have any cancelled ETS trips.';
     }
-    
+
     return RefreshIndicator(
       color: secondaryColor,
-      onRefresh: () async {
-        setState(() {
-          isRefreshing = true;
-        });
-        await Future.delayed(const Duration(milliseconds: 1000));
-        setState(() {
-          isRefreshing = false;
-        });
-      },
+      onRefresh: _initializeData,
       child: ListView(
         children: [
           SizedBox(
@@ -751,20 +793,15 @@ class _DriverETSTripsScreenState extends State<DriverETSTripsScreen> with Single
                         setState(() {
                           isRefreshing = true;
                         });
-                        Future.delayed(const Duration(milliseconds: 1000), () {
-                          if (mounted) {
-                            setState(() {
-                              isRefreshing = false;
-                            });
-                          }
-                        });
+                        _initializeData();
                       },
                       icon: const Icon(MaterialCommunityIcons.refresh),
                       label: const Text('Refresh'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: secondaryColor,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -781,307 +818,358 @@ class _DriverETSTripsScreenState extends State<DriverETSTripsScreen> with Single
   }
 
   Widget _buildETSTripCard(DummyETSTrip trip) {
-    final Color statusColor = activeTab == 'upcoming'
-        ? primaryColor
-        : activeTab == 'completed'
-            ? successColor
-            : errorColor;
-            
-    final String statusText = activeTab == 'upcoming'
+    final Color statusColor = trip.status == 'upcoming'
+        ? successColor
+        : trip.status == 'completed'
+        ? successColor
+        : errorColor;
+    final String statusText = trip.status == 'upcoming'
         ? 'Confirmed'
-        : activeTab == 'completed'
-            ? 'Completed'
-            : 'Cancelled';
-    
+        : trip.status == 'completed'
+        ? 'Completed'
+        : 'Cancelled';
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: cardColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.withOpacity(0.1)),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 5,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
-      child: Column(
-        children: [
-          // Header with ETS badge and status
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header with ETS label, Booking ID, and Status
+            Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Flexible(
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFF3E0),
-                          borderRadius: BorderRadius.circular(6),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: accentColor.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        'ETS',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: accentColor,
                         ),
-                        child: const Text(
-                          'ETS',
-                          style: TextStyle(
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'TotalBookings: ${trip.totalBookings}',
+                          style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFFF57C00),
+                            color: textColor,
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Employee Transport Service',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: textColor,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            Text(
-                              trip.bookingId,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: lightTextColor,
-                              ),
-                            ),
-                          ],
+                        const SizedBox(height: 4),
+                        Text(
+                          'Date: ${trip.date}',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: textColor,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-                // Status indicator
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: activeTab == 'upcoming' 
-                        ? Colors.transparent
-                        : statusColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: statusColor.withOpacity(0.3)
+                      ],
                     ),
+                  ],
+                ),
+                Container(
+                  padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: statusColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: statusColor.withOpacity(0.4)),
                   ),
                   child: Text(
                     statusText,
                     style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
                       color: statusColor,
                     ),
                   ),
                 ),
               ],
             ),
-          ),
-          
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            const SizedBox(height: 16),
+            const Divider(color: Colors.grey, height: 1),
+            const SizedBox(height: 16),
+            // Passenger Information
+            Row(
               children: [
-                // Passenger count info
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: secondaryColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
+                const Icon(
+                  MaterialCommunityIcons.account,
+                  size: 20,
+                  color: secondaryColor,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(
-                        MaterialCommunityIcons.account_group,
-                        size: 16,
-                        color: secondaryColor,
-                      ),
-                      const SizedBox(width: 8),
+                      const SizedBox(height: 4),
                       Text(
-                        '${trip.passengerCount} Passengers',
+                        'Slot ID: ${trip.slotId ?? 'N/A'}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: lightTextColor,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      const Text(
+                        'Passenger',
                         style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: lightTextColor,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        trip.passengerNames.isNotEmpty
+                            ? trip.passengerNames[0]
+                            : 'Unknown',
+                        style: const TextStyle(
+                          fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: secondaryColor,
+                          color: textColor,
                         ),
                       ),
                     ],
                   ),
                 ),
-
-                const SizedBox(height: 16),
-                
-                // Passenger list - expanded for upcoming trips
-                if (activeTab == 'upcoming') ...[
-                  const Text(
-                    'Passengers',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: textColor,
+              ],
+            ),
+            const SizedBox(height: 12),
+            // Phone Number
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(
+                            MaterialCommunityIcons.phone_outline,
+                            size: 20,
+                            color: secondaryColor,
+                          ),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'Phone',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: lightTextColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Text(
+                            trip.passengerPhones.isNotEmpty
+                                ? trip.passengerPhones[0]
+                                : 'N/A',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: textColor,
+                            ),
+                          ),
+                          const Spacer(),
+                          InkWell(
+                            onTap: () => makePhoneCall(
+                                trip.passengerPhones.isNotEmpty
+                                    ? trip.passengerPhones[0]
+                                    : ''),
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: secondaryColor.withOpacity(0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                MaterialCommunityIcons.phone,
+                                size: 20,
+                                color: secondaryColor,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            // Pickup and Drop-off Locations
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Column(
+                  children: [
+                    const Icon(
+                      MaterialCommunityIcons.map_marker,
+                      size: 20,
+                      color: successColor,
+                    ),
+                    Container(
+                      width: 2,
+                      height: 40,
+                      color: successColor.withOpacity(0.3),
+                    ),
+                    const Icon(
+                      MaterialCommunityIcons.map_marker_check,
+                      size: 20,
+                      color: errorColor,
+                    ),
+                  ],
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Pickup Location',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: lightTextColor,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        trip.pickupLocation ?? 'Unknown',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: textColor,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Drop-off Location',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: lightTextColor,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        trip.dropLocation ?? 'Unknown',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: textColor,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            // Pickup Time
+            Row(
+              children: [
+                const Icon(
+                  MaterialCommunityIcons.clock_outline,
+                  size: 20,
+                  color: secondaryColor,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Pickup Time',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: lightTextColor,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        trip.time,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: textColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            if (trip.status == 'upcoming') ...[
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildOutlinedActionButton(
+                      MaterialCommunityIcons.navigation,
+                      'Navigate',
+                      primaryColor,
+                          () => handleNavigateToETSTracking(trip),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: backgroundColor,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: trip.passengerCount,
-                      itemBuilder: (context, index) {
-                        return Container(
-                          padding: const EdgeInsets.all(12),
-                          margin: const EdgeInsets.only(bottom: 8),
-                          decoration: BoxDecoration(
-                            color: cardColor,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.grey.withOpacity(0.1)),
-                          ),
-                          child: Row(
-                            children: [
-                              CircleAvatar(
-                                radius: 18,
-                                backgroundColor: Colors.primaries[index % Colors.primaries.length].withOpacity(0.2),
-                                child: Text(
-                                  trip.passengerNames[index].isNotEmpty 
-                                      ? trip.passengerNames[index].substring(0, 1)
-                                      : '?',
-                                  style: TextStyle(
-                                    color: Colors.primaries[index % Colors.primaries.length],
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      trip.passengerNames[index],
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: textColor,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      trip.passengerPhones[index],
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        color: lightTextColor,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              InkWell(
-                                onTap: () => makePhoneCall(trip.passengerPhones[index]),
-                                child: Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: secondaryColor.withOpacity(0.1),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(
-                                    MaterialCommunityIcons.phone,
-                                    size: 16,
-                                    color: secondaryColor,
-                                  ),
-                                ),
-                              ),
-                            ],
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildOutlinedActionButton(
+                      MaterialCommunityIcons.map_marker_multiple,
+                      'View Route',
+                      secondaryColor,
+                          () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                                'Route viewer will be available in the next update.'),
                           ),
                         );
                       },
                     ),
                   ),
-                ] else ...[
-                  // Simplified passenger info for completed/cancelled trips
-                  Text(
-                    'Passengers: ${trip.passengerNames.join(", ")}',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: textColor,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                  ),
                 ],
-
-                const SizedBox(height: 16),
-                const Divider(),
-                const SizedBox(height: 16),
-                
-                // Trip Info
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _buildInfoItem(
-                      MaterialCommunityIcons.calendar,
-                      "Date",
-                      trip.date,
-                    ),
-                    _buildInfoItem(
-                      MaterialCommunityIcons.clock_outline,
-                      "Time",
-                      trip.time,
-                    ),
-                    _buildInfoItem(
-                      MaterialCommunityIcons.currency_inr,
-                      "Fare",
-                      trip.fare,
-                    ),
-                  ],
-                ),
-
-                // Action buttons - only for upcoming trips
-                if (activeTab == 'upcoming') ...[
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildOutlinedActionButton(
-                          MaterialCommunityIcons.navigation,
-                          'Navigate',
-                          primaryColor,
-                          () => handleNavigateToETSTracking(trip),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _buildOutlinedActionButton(
-                          MaterialCommunityIcons.map_marker_multiple,
-                          'View Route',
-                          secondaryColor,
-                          () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Route viewer will be available in the next update.'),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                ],
-              ],
-            ),
-          ),
-        ],
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -1094,8 +1182,8 @@ class _DriverETSTripsScreenState extends State<DriverETSTripsScreen> with Single
           Text(
             label,
             style: const TextStyle(
-              fontSize: 12, 
-              color: lightTextColor
+              fontSize: 12,
+              color: lightTextColor,
             ),
           ),
           const SizedBox(height: 4),
@@ -1112,7 +1200,8 @@ class _DriverETSTripsScreenState extends State<DriverETSTripsScreen> with Single
     );
   }
 
-  Widget _buildOutlinedActionButton(IconData icon, String text, Color color, VoidCallback onPressed) {
+  Widget _buildOutlinedActionButton(
+      IconData icon, String text, Color color, VoidCallback onPressed) {
     return GestureDetector(
       onTap: onPressed,
       child: Container(
@@ -1140,4 +1229,4 @@ class _DriverETSTripsScreenState extends State<DriverETSTripsScreen> with Single
       ),
     );
   }
-} 
+}
