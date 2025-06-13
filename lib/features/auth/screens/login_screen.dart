@@ -117,7 +117,6 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Consumer<AuthBloc>(
           builder: (context, authBloc, _) {
             final isLoading = authBloc.isLoading;
-
             return SingleChildScrollView(
               child: Container(
                 constraints: BoxConstraints(

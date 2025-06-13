@@ -348,9 +348,12 @@ class _PaymentScreenState extends State<ETSPaymentScreen> {
         backgroundColor: primaryColor,
         foregroundColor: Colors.white,
         elevation: 0,
-        title: const Text(
-          'ETS Payment',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: const Padding(
+          padding:  EdgeInsets.only(left: 60),
+          child: Text(
+            'ETS Payment',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),

@@ -522,11 +522,11 @@ class _DriverTripsScreenState extends State<DriverTripsScreen> with SingleTicker
               left: 20,
               right: 20,
             ),
-            child: Row(
+            child: const Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const SizedBox(width: 24), // Placeholder for back button
-                const Expanded(
+                SizedBox(width: 24), // Placeholder for back button
+                Expanded(
                   child: Text(
                     'My Trips',
                     style: TextStyle(
@@ -536,26 +536,6 @@ class _DriverTripsScreenState extends State<DriverTripsScreen> with SingleTicker
                     ),
                     textAlign: TextAlign.center,
                   ),
-                ),
-                Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(MaterialCommunityIcons.bus, size: 24, color: Colors.white),
-                      onPressed: () {
-                        Navigator.pushNamed(context, '/driver-ets-trips');
-                      },
-                      tooltip: 'ETS Trips',
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                    const SizedBox(width: 16),
-                    IconButton(
-                      icon: const Icon(MaterialCommunityIcons.refresh, size: 24, color: Colors.white),
-                      onPressed: () => getTripInfoByDriverId(),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                  ],
                 ),
               ],
             ),

@@ -307,11 +307,11 @@ class _TrackingScreenState extends State<TrackingScreen> {
     // Show snackbar on UI thread
     if (mounted) {
       Future.microtask(() {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Connection lost. Reconnecting in $delay seconds...'),
-          ),
-        );
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(
+        //     content: Text('Connection lost. Reconnecting in $delay seconds...'),
+        //   ),
+        // );
       });
     }
 
@@ -1326,8 +1326,9 @@ class _TrackingScreenState extends State<TrackingScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Row(
-          children: [const SizedBox(width: 8), const Text('Tracking')],
+        title:  const Padding(
+          padding: EdgeInsets.only(left: 80),
+          child: Text('Tracking'),
         ),
         backgroundColor: const Color(0xFF007BFF),
         actions: [
@@ -1453,18 +1454,19 @@ class _TrackingScreenState extends State<TrackingScreen> {
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
+                            fontSize: 13
                           ),
                         ),
                         Text(
                           _bookingId,
-                          style: const TextStyle(color: Colors.white),
+                          style: const TextStyle(color: Colors.white,fontSize: 12),
                         ),
                       ],
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(
                         vertical: 6,
-                        horizontal: 12,
+                        horizontal: 8,
                       ),
                       decoration: BoxDecoration(
                         color: _getStatusBadgeColor(),

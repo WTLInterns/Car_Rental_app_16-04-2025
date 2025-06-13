@@ -363,7 +363,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
             Text(
              bookingId,
              style: const TextStyle(
-              fontSize: 16,
+              fontSize: 14,
               fontWeight: FontWeight.bold,
              ),
             ),

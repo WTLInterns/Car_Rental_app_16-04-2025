@@ -1,4 +1,4 @@
-package com.example.worldtriplink
+package com.yourcompany.worldtriplink
 
 import io.flutter.embedding.android.FlutterActivity
 

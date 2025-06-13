@@ -315,8 +315,8 @@ class ETSTrip {
                   ? (json['amount'] as num).toDouble()
                   : double.tryParse(json['amount']?.toString() ?? '') ?? 0.0),
       status: statusCode,
-      name: json['vendorDriver']?['driverName'] ?? 'Wait',
-      phone: json['vendorDriver']?['contactNo'] ?? 'And Refresh',
+      name: json['vendorDriver']?['driverName'] ?? '',
+      phone: json['vendorDriver']?['contactNo'] ?? '',
       distance: json['distance'] is num
           ? (json['distance'] as num).toDouble()
           : double.tryParse(json['distance']?.toString() ?? '') ?? 0.0,
@@ -926,8 +926,8 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
       return _buildCorporateTripCard(trip, statusText, statusColor);
     }
 
-    final driverName = trip.vendorDriver?['driverName'] ?? 'Wait';
-    final contactNo = trip.vendorDriver?['contactNo'] ?? 'And Refresh';
+    final driverName = trip.vendorDriver?['driverName'] ?? '';
+    final contactNo = trip.vendorDriver?['contactNo'] ?? '';
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -1001,7 +1001,7 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
                           ),
                           const Divider(),
                           Text(
-                            'DriverName: $driverName',
+                            'DriverName : $driverName',
                             style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
@@ -1011,13 +1011,14 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                'ContactNo: $contactNo',
+                                'ContactNo : $contactNo',
                                 style: const TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
                               const SizedBox(width: 8),
+                              if (trip.vendorDriver != null && trip.vendorDriver!['contactNo'] != null)
                               IconButton(
                                 icon:
                                     const Icon(Icons.call, color: Colors.green),
