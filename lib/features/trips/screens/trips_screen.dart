@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // Add this import for clipboard
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:http/http.dart' as http;
@@ -12,29 +12,19 @@ import 'package:permission_handler/permission_handler.dart';
 import 'dart:io' show Platform;
 
 // Professional color palette - matching login screen
-const Color primaryColor =
-    Color(0xFF4A90E2); // Blue (updated to match home screen)
-const Color secondaryColor = Color(0xFF4A90E2); // Blue
-const Color accentColor = Color(0xFFFFCC00); // Yellow/gold accent
-
-// Background colors
-const Color backgroundColor = Colors.white; // White background (updated)
-const Color cardColor = Colors.white; // White card background
-const Color surfaceColor = Color(0xFFF0F7FF); // Light blue surface color
-
-// Text colors
-const Color textColor = Color(0xFF333333); // Dark text
-const Color lightTextColor = Color(0xFF666666); // Medium gray text
-const Color mutedTextColor = Color(0xFFA0A0A0); // Light gray text
-
-// Status colors
-const Color successColor = Color(0xFF4CAF50); // Green for success states
-const Color warningColor = Color(0xFFFF9800); // Orange for warning states
-const Color dangerColor = Color(0xFFF44336); // Red for error/danger states
-
-// Accent shade
-const Color lightAccentColor =
-    Color(0xFFF0F7FF); // Light blue for subtle highlights
+const Color primaryColor = Color(0xFF4A90E2);
+const Color secondaryColor = Color(0xFF4A90E2);
+const Color accentColor = Color(0xFFFFCC00);
+const Color backgroundColor = Colors.white;
+const Color cardColor = Colors.white;
+const Color surfaceColor = Color(0xFFF0F7FF);
+const Color textColor = Color(0xFF333333);
+const Color lightTextColor = Color(0xFF666666);
+const Color mutedTextColor = Color(0xFFA0A0A0);
+const Color successColor = Color(0xFF4CAF50);
+const Color warningColor = Color(0xFFFF9800);
+const Color dangerColor = Color(0xFFF44336);
+const Color lightAccentColor = Color(0xFFF0F7FF);
 
 class Trip {
   final String bookingId;
@@ -75,7 +65,7 @@ class Trip {
     return Trip(
       bookingId: json['bookingId'] ?? json['bookid'] ?? 'N/A',
       fromLocation:
-          json['fromLocation'] ?? json['userPickup'] ?? 'Unknown location',
+      json['fromLocation'] ?? json['userPickup'] ?? 'Unknown location',
       toLocation: json['toLocation'] ?? json['userDrop'] ?? 'Unknown location',
       startDate: json['startDate'] ?? json['date'] ?? 'N/A',
       time: json['time'] ?? 'N/A',
@@ -134,22 +124,24 @@ class _TripsScreenState extends State<TripsScreen> {
       if (userDataString != null) {
         try {
           _userData = json.decode(userDataString);
-        } catch (e) {}
+        } catch (e) {
+          debugPrint('Error decoding user data: $e');
+        }
       }
     });
 
-    _getUserTripInfo();
+    await _getUserTripInfo();
   }
 
   Future<void> _getUserTripInfo() async {
     try {
-      print('Fetching trips for user: $_userId');
+      debugPrint('Fetching trips for user: $_userId');
       final response = await http.get(
         Uri.parse('https://api.worldtriplink.com/api/by-user/$_userId'),
       );
 
-      print('API Response: ${response.statusCode}');
-      print('Response Body: ${response.body}');
+      debugPrint('API Response: ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
@@ -165,12 +157,11 @@ class _TripsScreenState extends State<TripsScreen> {
           tripsData = [responseData];
         }
 
-        print('Decoded JSON: ${tripsData.runtimeType}');
+        debugPrint('Decoded JSON: ${tripsData.runtimeType}');
 
         final List<Trip> loadedTrips = tripsData.map((tripJson) {
-          print(
-            'Processing trip: ${tripJson['bookingId'] ?? tripJson['bookid']}',
-          );
+          debugPrint(
+              'Processing trip: ${tripJson['bookingId'] ?? tripJson['bookid']}');
           return Trip.fromJson(tripJson);
         }).toList();
 
@@ -181,18 +172,37 @@ class _TripsScreenState extends State<TripsScreen> {
           return bDate.compareTo(aDate);
         });
 
-        print('Successfully loaded ${loadedTrips.length} trips');
+        // Calculate trip counts
+        final upcomingCount =
+            loadedTrips.where((trip) => trip.status == 0).length;
+        final completedCount =
+            loadedTrips.where((trip) => trip.status == 2).length;
+        final cancelledCount =
+            loadedTrips.where((trip) => trip.status == 3).length;
+
+        // Save counts to SharedPreferences
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setInt('upcomingTripCount', upcomingCount);
+        await prefs.setInt('completedTripCount', completedCount);
+        await prefs.setInt('cancelledTripCount', cancelledCount);
+
+        debugPrint(
+            'Saved trip counts - Upcoming: $upcomingCount, Completed: $completedCount, Cancelled: $cancelledCount');
+        debugPrint('Successfully loaded ${loadedTrips.length} trips');
+
         setState(() {
           _trips = loadedTrips;
           _isLoading = false;
         });
       } else {
-        print('API Error: ${response.statusCode}');
+        debugPrint('API Error: ${response.statusCode}');
         setState(() => _isLoading = false);
+        _showMessage('Failed to load trips', isError: true);
       }
     } catch (error) {
-      print('Error fetching trips: $error');
+      debugPrint('Error fetching trips: $error');
       setState(() => _isLoading = false);
+      _showMessage('Error fetching trips', isError: true);
     }
   }
 
@@ -211,7 +221,6 @@ class _TripsScreenState extends State<TripsScreen> {
     }).toList();
   }
 
-  // Enhanced phone call functionality with multiple fallback methods
   Future<void> makePhoneCall(String phoneNumber) async {
     if (phoneNumber.isEmpty || phoneNumber == 'N/A') {
       _showMessage('Phone number not available', isError: true);
@@ -219,47 +228,36 @@ class _TripsScreenState extends State<TripsScreen> {
     }
 
     try {
-      // Clean and validate phone number
       String cleanNumber = _cleanPhoneNumber(phoneNumber);
       if (cleanNumber.isEmpty) {
         _showMessage('Invalid phone number format', isError: true);
         return;
       }
 
-      print('Attempting to call: $cleanNumber');
-
-      // Show loading indicator
+      debugPrint('Attempting to call: $cleanNumber');
       _showMessage('Opening dialer...', isError: false);
 
-      // Method 1: Try direct tel: URL with external application launch
       bool success = await _tryDirectCall(cleanNumber);
-      
+
       if (!success) {
-        // Method 2: Try with platform default launch mode
         success = await _tryPlatformDefaultCall(cleanNumber);
       }
-      
+
       if (!success) {
-        // Method 3: Try with system launch mode
         success = await _trySystemCall(cleanNumber);
       }
-      
+
       if (!success) {
-        // Method 4: Show manual dial option
         _showManualDialOption(cleanNumber);
       }
-
     } catch (e) {
-      print('Error in makePhoneCall: $e');
+      debugPrint('Error in makePhoneCall: $e');
       _showMessage('Unable to open dialer. Please try again.', isError: true);
     }
   }
 
   String _cleanPhoneNumber(String phoneNumber) {
-    // Remove all non-digit characters except '+'
     String cleaned = phoneNumber.replaceAll(RegExp(r'[^\d+]'), '');
-    
-    // Handle Indian numbers
     if (cleaned.startsWith('91') && cleaned.length == 12) {
       cleaned = '+$cleaned';
     } else if (cleaned.startsWith('0') && cleaned.length == 11) {
@@ -267,32 +265,30 @@ class _TripsScreenState extends State<TripsScreen> {
     } else if (cleaned.length == 10 && !cleaned.startsWith('+')) {
       cleaned = '+91$cleaned';
     }
-    
-    // Validate format
+
     if (cleaned.length < 10 || cleaned.length > 15) {
       return '';
     }
-    
+
     return cleaned;
   }
 
   Future<bool> _tryDirectCall(String phoneNumber) async {
     try {
       final String telUrl = 'tel:$phoneNumber';
-      print('Trying direct call with URL: $telUrl');
-      
-      // Check if the URL can be launched
+      debugPrint('Trying direct call with URL: $telUrl');
+
       if (await canLaunchUrlString(telUrl)) {
         bool launched = await launchUrlString(
           telUrl,
           mode: LaunchMode.externalApplication,
         );
-        print('Direct call result: $launched');
+        debugPrint('Direct call result: $launched');
         return launched;
       }
       return false;
     } catch (e) {
-      print('Direct call failed: $e');
+      debugPrint('Direct call failed: $e');
       return false;
     }
   }
@@ -300,16 +296,16 @@ class _TripsScreenState extends State<TripsScreen> {
   Future<bool> _tryPlatformDefaultCall(String phoneNumber) async {
     try {
       final String telUrl = 'tel:$phoneNumber';
-      print('Trying platform default call with URL: $telUrl');
-      
+      debugPrint('Trying platform default call with URL: $telUrl');
+
       bool launched = await launchUrlString(
         telUrl,
         mode: LaunchMode.platformDefault,
       );
-      print('Platform default call result: $launched');
+      debugPrint('Platform default call result: $launched');
       return launched;
     } catch (e) {
-      print('Platform default call failed: $e');
+      debugPrint('Platform default call failed: $e');
       return false;
     }
   }
@@ -317,16 +313,16 @@ class _TripsScreenState extends State<TripsScreen> {
   Future<bool> _trySystemCall(String phoneNumber) async {
     try {
       final String telUrl = 'tel:$phoneNumber';
-      print('Trying system call with URL: $telUrl');
-      
+      debugPrint('Trying system call with URL: $telUrl');
+
       bool launched = await launchUrlString(
         telUrl,
         mode: LaunchMode.inAppWebView,
       );
-      print('System call result: $launched');
+      debugPrint('System call result: $launched');
       return launched;
     } catch (e) {
-      print('System call failed: $e');
+      debugPrint('System call failed: $e');
       return false;
     }
   }
@@ -376,7 +372,6 @@ class _TripsScreenState extends State<TripsScreen> {
                     ),
                     IconButton(
                       onPressed: () {
-                        // Copy to clipboard
                         _copyToClipboard(phoneNumber);
                       },
                       icon: Icon(Icons.copy, color: primaryColor),
@@ -411,13 +406,12 @@ class _TripsScreenState extends State<TripsScreen> {
 
   Future<void> _tryAlternativeDialer(String phoneNumber) async {
     try {
-      // Try different URL schemes that some devices support
       final List<String> schemes = [
         'tel:$phoneNumber',
         'phone:$phoneNumber',
         'callto:$phoneNumber',
       ];
-      
+
       for (String scheme in schemes) {
         try {
           if (await canLaunchUrlString(scheme)) {
@@ -431,7 +425,7 @@ class _TripsScreenState extends State<TripsScreen> {
           continue;
         }
       }
-      
+
       _showMessage('Please dial manually: $phoneNumber', isError: true);
     } catch (e) {
       _showMessage('Please dial manually: $phoneNumber', isError: true);
@@ -457,29 +451,20 @@ class _TripsScreenState extends State<TripsScreen> {
     );
   }
 
-  // Attempt to extract coordinates from a location string (simplified approach)
   Map<String, double> _extractCoordinatesFromAddress(String address) {
-    // Default coordinates (Mumbai)
     double latitude = 19.0760;
     double longitude = 72.8777;
 
-    // Example: if location contains "Pune", use Pune coordinates
     if (address.toLowerCase().contains('pune')) {
       latitude = 18.5204;
       longitude = 73.8567;
-    }
-    // Example: if location contains "Mumbai", use Mumbai coordinates
-    else if (address.toLowerCase().contains('mumbai')) {
+    } else if (address.toLowerCase().contains('mumbai')) {
       latitude = 19.0760;
       longitude = 72.8777;
-    }
-    // Example: if location contains "Delhi", use Delhi coordinates
-    else if (address.toLowerCase().contains('delhi')) {
+    } else if (address.toLowerCase().contains('delhi')) {
       latitude = 28.6139;
       longitude = 77.2090;
-    }
-    // Example: if location contains "Bangalore", use Bangalore coordinates
-    else if (address.toLowerCase().contains('bangalore') ||
+    } else if (address.toLowerCase().contains('bangalore') ||
         address.toLowerCase().contains('bengaluru')) {
       latitude = 12.9716;
       longitude = 77.5946;
@@ -490,18 +475,15 @@ class _TripsScreenState extends State<TripsScreen> {
 
   void _handleTrackPress(Trip trip) {
     try {
-      // Extract user and driver location coordinates
       final double userLatitude =
           trip.carRentalUser?['userlatitude']?.toDouble() ?? 0.0;
       final double userLongitude =
           trip.carRentalUser?['userlongitude']?.toDouble() ?? 0.0;
-
       final double driverLatitude =
           trip.vendorDriver?['driverLatitude']?.toDouble() ?? 0.0;
       final double driverLongitude =
           trip.vendorDriver?['driverLongitude']?.toDouble() ?? 0.0;
 
-      // If user coordinates not available, try to geocode from pickup address
       Map<String, double> pickupCoords = {
         'latitude': userLatitude,
         'longitude': userLongitude
@@ -511,11 +493,9 @@ class _TripsScreenState extends State<TripsScreen> {
         pickupCoords = _extractCoordinatesFromAddress(trip.fromLocation);
       }
 
-      // If destination coordinates not available, try to geocode from destination address
       Map<String, double> destCoords =
-          _extractCoordinatesFromAddress(trip.toLocation);
+      _extractCoordinatesFromAddress(trip.toLocation);
 
-      // Prepare booking data with null checks and default values
       final Map<String, dynamic> bookingData = {
         'bookingId': trip.bookingId,
         'pickup': trip.fromLocation,
@@ -537,7 +517,7 @@ class _TripsScreenState extends State<TripsScreen> {
         'tripInfo': {
           'estimatedTime': '30 mins',
           'distance':
-              trip.distance != null ? '${trip.distance} km' : 'Calculating...',
+          trip.distance != null ? '${trip.distance} km' : 'Calculating...',
           'fare': '₹${trip.amount.toStringAsFixed(2)}',
           'paymentMethod': 'Cash',
           'status': trip.status,
@@ -546,7 +526,6 @@ class _TripsScreenState extends State<TripsScreen> {
         'vendorDriver': trip.vendorDriver ?? {},
         'vendorCab': trip.vendorCab ?? {},
         'carRentalUser': trip.carRentalUser ?? {},
-        // Add coordinates for map
         'pickupLocation': {
           'latitude': pickupCoords['latitude'],
           'longitude': pickupCoords['longitude']
@@ -572,7 +551,8 @@ class _TripsScreenState extends State<TripsScreen> {
         ),
       );
     } catch (e) {
-      _showMessage('Error loading tracking screen: ${e.toString()}', isError: true);
+      _showMessage('Error loading tracking screen: ${e.toString()}',
+          isError: true);
     }
   }
 
@@ -620,7 +600,6 @@ class _TripsScreenState extends State<TripsScreen> {
   }
 
   Widget _buildStatusContainer(String status, Color color) {
-    // Changes to match the design in the image - green text for Confirmed
     if (status == 'Confirmed') {
       return Text(
         status,
@@ -650,11 +629,11 @@ class _TripsScreenState extends State<TripsScreen> {
   }
 
   Widget _buildActionButton(
-    IconData icon,
-    String text,
-    Color color,
-    VoidCallback onPressed,
-  ) {
+      IconData icon,
+      String text,
+      Color color,
+      VoidCallback onPressed,
+      ) {
     return GestureDetector(
       onTap: onPressed,
       child: Container(
@@ -710,7 +689,6 @@ class _TripsScreenState extends State<TripsScreen> {
           child: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
             onPressed: () {
-              // Navigate to UserHomeScreen
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
@@ -737,7 +715,6 @@ class _TripsScreenState extends State<TripsScreen> {
       ),
       body: Column(
         children: [
-          // Tab navigation - updated to match design
           Container(
             color: Colors.white,
             child: Padding(
@@ -755,22 +732,22 @@ class _TripsScreenState extends State<TripsScreen> {
           Expanded(
             child: _isLoading
                 ? Center(
-                    child: CircularProgressIndicator(color: primaryColor),
-                  )
+              child: CircularProgressIndicator(color: primaryColor),
+            )
                 : filteredTrips.isEmpty
-                    ? _buildNoTrips()
-                    : RefreshIndicator(
-                        color: primaryColor,
-                        onRefresh: _getUserTripInfo,
-                        child: ListView.builder(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: filteredTrips.length,
-                          itemBuilder: (ctx, index) {
-                            final trip = filteredTrips[index];
-                            return _buildTripCard(trip);
-                          },
-                        ),
-                      ),
+                ? _buildNoTrips()
+                : RefreshIndicator(
+              color: primaryColor,
+              onRefresh: _getUserTripInfo,
+              child: ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: filteredTrips.length,
+                itemBuilder: (ctx, index) {
+                  final trip = filteredTrips[index];
+                  return _buildTripCard(trip);
+                },
+              ),
+            ),
           ),
         ],
       ),
@@ -855,9 +832,7 @@ class _TripsScreenState extends State<TripsScreen> {
             const SizedBox(height: 30),
             if (_activeTab == 0)
               ElevatedButton(
-                onPressed: () {
-                  // Navigate to booking screen
-                },
+                onPressed: () {},
                 style: ElevatedButton.styleFrom(
                   backgroundColor: accentColor,
                   foregroundColor: textColor,
@@ -898,7 +873,6 @@ class _TripsScreenState extends State<TripsScreen> {
       ),
       child: Column(
         children: [
-          // Header with trip type and status
           Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
@@ -922,23 +896,19 @@ class _TripsScreenState extends State<TripsScreen> {
                   trip.status == 0
                       ? 'Confirmed'
                       : trip.status == 2
-                          ? 'Completed'
-                          : 'Cancelled',
+                      ? 'Completed'
+                      : 'Cancelled',
                   _getStatusColor(trip.status),
                 ),
               ],
             ),
           ),
-
-          // Trip details
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Driver info section
                 if (trip.status == 0) ...[
-                  // Only for upcoming trips
                   Row(
                     children: [
                       CircleAvatar(
@@ -1008,7 +978,8 @@ class _TripsScreenState extends State<TripsScreen> {
                           if (trip.phone.isNotEmpty && trip.phone != 'N/A') {
                             makePhoneCall(trip.phone);
                           } else {
-                            _showMessage('Phone number not available', isError: true);
+                            _showMessage('Phone number not available',
+                                isError: true);
                           }
                         },
                         child: Container(
@@ -1031,8 +1002,6 @@ class _TripsScreenState extends State<TripsScreen> {
                   const Divider(),
                   const SizedBox(height: 16),
                 ],
-
-                // Route information
                 _buildLocationItem(
                   Icons.circle,
                   Colors.blue,
@@ -1049,10 +1018,7 @@ class _TripsScreenState extends State<TripsScreen> {
                   Colors.red,
                   trip.toLocation,
                 ),
-
                 const SizedBox(height: 15),
-
-                // Trip details in a row
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -1063,10 +1029,7 @@ class _TripsScreenState extends State<TripsScreen> {
                     _buildTripDetailItem("Booking ID", trip.bookingId),
                   ],
                 ),
-
                 const SizedBox(height: 15),
-
-                // Action buttons matching the image
                 Row(
                   children: [
                     Expanded(
@@ -1074,7 +1037,7 @@ class _TripsScreenState extends State<TripsScreen> {
                         Icons.location_on,
                         'Track',
                         Colors.blue,
-                        () => _handleTrackPress(trip),
+                            () => _handleTrackPress(trip),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -1084,11 +1047,12 @@ class _TripsScreenState extends State<TripsScreen> {
                           MaterialCommunityIcons.phone,
                           'Call',
                           primaryColor,
-                          () {
+                              () {
                             if (trip.phone.isNotEmpty && trip.phone != 'N/A') {
                               makePhoneCall(trip.phone);
                             } else {
-                              _showMessage('Phone number not available', isError: true);
+                              _showMessage('Phone number not available',
+                                  isError: true);
                             }
                           },
                         ),
@@ -1100,14 +1064,13 @@ class _TripsScreenState extends State<TripsScreen> {
                         trip.status == 0 ? Icons.close : Icons.refresh,
                         trip.status == 0 ? 'Cancel' : 'Rebook',
                         trip.status == 0 ? Colors.red.shade300 : Colors.green,
-                        () => trip.status == 0
+                            () => trip.status == 0
                             ? _handleCancelPress(trip)
                             : _handleRebookPress(trip),
                       ),
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 16),
               ],
             ),
@@ -1183,13 +1146,13 @@ class _TripsScreenState extends State<TripsScreen> {
   Color _getStatusColor(int status) {
     switch (status) {
       case 0:
-        return warningColor; // Yellow for confirmed/upcoming
+        return warningColor;
       case 2:
-        return successColor; // Green for completed
+        return successColor;
       case 3:
-        return dangerColor; // Red for cancelled
+        return dangerColor;
       default:
-        return accentColor; // Blue for other statuses
+        return accentColor;
     }
   }
 

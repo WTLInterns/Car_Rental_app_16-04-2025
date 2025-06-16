@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-class AboutScreen extends StatefulWidget {
+class AboutWTLScreen extends StatefulWidget {
   @override
-  _AboutScreenState createState() => _AboutScreenState();
+  _AboutWTLScreenState createState() => _AboutWTLScreenState();
 }
 
-class _AboutScreenState extends State<AboutScreen>
+class _AboutWTLScreenState extends State<AboutWTLScreen>
     with TickerProviderStateMixin {
   late AnimationController _heroController;
   late AnimationController _featuresController;
