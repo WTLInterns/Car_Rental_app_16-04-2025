@@ -33,7 +33,7 @@ android {
         // You can update the following values to match your application needs.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
-        versionCode = 6
+        versionCode = 7
         versionName = flutter.versionName
     }
 

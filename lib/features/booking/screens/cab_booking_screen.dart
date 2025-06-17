@@ -921,11 +921,13 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
 
     return Expanded(
       child: InkWell(
-        onTap: () => setState(() => _bookingType = type),
+        onTap: type == 'rental' ? null : () => setState(() => _bookingType = type),
         borderRadius: BorderRadius.circular(10),
         child: Container(
           decoration: BoxDecoration(
-            color: isSelected ? primaryColor : Colors.grey[100],
+            color: isSelected
+                ? primaryColor
+                : (type == 'rental' ? Colors.grey[300] : Colors.grey[100]),
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
               color: isSelected ? primaryColor : Colors.grey[300]!,
@@ -939,14 +941,15 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
             children: [
               Container(
                 decoration: BoxDecoration(
-                  color:
-                      isSelected ? Colors.white.withOpacity(0.2) : Colors.white,
+                  color: isSelected ? Colors.white.withOpacity(0.2) : Colors.white,
                   shape: BoxShape.circle,
                 ),
                 padding: const EdgeInsets.all(4),
                 child: Icon(
                   iconToUse,
-                  color: isSelected ? Colors.white : primaryColor,
+                  color: isSelected
+                      ? Colors.white
+                      : (type == 'rental' ? Colors.grey[600] : primaryColor),
                   size: 14,
                 ),
               ),
@@ -955,7 +958,9 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
                 child: Text(
                   label,
                   style: TextStyle(
-                    color: isSelected ? Colors.white : Colors.grey[800],
+                    color: isSelected
+                        ? Colors.white
+                        : (type == 'rental' ? Colors.grey[600] : Colors.grey[800]),
                     fontWeight: FontWeight.w600,
                     fontSize: 13,
                   ),
