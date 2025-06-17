@@ -41,6 +41,7 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
     'SedanPremium': [],
     'SUV': [],
     'SUVPlus': [],
+    'Ertiga': [],
   };
 
   // Track availability by category
@@ -50,6 +51,7 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
     'SedanPremium': true,
     'SUV': true,
     'SUVPlus': true,
+    'Ertiga': true,
   };
 
   // Map of vehicle images by category
@@ -59,6 +61,7 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
     'sedanpremium': 'assets/images/sedan_premium.png',
     'suv': 'assets/images/suv.png',
     'suvplus': 'assets/images/suv_plus.png',
+    'ertiga': 'assets/images/ertiga.png',
   };
 
   // Map of category icons
@@ -68,6 +71,7 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
     'SedanPremium': MaterialCommunityIcons.car_sports,
     'SUV': MaterialCommunityIcons.car_estate,
     'SUVPlus': MaterialCommunityIcons.car_3_plus,
+    'Ertiga': MaterialCommunityIcons.car_estate,
   };
 
   @override
@@ -80,34 +84,13 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final baseUrl = 'https://ets.worldtriplink.com';
-      final response = await http.post(
-        Uri.parse('$baseUrl/schedule/cabFinder'),
-        body: {
-          'pickUpLocation': widget.bookingData['pickup'],
-          'dropLocation': widget.bookingData['destination'],
-          'time': widget.bookingData['time'],
-          'returnTime':
-              widget.bookingData['returnTime'] ?? widget.bookingData['time'],
-          'shiftTime': widget.bookingData['shiftTime'],
-          'distance': widget.bookingData['distance'],
-          'hatchback': widget.bookingData['hatchback']?.toString() ?? '0',
-          'sedan': widget.bookingData['sedan']?.toString() ?? '0',
-          'suv': widget.bookingData['suv']?.toString() ?? '0',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        setState(() {
-          _tripInfo = data;
-          _tripDistance = data['distance']?.toString() ?? '0';
-          _processVehicleData(data);
-          _isLoading = false;
-        });
-      } else {
-        throw Exception('Failed to load vehicles');
-      }
+      // Use the data already fetched from /schedule/etsCab1 in the booking screen
+      // No need to make another API call
+      setState(() {
+        _tripDistance = widget.bookingData['distance']?.toString() ?? '0';
+        _processVehicleDataFromBooking();
+        _isLoading = false;
+      });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -119,21 +102,36 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
     }
   }
 
-  void _processVehicleData(Map<String, dynamic> data) {
+  void _processVehicleDataFromBooking() {
     final newNoVehiclesAvailable = Map<String, bool>.from(_noVehiclesAvailable);
     final newVehicleData = <String, List<Vehicle>>{};
 
+    // Initialize empty lists for each category
     for (var category in _vehicleData.keys) {
       newVehicleData[category] = [];
     }
 
-    if (data['hatchbackRate'] != null) {
+    // Get distance for price calculation
+    final distance = double.tryParse(_tripDistance) ?? 0;
+
+    // Extract vehicle rates from booking data (these come from /schedule/etsCab1 API)
+    final hatchbackRate = double.tryParse(widget.bookingData['hatchback']?.toString() ?? '0') ?? 0;
+    final sedanRate = double.tryParse(widget.bookingData['sedan']?.toString() ?? '0') ?? 0;
+    final suvRate = double.tryParse(widget.bookingData['suv']?.toString() ?? '0') ?? 0;
+
+    // Check for additional vehicle types that might be in the API response
+    final sedanPremiumRate = double.tryParse(widget.bookingData['sedanpremium']?.toString() ?? '0') ?? 0;
+    final suvPlusRate = double.tryParse(widget.bookingData['suvplus']?.toString() ?? '0') ?? 0;
+    final ertigaRate = double.tryParse(widget.bookingData['ertiga']?.toString() ?? '0') ?? 0;
+
+    // Process HatchBack vehicles - only show if rate > 0
+    if (hatchbackRate > 0) {
       newNoVehiclesAvailable['HatchBack'] = false;
       newVehicleData['HatchBack'] = [
         Vehicle(
           type: 'Maruti Swift',
-          price: data['hatchbackFare']?.round() ?? 0,
-          pricePerKm: data['hatchbackRate']?.round() ?? 0,
+          price: (distance * hatchbackRate).round(),
+          pricePerKm: hatchbackRate.round(),
           capacity: '2 bags',
           features: [
             'Petrol',
@@ -147,19 +145,19 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
           available: true,
           modelType: 'Hatchback',
           seats: '4',
-          imageUrl:
-              _vehicleImages['hatchback'] ?? 'assets/images/hatchback.png',
+          imageUrl: _vehicleImages['hatchback'] ?? 'assets/images/hatchback.png',
         ),
       ];
     }
 
-    if (data['sedanRate'] != null) {
+    // Process Sedan vehicles - only show if rate > 0
+    if (sedanRate > 0) {
       newNoVehiclesAvailable['Sedan'] = false;
       newVehicleData['Sedan'] = [
         Vehicle(
           type: 'Maruti Swift Dzire',
-          price: data['sedanFare']?.round() ?? 0,
-          pricePerKm: data['sedanRate']?.round() ?? 0,
+          price: (distance * sedanRate).round(),
+          pricePerKm: sedanRate.round(),
           capacity: '3 bags',
           features: [
             'Diesel',
@@ -178,15 +176,15 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
       ];
     }
 
-    // Add SedanPremium category
-    if (data['sedanRate'] != null) {
+    // Process SedanPremium vehicles - only show if rate > 0
+    if (sedanPremiumRate > 0) {
       newNoVehiclesAvailable['SedanPremium'] = false;
       newVehicleData['SedanPremium'] = [
         Vehicle(
           type: 'Honda City',
-          price: (data['sedanFare'] * 1.2)?.round() ?? 0,
-          pricePerKm: (data['sedanRate'] * 1.2)?.round() ?? 0,
-          capacity: '3 bags',
+          price: (distance * sedanPremiumRate).round(),
+          pricePerKm: sedanPremiumRate.round(),
+          capacity: '4 bags',
           features: [
             'Petrol',
             'USB Charging',
@@ -199,19 +197,20 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
           arrivalTime: '7 mins',
           available: true,
           modelType: 'SedanPremium',
-          seats: '4',
+          seats: '5',
           imageUrl: _vehicleImages['sedanpremium'] ?? 'assets/images/sedan_premium.png',
         ),
       ];
     }
 
-    if (data['suvRate'] != null) {
+    // Process SUV vehicles - only show if rate > 0
+    if (suvRate > 0) {
       newNoVehiclesAvailable['SUV'] = false;
       newVehicleData['SUV'] = [
         Vehicle(
           type: 'Toyota Innova',
-          price: data['suvFare']?.round() ?? 0,
-          pricePerKm: data['suvRate']?.round() ?? 0,
+          price: (distance * suvRate).round(),
+          pricePerKm: suvRate.round(),
           capacity: '5 bags',
           features: [
             'Diesel',
@@ -231,14 +230,14 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
       ];
     }
 
-    // Add SUVPlus category
-    if (data['suvRate'] != null) {
+    // Process SUVPlus vehicles - only show if rate > 0
+    if (suvPlusRate > 0) {
       newNoVehiclesAvailable['SUVPlus'] = false;
       newVehicleData['SUVPlus'] = [
         Vehicle(
           type: 'Toyota Fortuner',
-          price: (data['suvFare'] * 1.3)?.round() ?? 0,
-          pricePerKm: (data['suvRate'] * 1.3)?.round() ?? 0,
+          price: (distance * suvPlusRate).round(),
+          pricePerKm: suvPlusRate.round(),
           capacity: '6 bags',
           features: [
             'Diesel',
@@ -259,6 +258,33 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
       ];
     }
 
+    // Process Ertiga vehicles - only show if rate > 0
+    if (ertigaRate > 0) {
+      newNoVehiclesAvailable['Ertiga'] = false;
+      newVehicleData['Ertiga'] = [
+        Vehicle(
+          type: 'Maruti Ertiga',
+          price: (distance * ertigaRate).round(),
+          pricePerKm: ertigaRate.round(),
+          capacity: '4 bags',
+          features: [
+            'Petrol',
+            'USB Charging',
+            'Air Conditioning',
+            'Music System',
+            'Family Car',
+          ],
+          rating: 4,
+          rides: 175,
+          arrivalTime: '8 mins',
+          available: true,
+          modelType: 'Ertiga',
+          seats: '7',
+          imageUrl: _vehicleImages['ertiga'] ?? 'assets/images/ertiga.png',
+        ),
+      ];
+    }
+
     setState(() {
       _vehicleData = newVehicleData;
       _noVehiclesAvailable = newNoVehiclesAvailable;
@@ -274,7 +300,6 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
   }
 
   void _handleVehicleSelect(Vehicle vehicle) {
-    final distance = double.tryParse(_tripDistance) ?? 0;
     final baseFare = vehicle.price;
     final platformFee = (baseFare * 0.05).round();
     final gst = (baseFare * 0.18).round();
@@ -563,15 +588,19 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
           ),
         ],
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildCategoryNavItem('HatchBack', 'Hatchback'),
-          _buildCategoryNavItem('Sedan', 'Sedan'),
-          _buildCategoryNavItem('SedanPremium', 'Premium'),
-          _buildCategoryNavItem('SUV', 'SUV'),
-          _buildCategoryNavItem('SUVPlus', 'SUV+'),
-        ],
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _buildCategoryNavItem('HatchBack', 'Hatchback'),
+            _buildCategoryNavItem('Sedan', 'Sedan'),
+            _buildCategoryNavItem('SedanPremium', 'Premium'),
+            _buildCategoryNavItem('SUV', 'SUV'),
+            _buildCategoryNavItem('SUVPlus', 'SUV+'),
+            _buildCategoryNavItem('Ertiga', 'Ertiga'),
+          ],
+        ),
       ),
     );
   }
