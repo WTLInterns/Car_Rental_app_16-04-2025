@@ -271,6 +271,32 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
       ];
     }
 
+    if (tripDetails['ertiga'] > 0) {
+      newNoVehiclesAvailable['Ertiga'] = false;
+      newVehicleData['Ertiga'] = [
+        Vehicle(
+          type: 'Ertiga',
+          price: (calculatedDistance * tripDetails['ertiga']).round(),
+          pricePerKm: tripDetails['ertiga'],
+          capacity: '4 bags',
+          features: [
+            'Diesel',
+            'USB Charging',
+            'Air Conditioning',
+            'Music System',
+            'Spacious',
+          ],
+          rating: 4,
+          rides: 250,
+          arrivalTime: '10 mins',
+          available: true,
+          modelType: 'ertiga',
+          seats: '7',
+          imageUrl: _vehicleImages['ertiga'] ?? 'assets/images/ertiga.jpg',
+        ),
+      ];
+    }
+
     setState(() {
       _vehicleData = newVehicleData;
       _noVehiclesAvailable = newNoVehiclesAvailable;
@@ -533,28 +559,32 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
   }
 
   Widget _buildCategoryNavBar() {
-    return SafeArea(
-      child: Container(
-        height: 70,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -5),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _buildCategoryNavItem('HatchBack', 'Hatchback'),
-            _buildCategoryNavItem('Sedan', 'Sedan'),
-            _buildCategoryNavItem('SedanPremium', 'Premium'),
-            _buildCategoryNavItem('SUV', 'SUV'),
-            _buildCategoryNavItem('SUVPlus', 'SUV+'),
-          ],
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: SafeArea(
+        child: Container(
+          height: 70,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, -5),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildCategoryNavItem('HatchBack', 'Hatchback'),
+              _buildCategoryNavItem('Sedan', 'Sedan'),
+              _buildCategoryNavItem('SedanPremium', 'Premium'),
+              _buildCategoryNavItem('SUV', 'SUV'),
+              _buildCategoryNavItem('SUVPlus', 'SUV+'),
+              _buildCategoryNavItem('Ertiga', 'Ertiga'),
+            ],
+          ),
         ),
       ),
     );
@@ -772,7 +802,7 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        '₹${vehicle.price}',
+                        '₹${vehicle.pricePerKm}',
                         style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
@@ -780,16 +810,16 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 6),
-                    Padding(
-                      padding: const EdgeInsets.only(right: 8.0),
-                      child: Text(
-                        '₹${vehicle.pricePerKm}/km',
-                        style: TextStyle(color: lightTextColor, fontSize: 11),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                      ),
-                    ),
+                    // const SizedBox(height: 6),
+                    // Padding(
+                    //   padding: const EdgeInsets.only(right: 8.0),
+                    //   child: Text(
+                    //     '₹${vehicle.price}',
+                    //     style: TextStyle(color: lightTextColor, fontSize: 11),
+                    //     overflow: TextOverflow.ellipsis,
+                    //     maxLines: 1,
+                    //   ),
+                    // ),
                     const SizedBox(height: 8),
                     Padding(
                       padding: const EdgeInsets.only(right: 2.0),
