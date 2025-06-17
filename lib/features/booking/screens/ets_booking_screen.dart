@@ -1065,7 +1065,10 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> with SingleTickerPr
           'destinationState': data['destinationState'],
           'hatchback': data['hatchback']?.toString() ?? '0',
           'sedan': data['sedan']?.toString() ?? '0',
+          'sedanpremium': data['sedanpremium']?.toString() ?? '0',
           'suv': data['suv']?.toString() ?? '0',
+          'suvplus': data['suvplus']?.toString() ?? '0',
+          'ertiga': data['ertiga']?.toString() ?? '0',
           'shiftTime': data['shiftTime'],
           'returnTime': data['returnTime'] ?? data['time'],
         };

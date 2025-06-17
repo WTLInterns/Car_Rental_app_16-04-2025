@@ -1,0 +1,564 @@
+{
+  "info": {
+    "name": "Car Rental Booking API Tests",
+    "description": "Comprehensive API tests for Car Rental App - One Way and Round Trip bookings",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://api.worldtriplink.com/api",
+      "type": "string"
+    },
+    {
+      "key": "ets_base_url",
+      "value": "https://ets.worldtriplink.com",
+      "type": "string"
+    },
+    {
+      "key": "google_maps_key",
+      "value": "AIzaSyCelDo4I5cPQ72TfCTQW-arhPZ7ALNcp8w",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. One Way Trip Booking",
+      "item": [
+        {
+          "name": "Get Vehicle Options - One Way",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "tripType",
+                  "value": "oneWay",
+                  "description": "Type of trip - oneWay, roundTrip, or rental"
+                },
+                {
+                  "key": "pickupLocation",
+                  "value": "Mumbai, Maharashtra, India",
+                  "description": "Pickup location address"
+                },
+                {
+                  "key": "dropLocation",
+                  "value": "Pune, Maharashtra, India",
+                  "description": "Drop location address"
+                },
+                {
+                  "key": "date",
+                  "value": "2025-06-20",
+                  "description": "Pickup date in YYYY-MM-DD format"
+                },
+                {
+                  "key": "time",
+                  "value": "10:30 AM",
+                  "description": "Pickup time"
+                },
+                {
+                  "key": "hours",
+                  "value": "",
+                  "description": "For rental trips only"
+                },
+                {
+                  "key": "Returndate",
+                  "value": "",
+                  "description": "For round trips only"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/cab1",
+              "host": ["{{base_url}}"],
+              "path": ["cab1"]
+            },
+            "description": "Fetch available vehicles and pricing for one-way trip"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. Round Trip Booking",
+      "item": [
+        {
+          "name": "Get Vehicle Options - Round Trip",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "tripType",
+                  "value": "roundTrip",
+                  "description": "Type of trip - oneWay, roundTrip, or rental"
+                },
+                {
+                  "key": "pickupLocation",
+                  "value": "Delhi, India",
+                  "description": "Pickup location address"
+                },
+                {
+                  "key": "dropLocation",
+                  "value": "Agra, Uttar Pradesh, India",
+                  "description": "Drop location address"
+                },
+                {
+                  "key": "date",
+                  "value": "2025-06-22",
+                  "description": "Pickup date in YYYY-MM-DD format"
+                },
+                {
+                  "key": "time",
+                  "value": "08:00 AM",
+                  "description": "Pickup time"
+                },
+                {
+                  "key": "hours",
+                  "value": "",
+                  "description": "For rental trips only"
+                },
+                {
+                  "key": "Returndate",
+                  "value": "2025-06-23",
+                  "description": "Return date for round trip"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/cab1",
+              "host": ["{{base_url}}"],
+              "path": ["cab1"]
+            },
+            "description": "Fetch available vehicles and pricing for round trip"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. Rental Trip Booking",
+      "item": [
+        {
+          "name": "Get Vehicle Options - Rental",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "tripType",
+                  "value": "rental",
+                  "description": "Type of trip - oneWay, roundTrip, or rental"
+                },
+                {
+                  "key": "pickupLocation",
+                  "value": "Bangalore, Karnataka, India",
+                  "description": "Pickup location address"
+                },
+                {
+                  "key": "dropLocation",
+                  "value": "Mysore, Karnataka, India",
+                  "description": "Drop location address"
+                },
+                {
+                  "key": "date",
+                  "value": "2025-06-25",
+                  "description": "Pickup date in YYYY-MM-DD format"
+                },
+                {
+                  "key": "time",
+                  "value": "09:00 AM",
+                  "description": "Pickup time"
+                },
+                {
+                  "key": "hours",
+                  "value": "8",
+                  "description": "Rental duration in hours"
+                },
+                {
+                  "key": "Returndate",
+                  "value": "",
+                  "description": "For round trips only"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/cab1",
+              "host": ["{{base_url}}"],
+              "path": ["cab1"]
+            },
+            "description": "Fetch available vehicles and pricing for rental trip"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. Google Maps APIs",
+      "item": [
+        {
+          "name": "Reverse Geocoding - Get Address from Coordinates",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://maps.googleapis.com/maps/api/geocode/json?latlng=19.0760,72.8777&key={{google_maps_key}}",
+              "protocol": "https",
+              "host": ["maps", "googleapis", "com"],
+              "path": ["maps", "api", "geocode", "json"],
+              "query": [
+                {
+                  "key": "latlng",
+                  "value": "19.0760,72.8777",
+                  "description": "Latitude,Longitude (Mumbai coordinates)"
+                },
+                {
+                  "key": "key",
+                  "value": "{{google_maps_key}}",
+                  "description": "Google Maps API Key"
+                }
+              ]
+            },
+            "description": "Convert coordinates to human-readable address"
+          },
+          "response": []
+        },
+        {
+          "name": "Places Autocomplete - Location Suggestions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://maps.googleapis.com/maps/api/place/autocomplete/json?input=Mumbai&key={{google_maps_key}}&components=country:in",
+              "protocol": "https",
+              "host": ["maps", "googleapis", "com"],
+              "path": ["maps", "api", "place", "autocomplete", "json"],
+              "query": [
+                {
+                  "key": "input",
+                  "value": "Mumbai",
+                  "description": "Search query for location"
+                },
+                {
+                  "key": "key",
+                  "value": "{{google_maps_key}}",
+                  "description": "Google Maps API Key"
+                },
+                {
+                  "key": "components",
+                  "value": "country:in",
+                  "description": "Restrict results to India"
+                }
+              ]
+            },
+            "description": "Get location suggestions for autocomplete"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5. ETS (Employee Transportation) APIs",
+      "item": [
+        {
+          "name": "ETS Cab Finder",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "pickUpLocation",
+                  "value": "Electronic City, Bangalore",
+                  "description": "Pickup location for ETS"
+                },
+                {
+                  "key": "dropLocation",
+                  "value": "Whitefield, Bangalore",
+                  "description": "Drop location for ETS"
+                },
+                {
+                  "key": "time",
+                  "value": "09:00",
+                  "description": "Pickup time in HH:MM format"
+                },
+                {
+                  "key": "returnTime",
+                  "value": "18:00",
+                  "description": "Return time in HH:MM format"
+                },
+                {
+                  "key": "shiftTime",
+                  "value": "09:00",
+                  "description": "Shift time"
+                },
+                {
+                  "key": "distance",
+                  "value": "25",
+                  "description": "Distance in kilometers"
+                },
+                {
+                  "key": "hatchback",
+                  "value": "15",
+                  "description": "Hatchback rate per km"
+                },
+                {
+                  "key": "sedan",
+                  "value": "18",
+                  "description": "Sedan rate per km"
+                },
+                {
+                  "key": "suv",
+                  "value": "22",
+                  "description": "SUV rate per km"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{ets_base_url}}/schedule/cabFinder",
+              "host": ["{{ets_base_url}}"],
+              "path": ["schedule", "cabFinder"]
+            },
+            "description": "Find available ETS cabs for employee transportation"
+          },
+          "response": []
+        },
+        {
+          "name": "ETS Invoice Generation",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{ets_base_url}}/schedule/invoice?baseFare=2416&cabType=SUV",
+              "host": ["{{ets_base_url}}"],
+              "path": ["schedule", "invoice"],
+              "query": [
+                {
+                  "key": "baseFare",
+                  "value": "2416",
+                  "description": "Base fare amount"
+                },
+                {
+                  "key": "cabType",
+                  "value": "SUV",
+                  "description": "Type of cab (HATCHBACK, SEDAN, SUV, etc.)"
+                }
+              ]
+            },
+            "description": "Generate invoice for ETS booking"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "6. Test Scenarios - Different Trip Types",
+      "item": [
+        {
+          "name": "Long Distance One Way (Mumbai to Goa)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "tripType",
+                  "value": "oneWay",
+                  "description": "One way trip type"
+                },
+                {
+                  "key": "pickupLocation",
+                  "value": "Mumbai, Maharashtra, India",
+                  "description": "Starting point"
+                },
+                {
+                  "key": "dropLocation",
+                  "value": "Goa, India",
+                  "description": "Destination"
+                },
+                {
+                  "key": "date",
+                  "value": "2025-07-01",
+                  "description": "Travel date"
+                },
+                {
+                  "key": "time",
+                  "value": "06:00 AM",
+                  "description": "Early morning departure"
+                },
+                {
+                  "key": "hours",
+                  "value": "",
+                  "description": "Not applicable for one way"
+                },
+                {
+                  "key": "Returndate",
+                  "value": "",
+                  "description": "Not applicable for one way"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/cab1",
+              "host": ["{{base_url}}"],
+              "path": ["cab1"]
+            },
+            "description": "Test long distance one-way trip (approx 600km)"
+          },
+          "response": []
+        },
+        {
+          "name": "Weekend Round Trip (Delhi to Manali)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "tripType",
+                  "value": "roundTrip",
+                  "description": "Round trip type"
+                },
+                {
+                  "key": "pickupLocation",
+                  "value": "New Delhi, Delhi, India",
+                  "description": "Starting point"
+                },
+                {
+                  "key": "dropLocation",
+                  "value": "Manali, Himachal Pradesh, India",
+                  "description": "Hill station destination"
+                },
+                {
+                  "key": "date",
+                  "value": "2025-07-05",
+                  "description": "Departure date (Friday)"
+                },
+                {
+                  "key": "time",
+                  "value": "05:00 AM",
+                  "description": "Early morning start"
+                },
+                {
+                  "key": "hours",
+                  "value": "",
+                  "description": "Not applicable for round trip"
+                },
+                {
+                  "key": "Returndate",
+                  "value": "2025-07-07",
+                  "description": "Return date (Sunday)"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/cab1",
+              "host": ["{{base_url}}"],
+              "path": ["cab1"]
+            },
+            "description": "Test weekend round trip to hill station (approx 550km each way)"
+          },
+          "response": []
+        },
+        {
+          "name": "City Rental (8 Hours in Bangalore)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "tripType",
+                  "value": "rental",
+                  "description": "Rental trip type"
+                },
+                {
+                  "key": "pickupLocation",
+                  "value": "Bangalore Airport, Karnataka, India",
+                  "description": "Airport pickup"
+                },
+                {
+                  "key": "dropLocation",
+                  "value": "Bangalore City Center, Karnataka, India",
+                  "description": "City center"
+                },
+                {
+                  "key": "date",
+                  "value": "2025-06-28",
+                  "description": "Rental date"
+                },
+                {
+                  "key": "time",
+                  "value": "10:00 AM",
+                  "description": "Start time"
+                },
+                {
+                  "key": "hours",
+                  "value": "8",
+                  "description": "8 hours rental duration"
+                },
+                {
+                  "key": "Returndate",
+                  "value": "",
+                  "description": "Not applicable for rental"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/cab1",
+              "host": ["{{base_url}}"],
+              "path": ["cab1"]
+            },
+            "description": "Test 8-hour city rental service for business/tourism"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
