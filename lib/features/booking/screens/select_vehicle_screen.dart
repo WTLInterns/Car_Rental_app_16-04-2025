@@ -45,6 +45,7 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
     'SedanPremium': [],
     'SUV': [],
     'SUVPlus': [],
+    'Ertiga': [],
   };
 
   // Track availability by category
@@ -54,6 +55,7 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
     'SedanPremium': true,
     'SUV': true,
     'SUVPlus': true,
+    'Ertiga': true,
   };
 
   // Map of vehicle images by category
@@ -63,6 +65,7 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
     'sedanpremium': 'assets/images/sedan_premium.png',
     'suv': 'assets/images/suv.png',
     'suvplus': 'assets/images/suv_plus.png',
+    'ertiga': 'assets/images/ertiga.jpg',
   };
 
   // Map of category icons
@@ -72,6 +75,7 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
     'SedanPremium': MaterialCommunityIcons.car_sports,
     'SUV': MaterialCommunityIcons.car_estate,
     'SUVPlus': MaterialCommunityIcons.car_3_plus,
+    'Ertiga': MaterialCommunityIcons.car_estate,
   };
 
   @override
@@ -313,7 +317,6 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
 
   void _handleVehicleSelect(Vehicle vehicle) {
     // Calculate fare components
-    final distance = double.tryParse(_tripDistance) ?? 0;
     final baseFare = vehicle.price;
     final platformFee = (baseFare * 0.10).round(); // 10% platform fee
     final gst = (baseFare * 0.05).round(); // 5% GST (changed from 18%)
