@@ -43,10 +43,6 @@
     
     <!-- System alert window (for overlay permissions) -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
-    
-    <!-- Query all packages (for URL launcher compatibility) -->
-    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" 
-        tools:ignore="QueryAllPackagesPermission" />
 
     <!-- Declare that this app supports various phone intents -->
     <queries>

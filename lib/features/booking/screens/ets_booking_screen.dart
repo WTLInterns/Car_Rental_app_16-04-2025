@@ -845,7 +845,17 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> with SingleTickerPr
           ),
           const SizedBox(height: 6),
           GestureDetector(
-            onTap: null,
+            onTap: () async {
+              final TimeOfDay? picked = await showTimePicker(
+                context: context,
+                initialTime: _selectedTime ?? TimeOfDay.now(),
+              );
+              if (picked != null && picked != _selectedTime) {
+                setState(() {
+                  _selectedTime = picked;
+                });
+              }
+            },
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               decoration: BoxDecoration(

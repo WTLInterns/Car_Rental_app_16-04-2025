@@ -95,7 +95,7 @@ class _AboutScreenState extends State<AboutScreen> with SingleTickerProviderStat
                 const Text(
                   'Discover Our Cab Services',
                   style: TextStyle(
-                    fontSize: 24,
+                    fontSize: 21,
                     fontWeight: FontWeight.bold,
                     color: textColor,
                   ),
@@ -104,23 +104,23 @@ class _AboutScreenState extends State<AboutScreen> with SingleTickerProviderStat
                 const Text(
                   'Explore our premium offerings and connect with us for a seamless travel experience.',
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 14,
                     color: lightTextColor,
                     height: 1.5,
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 22),
                 _buildMenuItem(
                   icon: MaterialCommunityIcons.file_document,
-                  color: accentColor,
+                  color: primaryColor,
                   title: 'Terms & Conditions',
                   description: 'Learn about our service terms and user agreements.',
                   onTap: () => _navigateToScreen(const TermAndConditionScreen()),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 _buildMenuItem(
                   icon: MaterialCommunityIcons.shield_lock_outline,
-                  color: accentColor,
+                  color: primaryColor,
                   title: 'Privacy Policy',
                   description: 'Understand how we protect your data and privacy.',
                   onTap: () => _navigateToScreen(const PrivacyPolicyScreen()),
@@ -147,19 +147,11 @@ class _AboutScreenState extends State<AboutScreen> with SingleTickerProviderStat
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         color: Colors.white,
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(12),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, color: color, size: 24),
-              ),
+              Icon(icon, color: color, size: 24),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
@@ -170,7 +162,7 @@ class _AboutScreenState extends State<AboutScreen> with SingleTickerProviderStat
                       style: const TextStyle(
                         fontWeight: FontWeight.w600,
                         color: textColor,
-                        fontSize: 18,
+                        fontSize: 16,
                       ),
                     ),
                     if (description.isNotEmpty) ...[
@@ -179,7 +171,7 @@ class _AboutScreenState extends State<AboutScreen> with SingleTickerProviderStat
                         description,
                         style: const TextStyle(
                           color: lightTextColor,
-                          fontSize: 14,
+                          fontSize: 13,
                           height: 1.4,
                         ),
                         maxLines: 2,
@@ -189,7 +181,7 @@ class _AboutScreenState extends State<AboutScreen> with SingleTickerProviderStat
                   ],
                 ),
               ),
-              const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 20),
+              const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 14),
             ],
           ),
         ),

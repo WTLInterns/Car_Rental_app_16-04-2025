@@ -24,19 +24,19 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
 
   // Color scheme for consistent styling - matching the app's professional style
   final Color primaryColor =
-      const Color(0xFF4A90E2); // Royal blue from the image
+  const Color(0xFF4A90E2); // Royal blue from the image
   final Color secondaryColor =
-      const Color(0xFF3057E3); // Same blue for consistency
+  const Color(0xFF3057E3); // Same blue for consistency
   final Color accentColor = const Color(0xFF4A90E2); // Yellow/gold accent
   final Color backgroundColor =
-      const Color(0xFFF3F5F9); // Light gray background
+  const Color(0xFFF3F5F9); // Light gray background
   final Color cardColor = Colors.white; // White card background
   final Color surfaceColor = Colors.white; // White for inputs/surfaces
   final Color textColor = const Color(0xFF333333); // Dark text
   final Color lightTextColor = const Color(0xFF666666); // Medium gray text
   final Color mutedTextColor = const Color(0xFFAAAAAA); // Light gray text
   final Color lightAccentColor =
-      const Color(0xFF4A90E2); // Light blue background
+  const Color(0xFF4A90E2); // Light blue background
 
   // Vehicle data organized by category
   Map<String, List<Vehicle>> _vehicleData = {
@@ -64,7 +64,7 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
     'sedan': 'assets/images/sedan.png',
     'sedanpremium': 'assets/images/sedan_premium.png',
     'suv': 'assets/images/suv.png',
-    'suvplus': 'assets/images/suv_plus.png',
+    'suvplus': 'assets/images/suvplus.jpg',
     'ertiga': 'assets/images/ertiga.jpg',
   };
 
@@ -162,7 +162,7 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
           modelType: 'hatchback',
           seats: '4',
           imageUrl:
-              _vehicleImages['hatchback'] ?? 'assets/images/hatchback.png',
+          _vehicleImages['hatchback'] ?? 'assets/images/hatchback.png',
         ),
       ];
     }
@@ -253,7 +253,7 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
       newNoVehiclesAvailable['SUVPlus'] = false;
       newVehicleData['SUVPlus'] = [
         Vehicle(
-          type: 'Toyota Fortuner',
+          type: ' Innova Crysta',
           price: (calculatedDistance * tripDetails['suvplus']).round(),
           pricePerKm: tripDetails['suvplus'],
           capacity: '6 bags',
@@ -270,7 +270,7 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
           available: true,
           modelType: 'suvplus',
           seats: '7',
-          imageUrl: _vehicleImages['suvplus'] ?? 'assets/images/suv_plus.png',
+          imageUrl: _vehicleImages['suvplus'] ?? 'assets/images/suvplus.jpg',
         ),
       ];
     }
@@ -317,7 +317,7 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
 
   void _handleVehicleSelect(Vehicle vehicle) {
     // Calculate fare components
-    final baseFare = vehicle.price;
+    final baseFare = vehicle.pricePerKm;
     final platformFee = (baseFare * 0.10).round(); // 10% platform fee
     final gst = (baseFare * 0.05).round(); // 5% GST (changed from 18%)
     final totalFare = baseFare + platformFee + gst;
@@ -326,7 +326,7 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
     final bookingDetails = {
       ...widget.bookingData,
       'vehicleType': vehicle.type,
-      'price': '₹${vehicle.price}',
+      'price': '₹${vehicle.pricePerKm}',
       'baseFare': baseFare.toString(),
       'platformFee': platformFee,
       'gst': gst,
@@ -373,29 +373,29 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
       ),
       body: _isLoading
           ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Finding the best vehicles for you...',
-                    style: TextStyle(
-                      color: textColor,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            )
-          : Column(
-              children: [
-                _buildTripSummary(),
-                Expanded(child: _buildVehicleList()),
-              ],
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
             ),
+            const SizedBox(height: 16),
+            Text(
+              'Finding the best vehicles for you...',
+              style: TextStyle(
+                color: textColor,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      )
+          : Column(
+        children: [
+          _buildTripSummary(),
+          Expanded(child: _buildVehicleList()),
+        ],
+      ),
       bottomNavigationBar: _isLoading ? null : _buildCategoryNavBar(),
     );
   }
@@ -583,9 +583,9 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
               _buildCategoryNavItem('HatchBack', 'Hatchback'),
               _buildCategoryNavItem('Sedan', 'Sedan'),
               _buildCategoryNavItem('SedanPremium', 'Premium'),
+              _buildCategoryNavItem('Ertiga', 'Ertiga'),
               _buildCategoryNavItem('SUV', 'SUV'),
               _buildCategoryNavItem('SUVPlus', 'SUV+'),
-              _buildCategoryNavItem('Ertiga', 'Ertiga'),
             ],
           ),
         ),
@@ -869,24 +869,24 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
               children: vehicle.features
                   .map(
                     (feature) => Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.blue[50],
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Text(
-                        feature,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: primaryColor,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.blue[50],
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Text(
+                    feature,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: primaryColor,
+                      fontWeight: FontWeight.w500,
                     ),
-                  ).toList(),
+                  ),
+                ),
+              ).toList(),
             ),
             const SizedBox(height: 16),
             const Divider(height: 1),
@@ -968,14 +968,8 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
             const SizedBox(height: 16),
             _buildDetailRow('Capacity', '${vehicle.seats} Seats'),
             _buildDetailRow('Luggage', vehicle.capacity),
-            _buildDetailRow(
-              'Price',
-              '₹${vehicle.price} (₹${vehicle.pricePerKm}/km)',
-            ),
-            _buildDetailRow(
-              'Rating',
-              '${vehicle.rating} (${vehicle.rides} rides)',
-            ),
+            _buildDetailRow('Price', '₹${vehicle.pricePerKm}'),
+            _buildDetailRow('Rating', '${vehicle.rating} (${vehicle.rides} rides)'),
             _buildDetailRow('Arrival Time', vehicle.arrivalTime),
             const SizedBox(height: 14),
             const Divider(height: 1),
@@ -986,7 +980,7 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
             ),
             const SizedBox(height: 8),
             ...vehicle.features.map(
-              (feature) => Padding(
+                  (feature) => Padding(
                 padding: const EdgeInsets.only(bottom: 4),
                 child: Row(
                   children: [

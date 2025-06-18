@@ -15,7 +15,8 @@ class SupportScreen extends StatefulWidget {
   State<SupportScreen> createState() => _SupportScreenState();
 }
 
-class _SupportScreenState extends State<SupportScreen> with SingleTickerProviderStateMixin {
+class _SupportScreenState extends State<SupportScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
 
@@ -48,7 +49,8 @@ class _SupportScreenState extends State<SupportScreen> with SingleTickerProvider
           const begin = Offset(1.0, 0.0);
           const end = Offset.zero;
           const curve = Curves.easeInOut;
-          var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+          var tween =
+              Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
           return SlideTransition(
             position: animation.drive(tween),
             child: child,
@@ -91,11 +93,11 @@ class _SupportScreenState extends State<SupportScreen> with SingleTickerProvider
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 16),
+                const SizedBox(height: 6),
                 const Text(
                   'Support & Assistance',
                   style: TextStyle(
-                    fontSize: 24,
+                    fontSize: 21,
                     fontWeight: FontWeight.bold,
                     color: textColor,
                   ),
@@ -104,25 +106,27 @@ class _SupportScreenState extends State<SupportScreen> with SingleTickerProvider
                 const Text(
                   'Get help with your rides, safety concerns, or frequently asked questions.',
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 14,
                     color: lightTextColor,
                     height: 1.5,
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 22),
                 _buildMenuItem(
                   icon: MaterialCommunityIcons.shield_check,
-                  color: accentColor,
+                  color: primaryColor,
                   title: 'Safety',
-                  description: 'Learn about our safety measures and ride policies.',
-                  onTap: () => _navigateToScreen(const SafetyScreen()),
+                  description:
+                      'Learn about our safety measures and ride policies.',
+                  onTap: () => _navigateToScreen(const SafetyPolicyScreen()),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 14),
                 _buildMenuItem(
                   icon: MaterialCommunityIcons.help_circle,
-                  color: accentColor,
+                  color: primaryColor,
                   title: 'FAQs',
-                  description: 'Find answers to common questions about our services.',
+                  description:
+                      'Find answers to common questions about our services.',
                   onTap: () => _navigateToScreen(const FAQsScreen()),
                 ),
               ],
@@ -147,20 +151,12 @@ class _SupportScreenState extends State<SupportScreen> with SingleTickerProvider
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         color: Colors.white,
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(12),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, color: color, size: 24),
-              ),
-              const SizedBox(width: 16),
+              Icon(icon, color: color, size: 22),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -170,7 +166,7 @@ class _SupportScreenState extends State<SupportScreen> with SingleTickerProvider
                       style: const TextStyle(
                         fontWeight: FontWeight.w600,
                         color: textColor,
-                        fontSize: 18,
+                        fontSize: 15,
                       ),
                     ),
                     if (description.isNotEmpty) ...[
@@ -179,7 +175,7 @@ class _SupportScreenState extends State<SupportScreen> with SingleTickerProvider
                         description,
                         style: const TextStyle(
                           color: lightTextColor,
-                          fontSize: 14,
+                          fontSize: 12,
                           height: 1.4,
                         ),
                         maxLines: 2,
@@ -189,7 +185,7 @@ class _SupportScreenState extends State<SupportScreen> with SingleTickerProvider
                   ],
                 ),
               ),
-              const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 20),
+              const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 16),
             ],
           ),
         ),

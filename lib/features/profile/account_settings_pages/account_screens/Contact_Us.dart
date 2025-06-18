@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:worldtriplink/features/booking/screens/user_home_screen.dart';
 
 const Color primaryColor = Color(0xFF4A90E2);
 
@@ -49,24 +48,24 @@ class ContactScreen extends StatelessWidget {
                     const SizedBox(height: 24),
 
                     _buildContactItem(
-                      icon: Icons.location_on,
-                      iconColor: Colors.blue,
-                      title: 'Our Location',
-                      subtitle: 'Kharadi, Pune, Maharashtra 411014',
-                    ),
-                    const SizedBox(height: 16),
-                    _buildContactItem(
                       icon: Icons.phone,
                       iconColor: Colors.green,
                       title: 'Phone Number',
-                      subtitle: '+91 9730545491',
+                      subtitle: '+91 9130030054',
                     ),
                     const SizedBox(height: 16),
                     _buildContactItem(
                       icon: Icons.email,
                       iconColor: Colors.purple,
                       title: 'Email Address',
-                      subtitle: 'info@wtltourism.com',
+                      subtitle: 'Info@worldtriplink.com Contact@worldtriplink.com',
+                    ),
+                    const SizedBox(height: 16),
+                    _buildContactItem(
+                      icon: Icons.location_on,
+                      iconColor: Colors.blue,
+                      title: 'Our Location',
+                      subtitle: 'Kharadi, Pune, Maharashtra 411014',
                     ),
                     const SizedBox(height: 16),
                     _buildContactItem(

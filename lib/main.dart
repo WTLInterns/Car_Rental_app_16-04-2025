@@ -16,10 +16,10 @@ import 'package:worldtriplink/features/booking/screens/user_home_screen.dart';
 void main() async {
   // Ensure Flutter binding is initialized
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Initialize storage service
   await StorageService.init();
-  
+
   // Run the app
   runApp(const MyApp());
 }
@@ -44,16 +44,19 @@ class MyApp extends StatelessWidget {
             routes: {
               AppConstants.routeSplash: (context) => const SplashScreen(),
               AppConstants.routeLogin: (context) => const LoginScreen(),
-              AppConstants.routeRegister: (context) => const RegistrationScreen(),
-              AppConstants.routeForgotPassword: (context) => const ForgotPasswordScreen(),
+              AppConstants.routeRegister: (context) =>
+                  const RegistrationScreen(),
+              AppConstants.routeForgotPassword: (context) =>
+                  const ForgotPasswordScreen(),
               AppConstants.routeUserHome: (context) => const UserHomeScreen(),
-              AppConstants.routeDriverTrips: (context) => const DriverTripsScreen(),
+              AppConstants.routeDriverTrips: (context) =>
+                  const DriverTripsScreen(),
               '/profile': (context) => const ProfileScreen(),
             },
             onGenerateRoute: (settings) {
               if (settings.name == AppConstants.routeTracking) {
                 final args = settings.arguments as Map<String, dynamic>?;
-                
+
                 if (args == null) {
                   return MaterialPageRoute(
                     builder: (context) => const Scaffold(
@@ -63,12 +66,11 @@ class MyApp extends StatelessWidget {
                     ),
                   );
                 }
-                
+
                 return MaterialPageRoute(
                   builder: (context) => TrackingScreen(bookingData: args),
                 );
               }
-              
               return null;
             },
           );
@@ -77,4 +79,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-

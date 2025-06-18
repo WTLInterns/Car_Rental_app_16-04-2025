@@ -60,7 +60,7 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
     'sedan': 'assets/images/sedan.png',
     'sedanpremium': 'assets/images/sedan_premium.png',
     'suv': 'assets/images/suv.png',
-    'suvplus': 'assets/images/suv_plus.png',
+    'suvplus': 'assets/images/suvplus.jpg',
     'ertiga': 'assets/images/ertiga.png',
   };
 
@@ -235,7 +235,7 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
       newNoVehiclesAvailable['SUVPlus'] = false;
       newVehicleData['SUVPlus'] = [
         Vehicle(
-          type: 'Toyota Fortuner',
+          type: 'Innova Crysta',
           price: (distance * suvPlusRate).round(),
           pricePerKm: suvPlusRate.round(),
           capacity: '6 bags',
@@ -253,7 +253,7 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
           available: true,
           modelType: 'SUVPlus',
           seats: '7',
-          imageUrl: _vehicleImages['suvplus'] ?? 'assets/images/suv_plus.png',
+          imageUrl: _vehicleImages['suvplus'] ?? 'assets/images/suvplus.jpg',
         ),
       ];
     }
