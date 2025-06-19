@@ -822,12 +822,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
  }
 
  Widget _buildFareDetails() {
-  final baseFare =
-      int.tryParse(widget.bookingData['baseFare']?.toString() ?? '0') ?? 0;
-  final platformFee =
-      int.tryParse(widget.bookingData['platformFee']?.toString() ?? '0') ?? 0;
+  final total = int.tryParse(widget.bookingData['total']?.toString() ?? '0') ?? 0;
+  final platformFee = int.tryParse(widget.bookingData['platformFee']?.toString() ?? '0') ?? 0;
   final gst = int.tryParse(widget.bookingData['gst']?.toString() ?? '0') ?? 0;
-  final totalFare = baseFare + platformFee + gst;
+  final totalFare = total + platformFee + gst;
 
   return Column(
    crossAxisAlignment: CrossAxisAlignment.start,
@@ -854,7 +852,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
      ],
     ),
     const SizedBox(height: 12),
-    _buildFareRow('Base Fare', '₹$baseFare'),
+    _buildFareRow('Base Fare', '₹$total'),
     const SizedBox(height: 8),
     _buildFareRow('Platform Fee', '₹$platformFee'),
     const SizedBox(height: 8),
@@ -863,10 +861,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     if (_isCouponApplied) _buildFareRow('Discount', '-₹$_discountAmount'),
     const Divider(),
     // Total Fare calculation
-    _buildFareRow(
-     'Total Fare',
-     '₹${_isCouponApplied ? (totalFare - _discountAmount) : totalFare}',
-     isTotal: true,
+    _buildFareRow('Total Fare', '₹${_isCouponApplied ? (totalFare - _discountAmount) : totalFare}', isTotal: true,
     ),
     const Divider(),
     const SizedBox(height: 8),

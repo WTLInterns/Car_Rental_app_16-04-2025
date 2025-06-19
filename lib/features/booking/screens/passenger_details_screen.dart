@@ -131,6 +131,15 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
       return;
     }
 
+    // Calculate fare details
+    final baseFare = int.tryParse(widget.bookingData['baseFare']?.toString() ?? '0') ?? 0;
+    final days = int.tryParse(widget.bookingData['_days']?.toString() ?? '0') ?? 0;
+    final driverRate = 300 * days;
+    final total = driverRate + baseFare;
+    final platformFee = (total * 0.10).round();
+    final gst = (total * 0.05).round();
+    final totalFare = total + platformFee + gst;
+
     // Prepare data for payment screen
     final paymentData = {
       ...widget.bookingData,
@@ -139,6 +148,11 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
       'passengerEmail': _emailController.text,
       'passengerPhone': _phoneController.text,
       'userId': _userId,
+      'total': total,
+      'platformFee': platformFee,
+      'gst': gst,
+      'totalFare': totalFare
+
     };
 
     // Navigate to payment screen
@@ -292,7 +306,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
             ),
           ],
         ),
-        
+
         // Connection line
         Padding(
           padding: const EdgeInsets.only(left: 14),
@@ -306,7 +320,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
             ],
           ),
         ),
-        
+
         // Drop location
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -458,10 +472,14 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
   }
 
   Widget _buildFareDetails() {
-    final baseFare = int.tryParse(widget.bookingData['baseFare'] ?? '0') ?? 0;
-    final platformFee = widget.bookingData['platformFee'] ?? 0;
-    final gst = widget.bookingData['gst'] ?? 0;
-    final totalFare = widget.bookingData['totalFare'] ?? 0;
+    final baseFare = int.tryParse(widget.bookingData['baseFare']?.toString() ?? '0') ?? 0;
+    final days = int.tryParse(widget.bookingData['_days']?.toString() ?? '0') ?? 0;
+    final driverRate = 300 * days;
+    final total = driverRate + baseFare;
+    final platformFee = (total * 0.10).round();
+    final gst = (total * 0.05).round();
+    final totalFare = total + platformFee + gst;
+
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -481,14 +499,24 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
           ],
         ),
         const SizedBox(height: 12),
+        if (days > 0) ...[
+          _buildFareRow('DayKm', '300 Km'),
+        ],
         _buildFareRow('Base Fare', '₹$baseFare'),
         const SizedBox(height: 8),
+        if (days > 0) ...[
+          _buildFareRow('DriverRate', '₹$driverRate'),
+          const SizedBox(height: 8),
+          _buildFareRow('Base Fare + DriverRate', '₹$total'),
+          const SizedBox(height: 8),
+        ],
         _buildFareRow('Platform Fee', '₹$platformFee'),
         const SizedBox(height: 8),
         _buildFareRow('GST (5%)', '₹$gst'),
         const SizedBox(height: 8),
         const Divider(),
         _buildFareRow('Total Fare', '₹$totalFare', isTotal: true),
+
       ],
     );
   }
