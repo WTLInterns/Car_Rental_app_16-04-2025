@@ -635,12 +635,17 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
                         // Date selector
                         Row(
                           children: [
-                            SizedBox(
+                            Container(
                               width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: Colors.blue[50],
+                                shape: BoxShape.circle,
+                              ),
                               child: Icon(
                                 Icons.calendar_today_outlined,
-                                color: primaryColor,
-                                size: 24,
+                                color: Colors.blue[600],
+                                size: 20,
                               ),
                             ),
                             const SizedBox(width: 16),
@@ -658,17 +663,20 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
                                   ),
                                   InkWell(
                                     onTap: () => _selectDate(context, false),
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 8),
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(8),
+                                        color: Colors.transparent,
+                                      ),
                                       child: Text(
                                         _selectedDate != null
-                                            ? DateFormat('dd MMM yyyy')
-                                                .format(_selectedDate!)
+                                            ? DateFormat('dd MMM yyyy').format(_selectedDate!)
                                             : "Select date",
                                         style: TextStyle(
                                           fontSize: 16,
-                                          fontWeight: FontWeight.w500,
+                                          fontWeight: FontWeight.w600,
                                           color: _selectedDate != null
                                               ? textColor
                                               : Colors.grey[500],
@@ -683,17 +691,25 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
                         ),
 
                         Divider(
-                            height: 32, thickness: 1, color: Colors.grey[200]),
+                          height: 12,
+                          thickness: 1,
+                          color: Colors.grey[400],
+                        ),
 
                         // Time selector
                         Row(
                           children: [
-                            SizedBox(
+                            Container(
                               width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: Colors.purple[50],
+                                shape: BoxShape.circle,
+                              ),
                               child: Icon(
                                 Icons.access_time,
-                                color: primaryColor,
-                                size: 24,
+                                color: Colors.purple[600],
+                                size: 20,
                               ),
                             ),
                             const SizedBox(width: 16),
@@ -711,16 +727,20 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
                                   ),
                                   InkWell(
                                     onTap: () => _selectTime(context),
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 8),
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(8),
+                                        color: Colors.transparent,
+                                      ),
                                       child: Text(
                                         _selectedTime != null
                                             ? _selectedTime!.format(context)
                                             : "Select time",
                                         style: TextStyle(
                                           fontSize: 16,
-                                          fontWeight: FontWeight.w500,
+                                          fontWeight: FontWeight.w600,
                                           color: _selectedTime != null
                                               ? textColor
                                               : Colors.grey[500],

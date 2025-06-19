@@ -823,6 +823,16 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
                     //     maxLines: 1,
                     //   ),
                     // ),
+                    // const SizedBox(height: 6),
+                    // Padding(
+                    //   padding: const EdgeInsets.only(right: 8.0),
+                    //   child: Text(
+                    //     '12/km',
+                    //     style: TextStyle(color: lightTextColor, fontSize: 11),
+                    //     overflow: TextOverflow.ellipsis,
+                    //     maxLines: 1,
+                    //   ),
+                    // ),
                     const SizedBox(height: 8),
                     Padding(
                       padding: const EdgeInsets.only(right: 2.0),
