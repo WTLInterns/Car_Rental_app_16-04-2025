@@ -1,3 +1,5 @@
+import 'package:device_preview/device_preview.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:worldtriplink/core/config/app_theme.dart';
@@ -20,8 +22,12 @@ void main() async {
   // Initialize storage service
   await StorageService.init();
 
-  // Run the app
-  runApp(const MyApp());
+  runApp(
+    DevicePreview(
+      enabled: !kReleaseMode, // Only in debug/profile
+      builder: (context) => const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -40,6 +46,9 @@ class MyApp extends StatelessWidget {
             debugShowCheckedModeBanner: false,
             title: 'World Trip Link',
             theme: AppTheme.lightTheme,
+            locale: DevicePreview.locale(context), // ✅ Locale support
+            builder: DevicePreview.appBuilder, // ✅ Toolbar + device frame
+            useInheritedMediaQuery: true, // ✅ Required
             initialRoute: AppConstants.routeSplash,
             routes: {
               AppConstants.routeSplash: (context) => const SplashScreen(),

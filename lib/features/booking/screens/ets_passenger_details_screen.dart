@@ -231,7 +231,7 @@ class _EtsPassengerDetailsScreenState extends State<EtsPassengerDetailsScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
             // Replace the current route with EtsSelectVehicleScreen
-            Navigator.pushReplacement(
+            Navigator.pop(
               context,
               MaterialPageRoute(
                 builder: (context) => EtsSelectVehicleScreen(bookingData: widget.bookingData, dates: widget.dates), // Pass dates back if needed

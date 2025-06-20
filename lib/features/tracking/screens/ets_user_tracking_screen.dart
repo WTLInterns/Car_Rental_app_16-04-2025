@@ -9,6 +9,9 @@ import 'package:http/http.dart' as http;
 const String googleMapsApiKey = "AIzaSyCelDo4I5cPQ72TfCTQW-arhPZ7ALNcp8w";
 const String baseUrl = "https://ets.worldtriplink.com";
 
+const Color primaryColor = Color(0xFF3F51B5); // Blue
+
+
 class ETSUserTrackingScreen extends StatefulWidget {
   final int? slotId;
   final String? pickupLocationText;
@@ -600,6 +603,9 @@ class _ETSUserTrackingScreenState extends State<ETSUserTrackingScreen> {
 
     return Scaffold(
       backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: primaryColor,
+      ),
       body: Stack(
         children: [
           Container(

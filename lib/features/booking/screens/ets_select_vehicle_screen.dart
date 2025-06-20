@@ -56,10 +56,10 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
 
   // Map of vehicle images by category
   final Map<String, String> _vehicleImages = {
-    'hatchback': 'assets/images/hatchback.png',
-    'sedan': 'assets/images/sedan.png',
+    'hatchback': 'assets/images/wagonr.jpg',
+    'sedan': 'assets/images/swift.jpg',
     'sedanpremium': 'assets/images/sedan_premium.png',
-    'suv': 'assets/images/suv.png',
+    'suv': 'assets/images/Innova.png',
     'suvplus': 'assets/images/suvplus.jpg',
     'ertiga': 'assets/images/ertiga.png',
   };
@@ -145,7 +145,7 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
           available: true,
           modelType: 'Hatchback',
           seats: '4',
-          imageUrl: _vehicleImages['hatchback'] ?? 'assets/images/hatchback.png',
+          imageUrl: _vehicleImages['hatchback'] ?? 'assets/images/wagonr.jpg',
         ),
       ];
     }
@@ -171,7 +171,7 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
           available: true,
           modelType: 'Sedan',
           seats: '4',
-          imageUrl: _vehicleImages['sedan'] ?? 'assets/images/sedan.png',
+          imageUrl: _vehicleImages['sedan'] ?? 'assets/images/swift.jpg',
         ),
       ];
     }
@@ -225,7 +225,7 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
           available: true,
           modelType: 'SUV',
           seats: '7',
-          imageUrl: _vehicleImages['suv'] ?? 'assets/images/suv.png',
+          imageUrl: _vehicleImages['suv'] ?? 'assets/images/Innova.png',
         ),
       ];
     }
