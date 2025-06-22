@@ -18,25 +18,24 @@ class SelectVehicleScreen extends StatefulWidget {
 
 class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
   String _selectedCategory = 'HatchBack';
+  String? _selectedVehicleType;
   bool _isLoading = true;
   String _tripDistance = '0';
   String _days = '0';
   String _dayPerKm = '0';
   Map<String, dynamic>? _tripInfo;
 
-  // Color scheme for consistent styling - matching the app's professional style
-  final Color primaryColor = const Color(0xFF4A90E2); // Royal blue
-  final Color secondaryColor = const Color(0xFF3057E3); // Same blue
-  final Color accentColor = const Color(0xFF4A90E2); // Yellow/gold accent
-  final Color backgroundColor = const Color(0xFFF3F5F9); // Light gray
-  final Color cardColor = Colors.white; // White card
-  final Color surfaceColor = Colors.white; // White for inputs
-  final Color textColor = const Color(0xFF333333); // Dark text
-  final Color lightTextColor = const Color(0xFF666666); // Medium gray
-  final Color mutedTextColor = const Color(0xFFAAAAAA); // Light gray
-  final Color lightAccentColor = const Color(0xFF4A90E2); // Light blue
+  final Color primaryColor = const Color(0xFF4A90E2);
+  final Color secondaryColor = const Color(0xFF3057E3);
+  final Color accentColor = const Color(0xFF4A90E2);
+  final Color backgroundColor = const Color(0xFFF3F5F9);
+  final Color cardColor = Colors.white;
+  final Color surfaceColor = Colors.white;
+  final Color textColor = const Color(0xFF333333);
+  final Color lightTextColor = const Color(0xFF666666);
+  final Color mutedTextColor = const Color(0xFFAAAAAA);
+  final Color lightAccentColor = const Color(0xFF4A90E2);
 
-  // Vehicle data organized by category
   Map<String, List<Vehicle>> _vehicleData = {
     'HatchBack': [],
     'Sedan': [],
@@ -46,7 +45,6 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
     'Ertiga': [],
   };
 
-  // Track availability by category
   Map<String, bool> _noVehiclesAvailable = {
     'HatchBack': true,
     'Sedan': true,
@@ -56,17 +54,20 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
     'Ertiga': true,
   };
 
-  // Map of vehicle images by category
   final Map<String, String> _vehicleImages = {
-    'hatchback': 'assets/images/wagonr.jpg',
-    'sedan': 'assets/images/swift.jpg',
-    'sedanpremium': 'assets/images/sedan_premium.png',
-    'suv': 'assets/images/Innova.png',
-    'suvplus': 'assets/images/suvplus.jpg',
+    'wagonr': 'assets/images/wagonr.webp',
+    'celerio': 'assets/images/Celerio.jpeg',
+    'swift': 'assets/images/swift.png',
+    'swiftdzire': 'assets/images/swift.jpg',
+    'hyundaiaura': 'assets/images/Aura.jpeg',
+    'hondaamaze': 'assets/images/honda_amaze.jpg',
+    'hondacity': 'assets/images/sedan_premium.png',
+    'maruticiaz': 'assets/images/RightCiaz.png',
+    'toyotainnova': 'assets/images/Innova.png',
+    'innovacrysta': 'assets/images/suvplus.jpg',
     'ertiga': 'assets/images/ertiga.jpg',
   };
 
-  // Map of category icons
   final Map<String, IconData> _categoryIcons = {
     'HatchBack': MaterialCommunityIcons.car_hatchback,
     'Sedan': MaterialCommunityIcons.car_2_plus,
@@ -108,7 +109,7 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
           _days = data['days']?.toString() ?? '0';
           _dayPerKm = (300 * (int.tryParse(_days) ?? 0)).toString();
         });
-        _processVehicleData(data); // Call to process vehicle data
+        _processVehicleData(data);
       } else {
         throw Exception('Failed to load vehicles: ${response.statusCode}');
       }
@@ -121,7 +122,7 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
       );
       setState(() => _isLoading = false);
     } finally {
-      setState(() => _isLoading = false); // Ensure loading stops
+      setState(() => _isLoading = false);
     }
   }
 
@@ -133,11 +134,9 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
     final tripDetails = data['tripinfo'][0];
     final calculatedDistance = double.tryParse(_tripDistance) ?? 150;
 
-    // Reset availability
     final newNoVehiclesAvailable = Map<String, bool>.from(_noVehiclesAvailable);
     final newVehicleData = <String, List<Vehicle>>{};
 
-    // Initialize empty lists for each category
     for (var category in _vehicleData.keys) {
       newVehicleData[category] = [];
     }
@@ -147,7 +146,7 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
       newNoVehiclesAvailable['HatchBack'] = false;
       newVehicleData['HatchBack'] = [
         Vehicle(
-          type: 'Maruti Wagonr',
+          type: 'Wagonr',
           price: (calculatedDistance * tripDetails['hatchback']).round(),
           pricePerKm: tripDetails['hatchback'],
           capacity: '2 bags',
@@ -163,7 +162,45 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
           available: true,
           modelType: 'hatchback',
           seats: '4',
-          imageUrl: _vehicleImages['hatchback'] ?? 'assets/images/wagonr.jpg',
+          imageUrl: _vehicleImages['wagonr'] ?? 'assets/images/wagonr.webp',
+        ),
+        Vehicle(
+          type: 'Celerio',
+          price: (calculatedDistance * tripDetails['hatchback']).round(),
+          pricePerKm: tripDetails['hatchback'],
+          capacity: '2 bags',
+          features: [
+            'Petrol',
+            'USB Charging',
+            'Air Conditioning',
+            'Music System',
+          ],
+          rating: 4,
+          rides: 175,
+          arrivalTime: '4 mins',
+          available: true,
+          modelType: 'hatchback',
+          seats: '4',
+          imageUrl: _vehicleImages['celerio'] ?? 'assets/images/Celerio.jpeg',
+        ),
+        Vehicle(
+          type: 'Swift',
+          price: (calculatedDistance * tripDetails['hatchback']).round(),
+          pricePerKm: tripDetails['hatchback'],
+          capacity: '2 bags',
+          features: [
+            'Petrol',
+            'USB Charging',
+            'Air Conditioning',
+            'Music System',
+          ],
+          rating: 4,
+          rides: 210,
+          arrivalTime: '3 mins',
+          available: true,
+          modelType: 'hatchback',
+          seats: '4',
+          imageUrl: _vehicleImages['swift'] ?? 'assets/images/swift.png',
         ),
       ];
     }
@@ -173,7 +210,7 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
       newNoVehiclesAvailable['Sedan'] = false;
       newVehicleData['Sedan'] = [
         Vehicle(
-          type: 'Maruti Swift Dzire',
+          type: 'Swift Dzire',
           price: (calculatedDistance * tripDetails['sedan']).round(),
           pricePerKm: tripDetails['sedan'],
           capacity: '3 bags',
@@ -189,7 +226,45 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
           available: true,
           modelType: 'sedan',
           seats: '4',
-          imageUrl: _vehicleImages['sedan'] ?? 'assets/images/swift.jpg',
+          imageUrl: _vehicleImages['swiftdzire'] ?? 'assets/images/swift.jpg',
+        ),
+        Vehicle(
+          type: 'Hyundai Aura',
+          price: (calculatedDistance * tripDetails['sedan']).round(),
+          pricePerKm: tripDetails['sedan'],
+          capacity: '3 bags',
+          features: [
+            'Diesel',
+            'USB Charging',
+            'Air Conditioning',
+            'Music System',
+          ],
+          rating: 4,
+          rides: 190,
+          arrivalTime: '6 mins',
+          available: true,
+          modelType: 'sedan',
+          seats: '4',
+          imageUrl: _vehicleImages['hyundaiaura'] ?? 'assets/images/Aura.jpeg',
+        ),
+        Vehicle(
+          type: 'Honda Amaze',
+          price: (calculatedDistance * tripDetails['sedan']).round(),
+          pricePerKm: tripDetails['sedan'],
+          capacity: '3 bags',
+          features: [
+            'Diesel',
+            'USB Charging',
+            'Air Conditioning',
+            'Music System',
+          ],
+          rating: 4,
+          rides: 200,
+          arrivalTime: '5 mins',
+          available: true,
+          modelType: 'sedan',
+          seats: '4',
+          imageUrl: _vehicleImages['hondaamaze'] ?? 'assets/images/honda_amaze.jpg',
         ),
       ];
     }
@@ -216,8 +291,27 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
           available: true,
           modelType: 'sedanpremium',
           seats: '5',
-          imageUrl:
-          _vehicleImages['sedanpremium'] ?? 'assets/images/sedan_premium.png',
+          imageUrl: _vehicleImages['hondacity'] ?? 'assets/images/sedan_premium.png',
+        ),
+        Vehicle(
+          type: 'Maruti Ciaz',
+          price: (calculatedDistance * tripDetails['sedanpremium']).round(),
+          pricePerKm: tripDetails['sedanpremium'],
+          capacity: '4 bags',
+          features: [
+            'Diesel',
+            'USB Charging',
+            'Air Conditioning',
+            'Music System',
+            'Leather Seats',
+          ],
+          rating: 4,
+          rides: 170,
+          arrivalTime: '8 mins',
+          available: true,
+          modelType: 'sedanpremium',
+          seats: '5',
+          imageUrl: _vehicleImages['maruticiaz'] ?? 'assets/images/RightCiaz.png',
         ),
       ];
     }
@@ -244,7 +338,7 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
           available: true,
           modelType: 'suv',
           seats: '7',
-          imageUrl: _vehicleImages['suv'] ?? 'assets/images/Innova.png',
+          imageUrl: _vehicleImages['toyotainnova'] ?? 'assets/images/Innova.png',
         ),
       ];
     }
@@ -271,7 +365,7 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
           available: true,
           modelType: 'suvplus',
           seats: '7',
-          imageUrl: _vehicleImages['suvplus'] ?? 'assets/images/suvplus.jpg',
+          imageUrl: _vehicleImages['innovacrysta'] ?? 'assets/images/suvplus.jpg',
         ),
       ];
     }
@@ -306,11 +400,12 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
     setState(() {
       _vehicleData = newVehicleData;
       _noVehiclesAvailable = newNoVehiclesAvailable;
-
-      // Set first available category as selected
       for (var category in _vehicleData.keys) {
         if (!newNoVehiclesAvailable[category]!) {
           _selectedCategory = category;
+          _selectedVehicleType = newVehicleData[category]!.isNotEmpty
+              ? newVehicleData[category]![0].type
+              : null;
           break;
         }
       }
@@ -318,10 +413,7 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
   }
 
   void _handleVehicleSelect(Vehicle vehicle) {
-    // Calculate fare components
     final baseFare = vehicle.pricePerKm;
-
-    // Prepare data for passenger details screen
     final bookingDetails = {
       ...widget.bookingData,
       'vehicleType': vehicle.type,
@@ -334,7 +426,6 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
       'imageUrl': vehicle.imageUrl,
     };
 
-    // Navigate to passenger details screen
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -360,7 +451,6 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
-            // Navigate back to CabBookingScreen
             Navigator.pop(
               context,
               MaterialPageRoute(builder: (context) => const CabBookingScreen()),
@@ -596,7 +686,12 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
 
     return InkWell(
       onTap: isAvailable
-          ? () => setState(() => _selectedCategory = category)
+          ? () => setState(() {
+        _selectedCategory = category;
+        _selectedVehicleType = _vehicleData[category]!.isNotEmpty
+            ? _vehicleData[category]![0].type
+            : null;
+      })
           : null,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -664,10 +759,48 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
       );
     }
 
-    return ListView.builder(
+    Vehicle? selectedVehicle = vehicles.firstWhere(
+          (vehicle) => vehicle.type == _selectedVehicleType,
+      orElse: () => vehicles[0],
+    );
+
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
-      itemCount: vehicles.length,
-      itemBuilder: (context, index) => _buildVehicleCard(vehicles[index]),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey.shade300),
+            ),
+            child: DropdownButton<String>(
+              value: _selectedVehicleType ?? vehicles[0].type,
+              isExpanded: true,
+              icon: Icon(Icons.arrow_drop_down, color: primaryColor),
+              underline: const SizedBox(),
+              items: vehicles.map((vehicle) {
+                return DropdownMenuItem<String>(
+                  value: vehicle.type,
+                  child: Text(
+                    vehicle.type,
+                    style: TextStyle(color: textColor, fontSize: 16),
+                  ),
+                );
+              }).toList(),
+              onChanged: (value) {
+                setState(() {
+                  _selectedVehicleType = value;
+                });
+              },
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildVehicleCard(selectedVehicle),
+        ],
+      ),
     );
   }
 
@@ -693,9 +826,8 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Vehicle image
                 SizedBox(
-                  width: 102,
+                  width: 107,
                   height: 70,
                   child: Container(
                     decoration: BoxDecoration(
@@ -717,7 +849,7 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 2),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -730,7 +862,7 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
                           color: textColor,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 3),
                       Row(
                         children: [
                           Icon(
@@ -738,7 +870,7 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
                             size: 16,
                             color: lightTextColor,
                           ),
-                          const SizedBox(width: 4),
+                          const SizedBox(width: 3),
                           Text(
                             '${vehicle.seats} Seats',
                             style: TextStyle(
@@ -746,13 +878,13 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
                               fontSize: 13,
                             ),
                           ),
-                          const SizedBox(width: 6),
+                          const SizedBox(width: 3),
                           Icon(
                             MaterialCommunityIcons.bag_suitcase,
                             size: 16,
                             color: lightTextColor,
                           ),
-                          const SizedBox(width: 4),
+                          const SizedBox(width: 3),
                           Text(
                             vehicle.capacity,
                             style: TextStyle(
@@ -907,7 +1039,6 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
             Center(
               child: TextButton.icon(
                 onPressed: () {
-                  // Show vehicle details dialog
                   showDialog(
                     context: context,
                     builder: (context) => _buildVehicleDetailsDialog(vehicle),

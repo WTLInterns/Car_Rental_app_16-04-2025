@@ -56,7 +56,7 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
 
   // Map of vehicle images by category
   final Map<String, String> _vehicleImages = {
-    'hatchback': 'assets/images/wagonr.jpg',
+    'hatchback': 'assets/images/wagonr.webp',
     'sedan': 'assets/images/swift.jpg',
     'sedanpremium': 'assets/images/sedan_premium.png',
     'suv': 'assets/images/Innova.png',
@@ -145,7 +145,7 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
           available: true,
           modelType: 'Hatchback',
           seats: '4',
-          imageUrl: _vehicleImages['hatchback'] ?? 'assets/images/wagonr.jpg',
+          imageUrl: _vehicleImages['hatchback'] ?? 'assets/images/wagonr.webp',
         ),
       ];
     }
