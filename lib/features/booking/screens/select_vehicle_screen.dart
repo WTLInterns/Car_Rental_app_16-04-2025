@@ -56,13 +56,8 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
 
   final Map<String, String> _vehicleImages = {
     'wagonr': 'assets/images/wagonr.webp',
-    'celerio': 'assets/images/Celerio.jpeg',
-    'swift': 'assets/images/swift.png',
     'swiftdzire': 'assets/images/swift.jpg',
-    'hyundaiaura': 'assets/images/Aura.jpeg',
-    'hondaamaze': 'assets/images/honda_amaze.jpg',
     'hondacity': 'assets/images/sedan_premium.png',
-    'maruticiaz': 'assets/images/RightCiaz.png',
     'toyotainnova': 'assets/images/Innova.png',
     'innovacrysta': 'assets/images/suvplus.jpg',
     'ertiga': 'assets/images/ertiga.jpg',
@@ -158,49 +153,11 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
           ],
           rating: 4,
           rides: 198,
-          arrivalTime: '3 mins',
+          arrivalTime: '10 mins',
           available: true,
           modelType: 'hatchback',
           seats: '4',
           imageUrl: _vehicleImages['wagonr'] ?? 'assets/images/wagonr.webp',
-        ),
-        Vehicle(
-          type: 'Celerio',
-          price: (calculatedDistance * tripDetails['hatchback']).round(),
-          pricePerKm: tripDetails['hatchback'],
-          capacity: '2 bags',
-          features: [
-            'Petrol',
-            'USB Charging',
-            'Air Conditioning',
-            'Music System',
-          ],
-          rating: 4,
-          rides: 175,
-          arrivalTime: '4 mins',
-          available: true,
-          modelType: 'hatchback',
-          seats: '4',
-          imageUrl: _vehicleImages['celerio'] ?? 'assets/images/Celerio.jpeg',
-        ),
-        Vehicle(
-          type: 'Swift',
-          price: (calculatedDistance * tripDetails['hatchback']).round(),
-          pricePerKm: tripDetails['hatchback'],
-          capacity: '2 bags',
-          features: [
-            'Petrol',
-            'USB Charging',
-            'Air Conditioning',
-            'Music System',
-          ],
-          rating: 4,
-          rides: 210,
-          arrivalTime: '3 mins',
-          available: true,
-          modelType: 'hatchback',
-          seats: '4',
-          imageUrl: _vehicleImages['swift'] ?? 'assets/images/swift.png',
         ),
       ];
     }
@@ -222,54 +179,16 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
           ],
           rating: 4,
           rides: 220,
-          arrivalTime: '5 mins',
+          arrivalTime: '10 mins',
           available: true,
           modelType: 'sedan',
           seats: '4',
           imageUrl: _vehicleImages['swiftdzire'] ?? 'assets/images/swift.jpg',
         ),
-        Vehicle(
-          type: 'Hyundai Aura',
-          price: (calculatedDistance * tripDetails['sedan']).round(),
-          pricePerKm: tripDetails['sedan'],
-          capacity: '3 bags',
-          features: [
-            'Diesel',
-            'USB Charging',
-            'Air Conditioning',
-            'Music System',
-          ],
-          rating: 4,
-          rides: 190,
-          arrivalTime: '6 mins',
-          available: true,
-          modelType: 'sedan',
-          seats: '4',
-          imageUrl: _vehicleImages['hyundaiaura'] ?? 'assets/images/Aura.jpeg',
-        ),
-        Vehicle(
-          type: 'Honda Amaze',
-          price: (calculatedDistance * tripDetails['sedan']).round(),
-          pricePerKm: tripDetails['sedan'],
-          capacity: '3 bags',
-          features: [
-            'Diesel',
-            'USB Charging',
-            'Air Conditioning',
-            'Music System',
-          ],
-          rating: 4,
-          rides: 200,
-          arrivalTime: '5 mins',
-          available: true,
-          modelType: 'sedan',
-          seats: '4',
-          imageUrl: _vehicleImages['hondaamaze'] ?? 'assets/images/honda_amaze.jpg',
-        ),
       ];
     }
 
-    // SedanPremium vehicles
+// SedanPremium vehicles
     if (tripDetails['sedanpremium'] > 0) {
       newNoVehiclesAvailable['SedanPremium'] = false;
       newVehicleData['SedanPremium'] = [
@@ -291,32 +210,13 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
           available: true,
           modelType: 'sedanpremium',
           seats: '5',
-          imageUrl: _vehicleImages['hondacity'] ?? 'assets/images/sedan_premium.png',
-        ),
-        Vehicle(
-          type: 'Maruti Ciaz',
-          price: (calculatedDistance * tripDetails['sedanpremium']).round(),
-          pricePerKm: tripDetails['sedanpremium'],
-          capacity: '4 bags',
-          features: [
-            'Diesel',
-            'USB Charging',
-            'Air Conditioning',
-            'Music System',
-            'Leather Seats',
-          ],
-          rating: 4,
-          rides: 170,
-          arrivalTime: '8 mins',
-          available: true,
-          modelType: 'sedanpremium',
-          seats: '5',
-          imageUrl: _vehicleImages['maruticiaz'] ?? 'assets/images/RightCiaz.png',
+          imageUrl:
+              _vehicleImages['hondacity'] ?? 'assets/images/sedan_premium.png',
         ),
       ];
     }
 
-    // SUV vehicles
+// SUV vehicles
     if (tripDetails['suv'] > 0) {
       newNoVehiclesAvailable['SUV'] = false;
       newVehicleData['SUV'] = [
@@ -338,12 +238,13 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
           available: true,
           modelType: 'suv',
           seats: '7',
-          imageUrl: _vehicleImages['toyotainnova'] ?? 'assets/images/Innova.png',
+          imageUrl:
+              _vehicleImages['toyotainnova'] ?? 'assets/images/Innova.png',
         ),
       ];
     }
 
-    // SUVPlus vehicles
+// SUVPlus vehicles
     if (tripDetails['suvplus'] > 0) {
       newNoVehiclesAvailable['SUVPlus'] = false;
       newVehicleData['SUVPlus'] = [
@@ -365,7 +266,8 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
           available: true,
           modelType: 'suvplus',
           seats: '7',
-          imageUrl: _vehicleImages['innovacrysta'] ?? 'assets/images/suvplus.jpg',
+          imageUrl:
+              _vehicleImages['innovacrysta'] ?? 'assets/images/suvplus.jpg',
         ),
       ];
     }
@@ -460,29 +362,29 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
       ),
       body: _isLoading
           ? Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Finding the best vehicles for you...',
-              style: TextStyle(
-                color: textColor,
-                fontWeight: FontWeight.w500,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Finding the best vehicles for you...',
+                    style: TextStyle(
+                      color: textColor,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
-        ),
-      )
+            )
           : Column(
-        children: [
-          _buildTripSummary(),
-          Expanded(child: _buildVehicleList()),
-        ],
-      ),
+              children: [
+                _buildTripSummary(),
+                Expanded(child: _buildVehicleList()),
+              ],
+            ),
       bottomNavigationBar: _isLoading ? null : _buildCategoryNavBar(),
     );
   }
@@ -687,11 +589,11 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
     return InkWell(
       onTap: isAvailable
           ? () => setState(() {
-        _selectedCategory = category;
-        _selectedVehicleType = _vehicleData[category]!.isNotEmpty
-            ? _vehicleData[category]![0].type
-            : null;
-      })
+                _selectedCategory = category;
+                _selectedVehicleType = _vehicleData[category]!.isNotEmpty
+                    ? _vehicleData[category]![0].type
+                    : null;
+              })
           : null,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -760,7 +662,7 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
     }
 
     Vehicle? selectedVehicle = vehicles.firstWhere(
-          (vehicle) => vehicle.type == _selectedVehicleType,
+      (vehicle) => vehicle.type == _selectedVehicleType,
       orElse: () => vehicles[0],
     );
 
@@ -769,39 +671,157 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.grey.shade300),
-            ),
-            child: DropdownButton<String>(
-              value: _selectedVehicleType ?? vehicles[0].type,
-              isExpanded: true,
-              icon: Icon(Icons.arrow_drop_down, color: primaryColor),
-              underline: const SizedBox(),
-              items: vehicles.map((vehicle) {
-                return DropdownMenuItem<String>(
-                  value: vehicle.type,
-                  child: Text(
-                    vehicle.type,
-                    style: TextStyle(color: textColor, fontSize: 16),
-                  ),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  _selectedVehicleType = value;
-                });
-              },
-            ),
-          ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 4),
           _buildVehicleCard(selectedVehicle),
         ],
       ),
     );
+  }
+
+  Widget _buildCategoryContent() {
+    switch (_selectedCategory) {
+      case 'HatchBack':
+        return const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'HATCHBACK',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            SizedBox(height: 6),
+            Row(
+              children: [
+                Text(
+                  '• Maruti Wagonr',
+                  style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+                ),
+                SizedBox(width: 20),
+                Text(
+                  '• Toyota Glanza',
+                  style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+                ),
+              ],
+            ),
+            Text(
+              '• Celerio',
+              style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+            ),
+          ],
+        );
+      case 'Sedan':
+        return const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'SEDAN',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            SizedBox(height: 6),
+            Row(
+              children: [
+                Text(
+                  '• Maruti Swift Dzire',
+                  style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+                ),
+                SizedBox(width: 20),
+                Text(
+                  '• Honda Amaze',
+                  style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+                ),
+              ],
+            ),
+            SizedBox(height: 4),
+            Row(
+              children: [
+                Text(
+                  '• Hyundai Aura/Xcent',
+                  style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+                ),
+                SizedBox(width: 20),
+                Text(
+                  '• Toyota etios',
+                  style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+                ),
+              ],
+            ),
+          ],
+        );
+      case 'SedanPremium':
+        return const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'SEDAN PREMIUM',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            SizedBox(height: 6),
+            Row(
+              children: [
+                Text(
+                  '• Hyundai Verna',
+                  style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+                ),
+                SizedBox(width: 20),
+                Text(
+                  '• Honda City',
+                  style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+                ),
+              ],
+            ),
+            Text(
+              '• Maruti Ciaz',
+              style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+            ),
+          ],
+        );
+      case 'Ertiga':
+        return const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Ertiga',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            SizedBox(height: 6),
+            Text(
+              '• Maruti Ertiga',
+              style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+            ),
+          ],
+        );
+      case 'SUV':
+        return const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'SUV',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            SizedBox(height: 6),
+            Text(
+              '• Toyota Innova',
+              style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+            ),
+          ],
+        );
+      case 'SUVPlus':
+        return const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'SUV PLUS',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            SizedBox(height: 6),
+            Text(
+              '• Innova Crysta',
+              style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+            ),
+          ],
+        );
+      default:
+        return const SizedBox.shrink();
+    }
   }
 
   Widget _buildVehicleCard(Vehicle vehicle) {
@@ -823,6 +843,8 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            _buildCategoryContent(),
+            const SizedBox(height: 4),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -854,15 +876,15 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        vehicle.type,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: textColor,
-                        ),
-                      ),
-                      const SizedBox(height: 3),
+                      // Text(
+                      //   vehicle.type,
+                      //   style: TextStyle(
+                      //     fontSize: 18,
+                      //     fontWeight: FontWeight.bold,
+                      //     color: textColor,
+                      //   ),
+                      // ),
+                      // const SizedBox(height: 3),
                       Row(
                         children: [
                           Icon(
@@ -969,9 +991,9 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 6),
             const Divider(height: 1),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
             Text(
               'Features',
               style: TextStyle(
@@ -987,24 +1009,24 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
               children: vehicle.features
                   .map(
                     (feature) => Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.blue[50],
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Text(
-                    feature,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: primaryColor,
-                      fontWeight: FontWeight.w500,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.blue[50],
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Text(
+                        feature,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: primaryColor,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              )
+                  )
                   .toList(),
             ),
             const SizedBox(height: 16),
@@ -1088,7 +1110,8 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
             _buildDetailRow('Capacity', '${vehicle.seats} Seats'),
             _buildDetailRow('Luggage', vehicle.capacity),
             _buildDetailRow('Price', '₹${vehicle.pricePerKm}'),
-            _buildDetailRow('Rating', '${vehicle.rating} (${vehicle.rides} rides)'),
+            _buildDetailRow(
+                'Rating', '${vehicle.rating} (${vehicle.rides} rides)'),
             _buildDetailRow('Arrival Time', vehicle.arrivalTime),
             const SizedBox(height: 14),
             const Divider(height: 1),
@@ -1099,7 +1122,7 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
             ),
             const SizedBox(height: 8),
             ...vehicle.features.map(
-                  (feature) => Padding(
+              (feature) => Padding(
                 padding: const EdgeInsets.only(bottom: 4),
                 child: Row(
                   children: [
