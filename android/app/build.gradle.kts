@@ -33,7 +33,7 @@ android {
         // You can update the following values to match your application needs.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
-        versionCode = 9
+        versionCode = 13
         versionName = flutter.versionName
     }
 
@@ -64,4 +64,7 @@ dependencies {
     // Add these dependencies for location services
     implementation("com.google.android.gms:play-services-location:21.0.1")
     implementation("com.google.android.gms:play-services-maps:18.2.0")
+
+    // Facebook SDK dependency
+    implementation("com.facebook.android:facebook-android-sdk:17.0.1")
 }

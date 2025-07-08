@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:worldtriplink/core/config/app_theme.dart';
 import 'package:worldtriplink/core/utils/app_constants.dart';
 import 'package:worldtriplink/core/utils/storage_service.dart';
+import 'package:worldtriplink/core/utils/facebook_analytics.dart';
 import 'package:worldtriplink/features/auth/blocs/auth_bloc.dart';
 import 'package:worldtriplink/features/auth/screens/login_screen.dart';
 import 'package:worldtriplink/features/auth/screens/registration_screen.dart';
@@ -21,6 +22,9 @@ void main() async {
 
   // Initialize storage service
   await StorageService.init();
+
+  // Log app open event for Facebook Analytics
+  await FacebookAnalytics.logAppOpen();
 
   runApp(
     DevicePreview(

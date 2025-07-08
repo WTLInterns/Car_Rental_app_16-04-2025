@@ -129,7 +129,7 @@ class _EtsSelectVehicleScreenState extends State<EtsSelectVehicleScreen> {
       newNoVehiclesAvailable['HatchBack'] = false;
       newVehicleData['HatchBack'] = [
         Vehicle(
-          type: 'Maruti Swift',
+          type: 'Wagonr',
           price: (distance * hatchbackRate).round(),
           pricePerKm: hatchbackRate.round(),
           capacity: '2 bags',

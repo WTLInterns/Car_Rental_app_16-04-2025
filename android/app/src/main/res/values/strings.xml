@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">World Trip Link</string>
+    <string name="facebook_app_id">9822494027828805</string>
+    <string name="fb_login_protocol_scheme">fb9822494027828805</string>
+    <string name="facebook_client_token">59eee5ea4c6b5aa748c7927390209e01</string>
+</resources>

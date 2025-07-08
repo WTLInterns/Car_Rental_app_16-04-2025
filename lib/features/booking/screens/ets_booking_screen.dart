@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:async';
 import 'package:location/location.dart';
 import 'package:flutter/services.dart';
 import '../../../features/booking/screens/ets_select_vehicle_screen.dart';
@@ -20,6 +21,8 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> with SingleTickerPr
   DateTime currentMonth = DateTime(DateTime.now().year, DateTime.now().month);
   final TextEditingController _pickupController = TextEditingController();
   final TextEditingController _dropController = TextEditingController();
+  final FocusNode _pickupFocusNode = FocusNode();
+  final FocusNode _dropFocusNode = FocusNode();
   TimeOfDay? _selectedTime;
   bool _isOneWay = true;
 
@@ -40,30 +43,73 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> with SingleTickerPr
   bool _isLoadingLocation = false;
   String? _activeField;
 
+  // Cache for place suggestions and location validation
+  final Map<String, List<dynamic>> _placeCache = {};
+  final Map<String, bool> _locationValidationCache = {};
+  Timer? _debounceTimer;
+
   @override
   void initState() {
     super.initState();
+    _placeCache.clear(); // Clear cache on startup to prevent stale non-Pune locations
+    _locationValidationCache.clear();
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 500),
     );
     _fadeInAnimation = CurvedAnimation(
       parent: _animationController,
-      curve: Curves.easeInOut,
+      curve: Curves.easeIn,
     );
     _animationController.forward();
     _selectedTime = TimeOfDay.now();
-    _pickupController.addListener(() => setState(() {}));
-    _dropController.addListener(() => setState(() {}));
+    _pickupController.addListener(_onPickupTextChanged);
+    _dropController.addListener(_onDropTextChanged);
+    _pickupFocusNode.addListener(() {
+      if (_pickupFocusNode.hasFocus) {
+        setState(() => _activeField = 'pickup');
+        if (_pickupController.text.isNotEmpty) {
+          _debounceSearch(_pickupController.text, 'pickup');
+        }
+      }
+    });
+    _dropFocusNode.addListener(() {
+      if (_dropFocusNode.hasFocus) {
+        setState(() => _activeField = 'drop');
+        if (_dropController.text.isNotEmpty) {
+          _debounceSearch(_dropController.text, 'drop');
+        }
+      }
+    });
     _getCurrentLocation();
   }
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
+    _pickupController.removeListener(_onPickupTextChanged);
+    _dropController.removeListener(_onDropTextChanged);
     _pickupController.dispose();
     _dropController.dispose();
+    _pickupFocusNode.dispose();
+    _dropFocusNode.dispose();
     _animationController.dispose();
     super.dispose();
+  }
+
+  void _onPickupTextChanged() {
+    _debounceSearch(_pickupController.text, 'pickup');
+  }
+
+  void _onDropTextChanged() {
+    _debounceSearch(_dropController.text, 'drop');
+  }
+
+  void _debounceSearch(String query, String type) {
+    if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+      _searchPlaces(query, type);
+    });
   }
 
   void _changeMonth(int increment) {
@@ -210,16 +256,13 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> with SingleTickerPr
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                   ),
-                  image: DecorationImage(
-                    image: const AssetImage('assets/images/Service-employee-transfer.jpg'),
+                  image: const DecorationImage(
+                    image: AssetImage('assets/images/Service-employee-transfer.jpg'),
                     fit: BoxFit.cover,
                     colorFilter: ColorFilter.mode(
-                      Colors.black.withAlpha(13),
+                      Colors.black12,
                       BlendMode.dstATop,
                     ),
-                    onError: (exception, stackTrace) {
-                      debugPrint('Error loading background pattern: $exception');
-                    },
                   ),
                 ),
               ),
@@ -290,67 +333,14 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> with SingleTickerPr
                                   ],
                                 ),
                               ),
-                              Padding(
-                                padding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[100],
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                        child: GestureDetector(
-                                          onTap: () => setState(() => _isOneWay = true),
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(vertical: 12),
-                                            decoration: BoxDecoration(
-                                              color: _isOneWay ? Theme.of(context).primaryColor : Colors.transparent,
-                                              borderRadius: BorderRadius.circular(12),
-                                            ),
-                                            child: Center(
-                                              child: Text(
-                                                'One Way',
-                                                style: TextStyle(
-                                                  fontWeight: FontWeight.w600,
-                                                  color: _isOneWay ? Colors.white : Colors.grey[700],
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      Expanded(
-                                        child: GestureDetector(
-                                          onTap: () => setState(() => _isOneWay = false),
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(vertical: 12),
-                                            decoration: BoxDecoration(
-                                              color: !_isOneWay ? Theme.of(context).primaryColor : Colors.transparent,
-                                              borderRadius: BorderRadius.circular(12),
-                                            ),
-                                            child: Center(
-                                              child: Text(
-                                                'Round Trip',
-                                                style: TextStyle(
-                                                  fontWeight: FontWeight.w600,
-                                                  color: !_isOneWay ? Colors.white : Colors.grey[700],
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
+                              _buildLocationWarningWidget(),
                               _buildInputField(
                                 icon: Icons.location_pin,
                                 iconColor: const Color(0xFF4CAF50),
                                 label: 'Pickup Location',
                                 controller: _pickupController,
-                                hint: 'Enter pickup location',
+                                hint: 'Enter pickup location in Pune district',
+                                focusNode: _pickupFocusNode,
                                 isActive: _activeField == 'pickup',
                                 onTap: () => setState(() => _activeField = 'pickup'),
                               ),
@@ -359,7 +349,8 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> with SingleTickerPr
                                 iconColor: const Color(0xFF2196F3),
                                 label: 'Drop Location',
                                 controller: _dropController,
-                                hint: 'Enter drop location',
+                                hint: 'Enter drop location in Pune district',
+                                focusNode: _dropFocusNode,
                                 isActive: _activeField == 'drop',
                                 onTap: () => setState(() => _activeField = 'drop'),
                               ),
@@ -370,8 +361,8 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> with SingleTickerPr
                                 padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
                                 child: TweenAnimationBuilder<double>(
                                   tween: Tween<double>(begin: 0.8, end: 1.0),
-                                  duration: const Duration(milliseconds: 500),
-                                  curve: Curves.easeOutBack,
+                                  duration: const Duration(milliseconds: 300),
+                                  curve: Curves.easeOut,
                                   builder: (context, scale, child) {
                                     return Transform.scale(
                                       scale: scale,
@@ -403,8 +394,7 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> with SingleTickerPr
                                         shape: RoundedRectangleBorder(
                                           borderRadius: BorderRadius.circular(16),
                                         ),
-                                        elevation: 5,
-                                        shadowColor: const Color(0xFF4CAF50).withAlpha(64),
+                                        elevation: 3,
                                       ),
                                       child: Row(
                                         mainAxisAlignment: MainAxisAlignment.center,
@@ -496,7 +486,7 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> with SingleTickerPr
                 ),
                 const SizedBox(height: 15),
                 Text(
-                  'The Employee Transportation Service (ETS) provides safe and reliable transportation for company employees.',
+                  'The Employee Transportation Service (ETS) provides safe and reliable transportation for company employees within Pune district.',
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.grey[700],
@@ -534,6 +524,7 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> with SingleTickerPr
     required String label,
     required TextEditingController controller,
     required String hint,
+    required FocusNode focusNode,
     required bool isActive,
     required VoidCallback onTap,
   }) {
@@ -567,22 +558,19 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> with SingleTickerPr
                 color: isActive ? Theme.of(context).primaryColor.withAlpha(128) : Colors.transparent,
                 width: 1.5,
               ),
-              boxShadow: isActive
-                  ? [
-                BoxShadow(
-                  color: Theme.of(context).primaryColor.withAlpha(26),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ]
-                  : null,
             ),
             child: Stack(
               alignment: Alignment.centerRight,
               children: [
                 TextField(
                   controller: controller,
-                  onTap: onTap,
+                  focusNode: focusNode,
+                  onTap: () {
+                    onTap();
+                    if (controller.text.isNotEmpty) {
+                      _debounceSearch(controller.text, type);
+                    }
+                  },
                   decoration: InputDecoration(
                     prefixIcon: Icon(icon, color: isActive ? iconColor : Colors.grey[400]),
                     hintText: hint,
@@ -606,7 +594,6 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> with SingleTickerPr
                         ? SizedBox(width: 40)
                         : null,
                   ),
-                  onChanged: (value) => _searchPlaces(value, type),
                 ),
                 Row(
                   mainAxisSize: MainAxisSize.min,
@@ -616,7 +603,13 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> with SingleTickerPr
                         icon: Icon(Icons.clear, size: 18, color: Colors.grey[400]),
                         onPressed: () {
                           controller.clear();
-                          _searchPlaces('', type);
+                          setState(() {
+                            if (type == 'pickup') {
+                              _pickupSuggestions = [];
+                            } else {
+                              _dropSuggestions = [];
+                            }
+                          });
                         },
                         constraints: BoxConstraints(maxWidth: 32),
                         padding: EdgeInsets.zero,
@@ -644,7 +637,8 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> with SingleTickerPr
               ],
             ),
           ),
-          if ((isPickup && _pickupSuggestions.isNotEmpty) || (!isPickup && _dropSuggestions.isNotEmpty))
+          if ((isPickup && _pickupFocusNode.hasFocus && _pickupSuggestions.isNotEmpty) ||
+              (!isPickup && _dropFocusNode.hasFocus && _dropSuggestions.isNotEmpty))
             _buildSuggestionsList(isPickup ? _pickupSuggestions : _dropSuggestions, controller, type),
         ],
       ),
@@ -984,11 +978,19 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> with SingleTickerPr
   }
 
   Future<void> _fetchVehicleAvailability() async {
-    if (!_animationController.isAnimating && _animationController.status != AnimationStatus.completed) {
-      _animationController.forward();
+    bool isPickupValid = await PuneLocationService.validatePuneLocation(_pickupController.text);
+    bool isDropValid = await PuneLocationService.validatePuneLocation(_dropController.text);
+
+    if (!isPickupValid) {
+      _showErrorSnackBar('Pickup location "${_pickupController.text}" is outside Pune district. Please choose a location like Pune city, Pimpri-Chinchwad, Baramati, or Indapur.');
+      return;
     }
 
-    // Show loading dialog
+    if (!isDropValid) {
+      _showErrorSnackBar('Drop location "${_dropController.text}" is outside Pune district. Please choose a location like Pune city, Pimpri-Chinchwad, Baramati, or Indapur.');
+      return;
+    }
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -1015,12 +1017,6 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> with SingleTickerPr
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Please wait while we process your request',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                ),
               ],
             ),
           ),
@@ -1031,6 +1027,7 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> with SingleTickerPr
     try {
       final baseUrl = 'https://ets.worldtriplink.com';
       final Uri uri = Uri.parse('$baseUrl/schedule/etsCab1');
+
       List<String> formattedDates = _selectedDates.map((date) => DateFormat('yyyy-MM-dd').format(date)).toList();
       String formattedTime = _selectedTime != null
           ? '${_selectedTime!.hour.toString().padLeft(2, '0')}:${_selectedTime!.minute.toString().padLeft(2, '0')}'
@@ -1049,17 +1046,23 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> with SingleTickerPr
         uriString += '&dates=$date';
       }
 
-      debugPrint('Calling API: $uriString');
       final response = await http.post(
         Uri.parse(uriString),
         headers: {'Content-Type': 'application/json'},
-      ).timeout(const Duration(seconds: 30));
+      ).timeout(const Duration(seconds: 20));
 
       if (!mounted) return;
-      Navigator.pop(context); // Close loading dialog
+      Navigator.pop(context);
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
+        final distance = data['distance']?.toString() ?? data['distace']?.toString() ?? '0';
+
+        if (data.containsKey('errorCode')) {
+          _showErrorSnackBar('Service is currently limited to Pune district only');
+          return;
+        }
+
         if (!mounted) return;
 
         final bookingData = {
@@ -1068,7 +1071,7 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> with SingleTickerPr
           'dates': formattedDates,
           'time': data['time'],
           'bookingType': _isOneWay ? 'oneWay' : 'roundTrip',
-          'distance': data['distace']?.toString() ?? '0',
+          'distance': distance,
           'sourceCity': data['sourceCity'],
           'destinationCity': data['destinationCity'],
           'sourceState': data['sourceState'],
@@ -1098,7 +1101,6 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> with SingleTickerPr
       if (!mounted) return;
       Navigator.pop(context);
       _showErrorDialog(context, 'Connection Error', 'Could not connect to the server. Please check your internet connection and try again.');
-      debugPrint('API Error: $e');
     }
   }
 
@@ -1127,14 +1129,14 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> with SingleTickerPr
         content: Row(
           children: [
             const Icon(Icons.error_outline, color: Colors.white),
-            const SizedBox(width: 12),
+            const SizedBox(width: 11),
             Expanded(child: Text(message)),
           ],
         ),
         backgroundColor: Colors.red[700],
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        margin: const EdgeInsets.all(8),
+        margin: const EdgeInsets.all(6),
         duration: const Duration(seconds: 4),
         action: SnackBarAction(
           label: 'DISMISS',
@@ -1232,28 +1234,6 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> with SingleTickerPr
     );
   }
 
-  Future<void> _selectTime(BuildContext context) async {
-    final TimeOfDay? picked = await showTimePicker(
-      context: context,
-      initialTime: _selectedTime ?? TimeOfDay.now(),
-      builder: (BuildContext context, Widget? child) {
-        return Theme(
-          data: ThemeData.light().copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(0xFF2196F3),
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: Colors.black,
-            ),
-            dialogTheme: const DialogThemeData(backgroundColor: Colors.white),
-          ),
-          child: child!,
-        );
-      },
-    );
-    if (picked != null && picked != _selectedTime) setState(() => _selectedTime = picked);
-  }
-
   Widget _buildCalendarCell(int? day, {bool isSelected = false, bool isSunday = false, bool isHoliday = false}) {
     if (day == null) {
       return Container(
@@ -1288,29 +1268,42 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> with SingleTickerPr
   Future<void> _getCurrentLocation() async {
     setState(() => _isLoadingLocation = true);
     Location location = Location();
+
     bool serviceEnabled = await location.serviceEnabled();
     if (!serviceEnabled) {
       serviceEnabled = await location.requestService();
       if (!serviceEnabled) {
         setState(() => _isLoadingLocation = false);
+        _showErrorSnackBar('Location services are required for this app');
         return;
       }
     }
+
     PermissionStatus permissionGranted = await location.hasPermission();
     if (permissionGranted == PermissionStatus.denied) {
       permissionGranted = await location.requestPermission();
       if (permissionGranted != PermissionStatus.granted) {
         setState(() => _isLoadingLocation = false);
+        _showErrorSnackBar('Location permission is required to get your current location');
         return;
       }
     }
+
     try {
       final locationData = await location.getLocation();
+      if (!PuneLocationService.isLocationInPuneDistrict(locationData.latitude!, locationData.longitude!)) {
+        setState(() => _isLoadingLocation = false);
+        debugPrint('Current location outside Pune district: lat=${locationData.latitude}, lng=${locationData.longitude}');
+        _showErrorSnackBar('Your current location is outside Pune district. Please choose a location like Pune city, Pimpri-Chinchwad, Baramati, or Indapur.');
+        return;
+      }
+
       setState(() => _isLoadingLocation = false);
       _reverseGeocode(locationData);
     } catch (e) {
       setState(() => _isLoadingLocation = false);
-      _showErrorSnackBar('Could not get location. Please try again.');
+      _showErrorSnackBar('Could not get your location. Please enter manually');
+      debugPrint('Error getting current location: $e');
     }
   }
 
@@ -1324,14 +1317,24 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> with SingleTickerPr
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['results'].isNotEmpty) {
-          setState(() {
-            _pickupController.text = data['results'][0]['formatted_address'];
-            _activeField = 'pickup';
-          });
+          final address = data['results'][0]['formatted_address'];
+          bool isValid = await PuneLocationService.validatePuneLocation(address);
+          if (isValid) {
+            setState(() {
+              _pickupController.text = address;
+              _activeField = 'pickup';
+              _pickupFocusNode.requestFocus();
+            });
+            debugPrint('Reverse geocoded address: $address (valid in Pune district)');
+          } else {
+            _showErrorSnackBar('Current location "${address}" is outside Pune district. Please choose a location like Pune city, Pimpri-Chinchwad, Baramati, or Indapur.');
+            debugPrint('Reverse geocoded address: $address (invalid, outside Pune district)');
+          }
         }
       }
     } catch (e) {
-      _showErrorSnackBar('Could not get address. Please enter manually.');
+      _showErrorSnackBar('Could not get address. Please enter manually');
+      debugPrint('Error reverse geocoding: $e');
     }
   }
 
@@ -1340,17 +1343,145 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> with SingleTickerPr
       setState(() => type == 'pickup' ? _pickupSuggestions = [] : _dropSuggestions = []);
       return;
     }
+
+    final cacheKey = '$type:$query';
+    if (_placeCache.containsKey(cacheKey)) {
+      setState(() {
+        if (type == 'pickup') {
+          _pickupSuggestions = _placeCache[cacheKey]!;
+        } else {
+          _dropSuggestions = _placeCache[cacheKey]!;
+        }
+      });
+      return;
+    }
+
     try {
       final response = await http.get(
         Uri.parse(
-          'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$query&key=$googleMapsApiKey&components=country:in',
+            'https://maps.googleapis.com/maps/api/place/autocomplete/json?'
+                'input=${Uri.encodeComponent(query)}&'
+                'key=$googleMapsApiKey&'
+                'components=country:in&'
+                'location=18.5204,73.8567&'
+                'radius=120000&'
+                'strictbounds=true'
         ),
-      );
+      ).timeout(const Duration(seconds: 5));
+
+      debugPrint('Autocomplete query: $query, response: ${response.body}');
+
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        setState(() => type == 'pickup' ? _pickupSuggestions = data['predictions'] ?? [] : _dropSuggestions = data['predictions'] ?? []);
+        List<dynamic> predictions = data['predictions'] ?? [];
+
+        List<dynamic> puneOnlyPredictions = [];
+        const batchSize = 5;
+        for (var i = 0; i < predictions.length; i += batchSize) {
+          final batch = predictions.sublist(i, i + batchSize > predictions.length ? predictions.length : i + batchSize);
+          final results = await Future.wait(batch.map((prediction) => _validateLocationCoordinates(prediction['place_id'])));
+          for (var j = 0; j < batch.length; j++) {
+            if (results[j]) {
+              puneOnlyPredictions.add(batch[j]);
+            }
+          }
+        }
+
+        if (puneOnlyPredictions.isEmpty && query.isNotEmpty) {
+          final fallbackResponse = await http.get(
+            Uri.parse(
+                'https://maps.googleapis.com/maps/api/place/autocomplete/json?'
+                    'input=${Uri.encodeComponent(query + ' pune district')}&'
+                    'key=$googleMapsApiKey&'
+                    'components=country:in&'
+                    'location=18.5204,73.8567&'
+                    'radius=120000&'
+                    'strictbounds=true'
+            ),
+          ).timeout(const Duration(seconds: 5));
+
+          debugPrint('Fallback query: ${query + ' pune district'}, response: ${fallbackResponse.body}');
+
+          if (fallbackResponse.statusCode == 200) {
+            final fallbackData = json.decode(fallbackResponse.body);
+            List<dynamic> fallbackPredictions = fallbackData['predictions'] ?? [];
+            final fallbackResults = await Future.wait(fallbackPredictions.map((prediction) => _validateLocationCoordinates(prediction['place_id'])));
+            for (var j = 0; j < fallbackPredictions.length; j++) {
+              if (fallbackResults[j]) {
+                puneOnlyPredictions.add(fallbackPredictions[j]);
+              }
+            }
+          }
+        }
+
+        _placeCache[cacheKey] = puneOnlyPredictions;
+
+        if (!mounted) return;
+        setState(() {
+          if (type == 'pickup') {
+            _pickupSuggestions = puneOnlyPredictions;
+          } else {
+            _dropSuggestions = puneOnlyPredictions;
+          }
+        });
+      } else {
+        if (!mounted) return;
+        _showErrorSnackBar('Failed to fetch location suggestions. Please try again.');
       }
-    } catch (e) {}
+    } catch (e) {
+      if (!mounted) return;
+      _showErrorSnackBar('Error fetching location suggestions. Please check your internet connection.');
+      debugPrint('Error in _searchPlaces: $e');
+    }
+  }
+
+  Future<bool> _validateLocationCoordinates(String placeId) async {
+    if (_locationValidationCache.containsKey(placeId)) {
+      return _locationValidationCache[placeId]!;
+    }
+
+    try {
+      final response = await http.get(
+        Uri.parse(
+            'https://maps.googleapis.com/maps/api/place/details/json?'
+                'place_id=$placeId&'
+                'fields=geometry,formatted_address&'
+                'key=$googleMapsApiKey'
+        ),
+      ).timeout(const Duration(seconds: 5));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['result'] != null && data['result']['geometry'] != null) {
+          final location = data['result']['geometry']['location'];
+          final address = data['result']['formatted_address']?.toString().toLowerCase() ?? '';
+          final lat = location['lat'];
+          final lng = location['lng'];
+
+          bool isInPuneDistrict = PuneLocationService.isLocationInPuneDistrict(lat, lng);
+          _locationValidationCache[placeId] = isInPuneDistrict;
+
+          if (!isInPuneDistrict) {
+            _placeCache.removeWhere((key, value) => value.any((pred) => pred['place_id'] == placeId));
+          }
+
+          if (isInPuneDistrict) {
+            debugPrint('Place validated: $placeId, address: $address, lat: $lat, lng: $lng (within Pune district)');
+          } else {
+            debugPrint('Place rejected: $placeId, address: $address, lat: $lat, lng: $lng (outside Pune district)');
+          }
+
+          return isInPuneDistrict;
+        }
+      }
+      _locationValidationCache[placeId] = false;
+      debugPrint('Place details failed for placeId: $placeId');
+      return false;
+    } catch (e) {
+      _locationValidationCache[placeId] = false;
+      debugPrint('Error validating placeId: $placeId, error: $e');
+      return false;
+    }
   }
 
   Widget _buildSuggestionsList(List<dynamic> suggestions, TextEditingController controller, String type) {
@@ -1362,17 +1493,24 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> with SingleTickerPr
         borderRadius: BorderRadius.circular(10),
         boxShadow: [BoxShadow(color: Colors.black.withAlpha(16), blurRadius: 6, offset: const Offset(0, 3))],
       ),
-      child: ListView.separated(
+      child: ListView.builder(
         shrinkWrap: true,
         padding: EdgeInsets.zero,
         itemCount: suggestions.length,
-        separatorBuilder: (context, index) => Divider(height: 1, color: Colors.grey[200]),
         itemBuilder: (context, index) => Material(
           color: Colors.transparent,
           child: InkWell(
             onTap: () {
               controller.text = suggestions[index]['description'];
-              setState(() => type == 'pickup' ? _pickupSuggestions = [] : _dropSuggestions = []);
+              setState(() {
+                if (type == 'pickup') {
+                  _pickupSuggestions = [];
+                  _pickupFocusNode.unfocus();
+                } else {
+                  _dropSuggestions = [];
+                  _dropFocusNode.unfocus();
+                }
+              });
             },
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
@@ -1400,5 +1538,76 @@ class _EtsBookingScreenState extends State<EtsBookingScreen> with SingleTickerPr
         ),
       ),
     );
+  }
+
+  Widget _buildLocationWarningWidget() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.orange[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.orange[200]!),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.info_outline, color: Colors.red[700], size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Service is available only within Pune district, including Pune city, Pimpri-Chinchwad, Baramati, Indapur, and surrounding areas.',
+              style: TextStyle(
+                color: Colors.red[700],
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class PuneLocationService {
+  static const double puneNorthLat = 19.4000; // Covers Chakan, Alandi
+  static const double puneSouthLat = 17.9000; // Covers Baramati, Daund
+  static const double puneEastLng = 75.2000;  // Covers Indapur, Shirur
+  static const double puneWestLng = 73.2000;  // Covers Mulshi, Paud
+
+  static bool isLocationInPuneDistrict(double lat, double lng) {
+    return lat >= puneSouthLat && lat <= puneNorthLat && lng >= puneWestLng && lng <= puneEastLng;
+  }
+
+  static Future<bool> validatePuneLocation(String address) async {
+    try {
+      final response = await http.get(
+        Uri.parse(
+          'https://maps.googleapis.com/maps/api/geocode/json?address=${Uri.encodeComponent(address)}&key=$googleMapsApiKey',
+        ),
+      ).timeout(const Duration(seconds: 5));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['results'].isNotEmpty) {
+          final location = data['results'][0]['geometry']['location'];
+          final lat = location['lat'];
+          final lng = location['lng'];
+
+          if (isLocationInPuneDistrict(lat, lng)) {
+            debugPrint('Location validated: $address, lat: $lat, lng: $lng (within Pune district)');
+            return true;
+          }
+
+          debugPrint('Location rejected: $address, lat: $lat, lng: $lng (outside Pune district)');
+          return false;
+        }
+      }
+      debugPrint('Geocoding failed for address: $address');
+      return false;
+    } catch (e) {
+      debugPrint('Error validating location: $address, error: $e');
+      return false;
+    }
   }
 }

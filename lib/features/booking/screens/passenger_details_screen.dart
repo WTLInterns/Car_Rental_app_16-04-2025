@@ -418,9 +418,9 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
           ),
         ],
         if (widget.bookingData['bookingType'] == 'rental' &&
-            widget.bookingData['hours'] != null) ...[
+            widget.bookingData['selectedPackage'] != null) ...[
           const SizedBox(height: 16),
-          _buildDetailItem(Icons.timer, 'Hours', widget.bookingData['hours']),
+          _buildDetailItem(Icons.tour,'selectedPackage', widget.bookingData['selectedPackage']),
         ],
       ],
     );

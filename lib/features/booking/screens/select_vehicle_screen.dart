@@ -90,14 +90,16 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
           'dropLocation': widget.bookingData['destination'],
           'date': widget.bookingData['date'],
           'time': widget.bookingData['time'],
-          'hours': widget.bookingData['hours'] ?? '',
           'Returndate': widget.bookingData['returnDate'] ?? '',
+          'packageName': widget.bookingData['selectedPackage'] ?? '',
         },
       );
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
+
         print('API Response: ${response.body}');
+
         setState(() {
           _tripInfo = data;
           _tripDistance = data['distance']?.toString() ?? '0';
@@ -244,7 +246,7 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
       ];
     }
 
-// SUVPlus vehicles
+    // SUVPlus vehicles
     if (tripDetails['suvplus'] > 0) {
       newNoVehiclesAvailable['SUVPlus'] = false;
       newVehicleData['SUVPlus'] = [
