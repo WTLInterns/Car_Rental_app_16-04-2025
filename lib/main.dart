@@ -26,11 +26,13 @@ void main() async {
   // Log app open event for Facebook Analytics
   await FacebookAnalytics.logAppOpen();
 
-  runApp(
-    DevicePreview(
-      enabled: !kReleaseMode, // Only in debug/profile
-      builder: (context) => const MyApp(),
-    ),
+  runApp(const MyApp(),
+
+    // DevicePreview(
+    //   enabled: !kReleaseMode, // Only in debug/profile
+    //   builder: (context) => const MyApp(),
+    // ),
+    
   );
 }
 

@@ -16,7 +16,7 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "com.yourcompany.worldtriplink"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 35
     ndkVersion = "27.0.12077973"  // Updated NDK version to match plugin requirements
     
     compileOptions {
@@ -31,9 +31,9 @@ android {
     defaultConfig {
         applicationId = "com.yourcompany.worldtriplink"
         // You can update the following values to match your application needs.
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
-        versionCode = 13
+        minSdk = 21
+        targetSdk = 34
+        versionCode = 17
         versionName = flutter.versionName
     }
 
@@ -48,10 +48,21 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // Enable ProGuard for code optimization and obfuscation
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+
+            // Use release signing configuration
             signingConfig = signingConfigs.getByName("release")
+        }
+        debug {
+            // Disable ProGuard for debug builds for faster compilation
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
 }
@@ -64,6 +75,16 @@ dependencies {
     // Add these dependencies for location services
     implementation("com.google.android.gms:play-services-location:21.0.1")
     implementation("com.google.android.gms:play-services-maps:18.2.0")
+
+    // Google Play Core for App Bundles and Dynamic Features (Compatible with SDK 34)
+    implementation("com.google.android.play:app-update:2.1.0")
+    implementation("com.google.android.play:app-update-ktx:2.1.0")
+    implementation("com.google.android.play:feature-delivery:2.1.0")
+    implementation("com.google.android.play:feature-delivery-ktx:2.1.0")
+
+    // Google Play Services for Advertising ID (Latest version)
+    implementation("com.google.android.gms:play-services-ads-identifier:18.1.0")
+    implementation("com.google.android.gms:play-services-base:18.5.0")
 
     // Facebook SDK dependency
     implementation("com.facebook.android:facebook-android-sdk:17.0.1")

@@ -81,6 +81,7 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
   // Location update timer
   Timer? _locationUpdateTimer;
   bool isConnected = false;
+  DateTime? _lastMarkerUpdate; // Throttle marker updates for performance
 
   // Controllers and references
   final TextEditingController _otpController = TextEditingController();
@@ -121,7 +122,7 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
   double? destinationLng;
 
   // WebSocket config
-  final String _websocketUrl = "https://api.worldtriplink.com/ws-trip-tracking/";
+  final String _websocketUrl = "https://api.worldtriplink.com/ws-trip-tracking/websocket";
   StompClient? _stompClient;
   bool _isConnected = false;
   int _reconnectAttempts = 0;
@@ -346,6 +347,13 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
     if (!mounted) return;
 
     _reconnectAttempts++;
+
+    // Limit reconnection attempts to prevent memory issues
+    if (_reconnectAttempts > 10) {
+      debugPrint('❌ Max reconnection attempts reached. Stopping reconnection.');
+      return;
+    }
+
     final delay = min(30, pow(2, _reconnectAttempts)).toInt();
     debugPrint(
       '🔄 Attempting to reconnect in $delay seconds (attempt $_reconnectAttempts)',
@@ -517,6 +525,16 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
   }
 
   void _updateMapMarkers() {
+    if (!mounted) return;
+
+    // Throttle marker updates to reduce rendering overhead
+    final now = DateTime.now();
+    if (_lastMarkerUpdate != null &&
+        now.difference(_lastMarkerUpdate!).inMilliseconds < 500) {
+      return;
+    }
+    _lastMarkerUpdate = now;
+
     Set<Marker> markers = {};
 
     // Add driver marker
@@ -1493,6 +1511,16 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
             zoomControlsEnabled: false,
             mapToolbarEnabled: false,
             minMaxZoomPreference: const MinMaxZoomPreference(8, 20),
+            // Performance optimizations to reduce frame events errors
+            liteModeEnabled: false, // Ensure full functionality
+            tiltGesturesEnabled: false, // Reduce rendering complexity
+            rotateGesturesEnabled: false, // Reduce rendering complexity
+            scrollGesturesEnabled: true,
+            zoomGesturesEnabled: true,
+            // Reduce map rendering load
+            buildingsEnabled: false,
+            indoorViewEnabled: false,
+            trafficEnabled: false,
           ),
 
           // Booking ID and Status Badge

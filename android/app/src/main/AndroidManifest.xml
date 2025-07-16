@@ -1,6 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Advertising ID permission for Google Play Services -->
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
+
     <!-- Internet Permission -->
     <uses-permission android:name="android.permission.INTERNET" />
     
@@ -11,17 +14,8 @@
     <!-- Location Permissions -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
     
-    <!-- Phone Call Permissions - Multiple for maximum compatibility -->
-    <uses-permission android:name="android.permission.CALL_PHONE" />
-    <uses-permission android:name="android.permission.CALL_PRIVILEGED" 
-        tools:ignore="ProtectedPermissions" />
-    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
-    <uses-permission android:name="android.permission.MODIFY_PHONE_STATE" 
-        tools:ignore="ProtectedPermissions" />
-    
-    <!-- Dialer Intent Support -->
+    <!-- Phone Call Permission -->
     <uses-permission android:name="android.permission.CALL_PHONE" />
     
     <!-- Gallery and Camera Permission -->
@@ -34,18 +28,20 @@
     
     <!-- Notification permissions for Android 13+ -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    
+
     <!-- Wake lock for background processing -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+
     
     <!-- Vibration for notifications -->
     <uses-permission android:name="android.permission.VIBRATE" />
     
-    <!-- System alert window (for overlay permissions) -->
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
-    <!-- Declare that this app supports various phone intents -->
+
+    <!-- Declare that this app supports various intents -->
     <queries>
+        <!-- Phone intents -->
         <intent>
             <action android:name="android.intent.action.DIAL" />
         </intent>
@@ -64,17 +60,23 @@
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="callto" />
         </intent>
+
+        <!-- Google Play Services for Advertising ID -->
+        <package android:name="com.google.android.gms" />
+        <package android:name="com.android.vending" />
     </queries>
 
     <application
         android:label="World Trip Link"
         android:name="com.yourcompany.worldtriplink.MyApplication"
         android:icon="@mipmap/launcher_icon"
-        android:requestLegacyExternalStorage="true"
-        android:preserveLegacyExternalStorage="true"
-        android:usesCleartextTraffic="true"
+        android:requestLegacyExternalStorage="false"
+        android:usesCleartextTraffic="false"
+        android:networkSecurityConfig="@xml/network_security_config"
         android:hardwareAccelerated="true"
-        android:largeHeap="true">
+        android:largeHeap="true"
+        android:enableOnBackInvokedCallback="true"
+        android:appCategory="maps">
         
         <!-- Google Maps API Key -->
         <meta-data
@@ -94,6 +96,11 @@
         <meta-data
             android:name="com.facebook.sdk.ClientToken"
             android:value="@string/facebook_client_token" />
+
+        <!-- Google Advertising ID Service -->
+        <meta-data
+            android:name="com.google.android.gms.ads.AD_MANAGER_APP"
+            android:value="true" />
             
         <!-- File provider for sharing files -->
         <provider
@@ -124,18 +131,7 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
             
-            <!-- Phone intent filters for better compatibility -->
-            <intent-filter>
-                <action android:name="android.intent.action.DIAL" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <data android:scheme="tel" />
-            </intent-filter>
-            
-            <intent-filter>
-                <action android:name="android.intent.action.CALL" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <data android:scheme="tel" />
-            </intent-filter>
+
         </activity>
 
         <!-- Facebook Login Activity -->

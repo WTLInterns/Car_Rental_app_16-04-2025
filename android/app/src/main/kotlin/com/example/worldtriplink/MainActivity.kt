@@ -1,16 +1,40 @@
 package com.yourcompany.worldtriplink
 
 import android.os.Bundle
+import android.util.Log
+import android.util.Base64
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import com.facebook.appevents.AppEventsLogger
 import com.facebook.appevents.AppEventsConstants
 import java.math.BigDecimal
+import java.security.MessageDigest
+import java.security.NoSuchAlgorithmException
 
 class MainActivity : FlutterActivity() {
     private val CHANNEL = "facebook_analytics"
     private lateinit var appEventsLogger: AppEventsLogger
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        // Generate and log Facebook key hash for debugging
+        try {
+            val info = packageManager.getPackageInfo(packageName, android.content.pm.PackageManager.GET_SIGNATURES)
+            info.signatures?.let { signatures ->
+                for (signature in signatures) {
+                    val md = MessageDigest.getInstance("SHA")
+                    md.update(signature.toByteArray())
+                    val keyHash = Base64.encodeToString(md.digest(), Base64.DEFAULT)
+                    Log.d("FacebookKeyHash", "Key Hash: $keyHash")
+                    println("Facebook Key Hash: $keyHash")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("FacebookKeyHash", "Error generating key hash", e)
+        }
+    }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)

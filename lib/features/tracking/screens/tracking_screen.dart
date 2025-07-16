@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
@@ -70,7 +71,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
   Timer? _locationUpdateTimer;
 
   // WebSocket config
-  final String _websocketUrl = "'https://api.worldtriplink.com/ws-trip-tracking/websocket";
+  final String _websocketUrl = "https://api.worldtriplink.com/ws-trip-tracking/websocket";
 
   // Connection status
   bool _isConnected = false;
@@ -88,6 +89,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
   );
   double _driverBearing = 0.0; // Track driver heading/bearing
   bool _isCarIconLoaded = false; // Track if car icon is loaded
+  DateTime? _lastMarkerUpdate; // Throttle marker updates for performance
 
   @override
   void initState() {
@@ -299,6 +301,13 @@ class _TrackingScreenState extends State<TrackingScreen> {
     if (!mounted) return;
 
     _reconnectAttempts++;
+
+    // Limit reconnection attempts to prevent memory issues
+    if (_reconnectAttempts > 10) {
+      debugPrint('❌ Max reconnection attempts reached. Stopping reconnection.');
+      return;
+    }
+
     final delay = min(30, pow(2, _reconnectAttempts)).toInt();
     debugPrint(
       '🔄 Attempting to reconnect in $delay seconds (attempt $_reconnectAttempts)',
@@ -634,8 +643,20 @@ class _TrackingScreenState extends State<TrackingScreen> {
   void _updateMapMarkers() {
     if (!mounted) return;
 
+    // Throttle marker updates to reduce rendering overhead
+    final now = DateTime.now();
+    if (_lastMarkerUpdate != null &&
+        now.difference(_lastMarkerUpdate!).inMilliseconds < 500) {
+      return;
+    }
+    _lastMarkerUpdate = now;
+
     Set<Marker> markers = {};
-    debugPrint('🗺️ Updating map markers');
+    // Reduce debug logging frequency to prevent log overflow
+    if (kDebugMode && (_lastMarkerUpdate == null ||
+        now.difference(_lastMarkerUpdate!).inSeconds > 5)) {
+      debugPrint('🗺️ Updating map markers');
+    }
 
     // Add user marker
     if (_userLocation != null) {
@@ -1432,6 +1453,19 @@ class _TrackingScreenState extends State<TrackingScreen> {
                     8,
                     20,
                   ), // Limit zoom levels for better UX
+                  // Performance optimizations to reduce frame events errors
+                  liteModeEnabled: false, // Ensure full functionality
+                  tiltGesturesEnabled: false, // Reduce rendering complexity
+                  rotateGesturesEnabled: false, // Reduce rendering complexity
+                  scrollGesturesEnabled: true,
+                  zoomGesturesEnabled: true,
+                  // Reduce map rendering load
+                  buildingsEnabled: false,
+                  indoorViewEnabled: false,
+                  trafficEnabled: false,
+                  // Additional performance optimizations
+                  mapType: MapType.normal, // Use normal map type for better performance
+                  cameraTargetBounds: CameraTargetBounds.unbounded, // Allow free movement
                 ),
             // Booking ID and Status Badge
             Positioned(
@@ -1935,9 +1969,22 @@ class _TrackingScreenState extends State<TrackingScreen> {
 
   @override
   void dispose() {
+    debugPrint('🗑️ TrackingScreen disposing');
+
     // Cancel timers and close connections
     _locationUpdateTimer?.cancel();
     _stompClient?.deactivate();
+
+    // Clear collections to free memory
+    _markers.clear();
+    _polylines.clear();
+    _routePoints.clear();
+
+    // Force garbage collection
+    _userLocation = null;
+    _driverLocation = null;
+    _destinationLocation = null;
+
     super.dispose();
   }
 }

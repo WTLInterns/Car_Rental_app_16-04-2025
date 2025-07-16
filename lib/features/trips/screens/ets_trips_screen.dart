@@ -383,6 +383,8 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
   }
 
   Future<void> _fetchTrips() async {
+    if (!mounted) return;
+
     setState(() {
       _isLoading = true;
     });
@@ -390,6 +392,8 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
     try {
       final response = await http.get(Uri.parse(
           'https://ets.worldtriplink.com/schedule/byUserId/$_userId'));
+
+      if (!mounted) return;
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
@@ -403,23 +407,31 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
         setState(() {
           _isLoading = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('Failed to load trips: ${response.statusCode}')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text('Failed to load trips: ${response.statusCode}')),
+          );
+        }
       }
     } catch (e) {
+      if (!mounted) return;
+
       setState(() {
         _isLoading = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${e.toString()}')),
+        );
+      }
     }
   }
 
   Future<void> _loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+
     setState(() {
       _userId = prefs.getInt('userId')?.toString() ??
           prefs.getString('userId') ??
@@ -642,9 +654,11 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
               const SizedBox(height: 4),
               GestureDetector(
                 onTap: () {
-                  setState(() {
-                    _isDropdownVisible = !_isDropdownVisible;
-                  });
+                  if (mounted) {
+                    setState(() {
+                      _isDropdownVisible = !_isDropdownVisible;
+                    });
+                  }
                 },
                 child: Container(
                   padding:
@@ -708,10 +722,12 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
                                 ),
                               ),
                               onTap: () {
-                                setState(() {
-                                  _selectedDate = date;
-                                  _isDropdownVisible = false;
-                                });
+                                if (mounted) {
+                                  setState(() {
+                                    _selectedDate = date;
+                                    _isDropdownVisible = false;
+                                  });
+                                }
                               },
                             );
                           }).toList()
@@ -853,7 +869,11 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
   Widget _buildTabButton(String text, int index) {
     final isActive = _activeTab == index;
     return GestureDetector(
-      onTap: () => setState(() => _activeTab = index),
+      onTap: () {
+        if (mounted) {
+          setState(() => _activeTab = index);
+        }
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
         decoration: BoxDecoration(
