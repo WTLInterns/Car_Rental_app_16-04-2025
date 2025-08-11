@@ -6,7 +6,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 
-const String googleMapsApiKey = "AIzaSyCelDo4I5cPQ72TfCTQW-arhPZ7ALNcp8w";
+const String googleMapsApiKey = "AIzaSyAKjmBSUJ3XR8uD10vG2ptzqLJAZnOlzqI";
 
 // Professional color palette
 const Color primaryColor = Color(0xFF4A90E2);

@@ -12,7 +12,7 @@ import '../blocs/booking_state.dart';
 import 'select_vehicle_screen.dart';
 import 'user_home_screen.dart';
 
-const String googleMapsApiKey = "AIzaSyCelDo4I5cPQ72TfCTQW-arhPZ7ALNcp8w";
+const String googleMapsApiKey = "AIzaSyAKjmBSUJ3XR8uD10vG2ptzqLJAZnOlzqI";
 
 class CabBookingScreen extends StatefulWidget {
   final String? initialDropLocation;
@@ -1154,7 +1154,9 @@ class _CabBookingScreenState extends State<CabBookingScreen> {
     }
     if (_bookingType == 'roundTrip' && _selectedReturnDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a return date')),
+        const SnackBar(content: Text('Please select a return date'),
+        backgroundColor: Colors.red,
+        ),
       );
       return;
     }

@@ -72,6 +72,10 @@ Navigator.pushReplacementNamed(context, AppConstants.routeUserHome);
 
 Navigator.pushReplacementNamed(context, AppConstants.routeDriverTrips);
 
+} else if (role.toUpperCase() == AppConstants.roleAdminDriver) {
+
+Navigator.pushReplacementNamed(context, AppConstants.routeAdminDriverHome);
+
 } else {
 
 // Default to login if role is unknown

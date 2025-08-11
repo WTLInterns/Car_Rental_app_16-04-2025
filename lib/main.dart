@@ -1,6 +1,8 @@
+// main.dart
 import 'package:device_preview/device_preview.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:worldtriplink/core/config/app_theme.dart';
 import 'package:worldtriplink/core/utils/app_constants.dart';
@@ -15,11 +17,19 @@ import 'package:worldtriplink/features/profile/screens/profile_screen.dart';
 import 'package:worldtriplink/features/tracking/screens/tracking_screen.dart';
 import 'package:worldtriplink/features/trips/screens/driver_trips_screen.dart';
 import 'package:worldtriplink/features/booking/screens/user_home_screen.dart';
+import 'package:worldtriplink/features/admin_driver/screens/driver_home_screen.dart';
 
 void main() async {
   // Ensure Flutter binding is initialized
   WidgetsFlutterBinding.ensureInitialized();
-
+  try {
+    // Load .env file
+    await dotenv.load(fileName: ".env");
+  } catch (e) {
+    if (kDebugMode) print('Error loading .env file: $e');
+    // Optionally log to analytics or crash reporting (e.g., Firebase Crashlytics)
+  }
+  
   // Initialize storage service
   await StorageService.init();
 
@@ -66,6 +76,7 @@ class MyApp extends StatelessWidget {
               AppConstants.routeUserHome: (context) => const UserHomeScreen(),
               AppConstants.routeDriverTrips: (context) =>
                   const DriverTripsScreen(),
+              AppConstants.routeAdminDriverHome: (context) => const DriverHomeScreen(),
               '/profile': (context) => const ProfileScreen(),
             },
             onGenerateRoute: (settings) {

@@ -11,6 +11,7 @@ class AppConstants {
   // User Roles
   static const String roleUser = 'USER';
   static const String roleDriver = 'DRIVER';
+  static const String roleAdminDriver = 'ADMIN_DRIVER';
   
   // Routes
   static const String routeSplash = '/splash';
@@ -19,6 +20,7 @@ class AppConstants {
   static const String routeForgotPassword = '/forgot-password';
   static const String routeUserHome = '/user-home';
   static const String routeDriverTrips = '/driver-trips';
+  static const String routeAdminDriverHome = '/admin-driver-home';
   static const String routeTracking = '/tracking';
   
   // Booking Types

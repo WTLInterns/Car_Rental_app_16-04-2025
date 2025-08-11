@@ -113,7 +113,7 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error: $e'),
+          content: Text('Please fill correct location details.'),
           backgroundColor: Colors.red.shade700,
         ),
       );

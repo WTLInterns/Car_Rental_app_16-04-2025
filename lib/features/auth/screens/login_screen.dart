@@ -74,6 +74,9 @@ class _LoginScreenState extends State<LoginScreen> {
         } else if (role.toUpperCase() == AppConstants.roleDriver) {
           Navigator.pushReplacementNamed(
               context, AppConstants.routeDriverTrips);
+        } else if (role.toUpperCase() == AppConstants.roleAdminDriver) {
+          Navigator.pushReplacementNamed(
+              context, AppConstants.routeAdminDriverHome);
         } else {
           // Handle unknown roles
           ScaffoldMessenger.of(context).showSnackBar(

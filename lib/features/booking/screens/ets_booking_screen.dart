@@ -8,7 +8,7 @@ import 'package:flutter/services.dart';
 import '../../../features/booking/screens/ets_select_vehicle_screen.dart';
 import '../../../features/trips/screens/ets_trips_screen.dart';
 
-const String googleMapsApiKey = "AIzaSyCelDo4I5cPQ72TfCTQW-arhPZ7ALNcp8w";
+const String googleMapsApiKey = "AIzaSyAKjmBSUJ3XR8uD10vG2ptzqLJAZnOlzqI";
 
 class EtsBookingScreen extends StatefulWidget {
   const EtsBookingScreen({super.key});

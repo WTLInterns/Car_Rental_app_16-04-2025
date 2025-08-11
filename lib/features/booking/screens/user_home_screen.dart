@@ -219,7 +219,7 @@ class _HomeContentState extends State<_HomeContent>
       final response = await http.get(
         Uri.parse(
           'https://maps.googleapis.com/maps/api/place/autocomplete/json?'
-          'input=$query&key=AIzaSyCelDo4I5cPQ72TfCTQW-arhPZ7ALNcp8w&components=country:in',
+          'input=$query&key=AIzaSyAKjmBSUJ3XR8uD10vG2ptzqLJAZnOlzqI&components=country:in',
         ),
       );
 

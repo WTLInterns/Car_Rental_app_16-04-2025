@@ -47,6 +47,10 @@ dependencies:
   # device preview
   device_preview: ^1.2.0
 
+  #razorpay  
+  razorpay_flutter: ^1.4.0
+  flutter_dotenv: ^5.2.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -58,6 +62,7 @@ dependency_overrides:
 flutter:
   uses-material-design: true
   assets:
+    - .env
     - assets/images/
     - assets/about/
     - assets/pickup.png

@@ -169,7 +169,7 @@ class _TripsScreenState extends State<TripsScreen> {
         loadedTrips.sort((b, a) {
           final aDate = DateTime.tryParse(a.startDate) ?? DateTime.fromMillisecondsSinceEpoch(0);
           final bDate = DateTime.tryParse(b.startDate) ?? DateTime.fromMillisecondsSinceEpoch(0);
-          return bDate.compareTo(aDate); // Newest first
+          return aDate.compareTo(bDate); // Newest first
         });
 
         // Calculate trip counts

@@ -6,7 +6,7 @@ class AppConfig {
   static const String loginEndpoint = '/auth/login1';
   
   // Map API Key - Should use environment variables in production
-  static const String googleMapsApiKey = "AIzaSyCelDo4I5cPQ72TfCTQW-arhPZ7ALNcp8w";
+  static const String googleMapsApiKey = "AIzaSyAKjmBSUJ3XR8uD10vG2ptzqLJAZnOlzqI";
   
   // App Theme Colors
   static const primaryColorHex = 0xFF2E3192;

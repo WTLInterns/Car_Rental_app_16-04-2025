@@ -353,7 +353,7 @@ class _ETSTripsScreenState extends State<ETSTripsScreen> {
 
   Future<LatLng?> _geocodeAddress(String address) async {
     try {
-      const String apiKey = 'AIzaSyCelDo4I5cPQ72TfCTQW-arhPZ7ALNcp8w';
+      const String apiKey = 'AIzaSyAKjmBSUJ3XR8uD10vG2ptzqLJAZnOlzqI';
       final String encodedAddress = Uri.encodeComponent(address);
       final String url =
           'https://maps.googleapis.com/maps/api/geocode/json?address=$encodedAddress&key=$apiKey';
